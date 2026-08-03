@@ -225,7 +225,7 @@
 <script>
 (function(){
   const STORAGE_KEY = 'production-tracker-data';
-  const hasStorage = typeof window.storage !== 'undefined';
+  const hasStorage = true;
 
   let state = null;
   let nav = [{ view:'products' }]; // stack of {view, productId, stageId}
@@ -243,22 +243,19 @@
     };
   }
 
-  async function loadState(){
-    if(hasStorage){
-      try{
-        const res = await window.storage.get(STORAGE_KEY, false);
-        if(res && res.value) return JSON.parse(res.value);
-      }catch(e){ /* no saved data yet */ }
+  async function loadState() {
+    const data = localStorage.getItem("production-tracker-data");
+    if (data) {
+        return JSON.parse(data);
     }
     return seed();
-  }
-
-  async function saveState(){
-    if(hasStorage){
-      try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }
-      catch(e){ console.error('Storage save failed', e); }
-    }
-  }
+}
+  async function saveState() {
+    localStorage.setItem(
+        "production-tracker-data",
+        JSON.stringify(state)
+    );
+}
 
   function currentNav(){ return nav[nav.length-1]; }
 
