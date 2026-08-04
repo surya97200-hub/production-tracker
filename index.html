@@ -683,7 +683,7 @@
           <div class="row-title" style="font-family:var(--sans);">${escapeHtml(s.name)}</div>
           <div class="row-sub">${s.entries.length} entr${s.entries.length===1?'y':'ies'}</div>
         </div>
-        <div class="pill">${stageQty(s)} pcs</div>
+        <div class="pill">${stageQty(s)} Boards</div>
         <button class="edit-btn" data-edit="${s.id}">${icon('pencil')}</button>
         <button class="del-btn" data-del="${s.id}">${icon('trash')}</button>
         <div class="chev">${icon('chev')}</div>
@@ -722,7 +722,7 @@
           <div class="summary-label">Total logged</div>
           <div class="summary-num">${stageQty(stage)}</div>
         </div>
-        <div class="summary-label">pcs</div>
+        <div class="summary-label">Boards</div>
       </div>
     `;
     if(stage.entries.length===0){
@@ -735,7 +735,7 @@
             <div class="entry-date">${formatDate(e.date)}</div>
             ${e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : ''}
           </div>
-          <div class="pill">${e.qty} pcs</div>
+          <div class="pill">${e.qty} Boards</div>
           <button class="edit-btn" data-edit="${e.id}">${icon('pencil')}</button>
           <button class="del-btn" data-del="${e.id}">${icon('trash')}</button>
         </div>
