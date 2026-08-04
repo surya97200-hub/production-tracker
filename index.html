@@ -266,13 +266,14 @@
 
 <script>
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
+  apiKey: "AIzaSyChhMqO32RVQ8csEJuQDJlva86dehKU7cQ",
+  authDomain: "econ-wip-tracker.firebaseapp.com",
+  projectId: "econ-wip-tracker",
+  storageBucket: "econ-wip-tracker.firebasestorage.app",
+  messagingSenderId: "1065634177485",
+  appId: "1:1065634177485:web:f642f1dc90b1efe004a484",
+  measurementId: "G-SE5Q84YPJH"
+};
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const stateDocRef = db.collection('productionTracker').doc('sharedState');
