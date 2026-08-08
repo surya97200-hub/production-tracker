@@ -216,7 +216,56 @@
 </style>
 </head>
 <body>
-<div id="shell">
+<style>
+  #authScreen{position:fixed;inset:0;background:#1C1C1E;display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999;}
+  #authCard{width:100%;max-width:420px;background:#F5F5F3;border-radius:20px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  #authCard h1{margin:0 0 6px;font-size:24px;}
+  #authCard .auth-sub{margin:0 0 22px;color:#77776F;font-size:13px;}
+  #authCard input{width:100%;border:1px solid #D8D8D4;border-radius:11px;padding:12px 13px;font-size:15px;margin-top:6px;background:#fff;outline:none;}
+  #authCard label{display:block;font-size:12px;font-weight:600;color:#7A7A72;text-transform:uppercase;letter-spacing:.05em;margin-top:14px;}
+  #authCard button{width:100%;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:18px;background:#1C1C1E;color:#fff;}
+  #authMsg{min-height:18px;margin-top:12px;font-size:13px;color:#D0564A;}
+  #ownerPanel{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:flex-end;}
+  #ownerPanel.open{display:flex;}
+  #ownerSheet{width:100%;background:#fff;border-radius:22px 22px 0 0;padding:20px;max-height:85vh;overflow:auto;}
+  #ownerSheet h2{margin:0 0 16px;font-size:18px;}
+  #ownerSheet input{width:100%;border:1px solid #D8D8D4;border-radius:11px;padding:12px 13px;font-size:15px;margin:6px 0 12px;box-sizing:border-box;}
+  #ownerSheet label{display:block;font-size:12px;font-weight:600;color:#7A7A72;text-transform:uppercase;}
+  .owner-actions{display:flex;gap:8px;}
+  .owner-actions button{flex:1;border:0;border-radius:12px;padding:13px;font-weight:600;cursor:pointer;}
+  #createUserBtn{background:#1C1C1E;color:#fff;} #closeOwnerBtn{background:#E8E8E5;color:#1C1C1E;}
+  #ownerMsg{font-size:13px;min-height:18px;margin-bottom:8px;}
+</style>
+
+<div id="authScreen">
+  <div id="authCard">
+    <h1>ECON WIP TrackeR</h1>
+    <p class="auth-sub">Owner / User Login</p>
+    <label>User ID / Owner ID</label>
+    <input id="loginId" autocomplete="username" placeholder="Enter user ID">
+    <label>Password</label>
+    <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password">
+    <button id="loginBtn">LOGIN</button>
+    <div id="authMsg"></div>
+  </div>
+</div>
+
+<div id="ownerPanel">
+  <div id="ownerSheet">
+    <h2>Create User</h2>
+    <label>User ID</label>
+    <input id="newUserId" placeholder="e.g. EA001" autocomplete="off">
+    <label>Password</label>
+    <input id="newUserPassword" type="password" placeholder="Minimum 6 characters" autocomplete="new-password">
+    <div id="ownerMsg"></div>
+    <div class="owner-actions">
+      <button id="closeOwnerBtn">Cancel</button>
+      <button id="createUserBtn">Create User</button>
+    </div>
+  </div>
+</div>
+
+<div id="shell" style="display:none;">
 
   <div class="appbar" id="appbar"></div>
   <div class="search-wrap" id="searchWrap" style="display:none;">
@@ -253,7 +302,7 @@
         service cloud.firestore {
           match /databases/{database}/documents {
             match /{document=**} {
-              allow read, write: if true;
+              allow read, write: if true; // Temporary only — replace with authenticated rules before deployment.
             }
           }
         }
@@ -263,6 +312,7 @@
      ============================================================ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
   const firebaseConfig = {
@@ -277,10 +327,392 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const stateDocRef = db.collection('productionTracker').doc('sharedState');
+  const auth = firebase.auth();
+  const secondaryApp = firebase.initializeApp(firebaseConfig, 'userCreator');
+  const secondaryAuth = secondaryApp.auth();
+</script>
+
+
+<script>
+/* ============================================================
+   OWNER / USER LOGIN — User ID + Password only
+   ------------------------------------------------------------
+   Owner is created once automatically in Firestore on first run.
+   Change the default owner password immediately after first login.
+   Users are created/managed only from the Owner panel.
+   ============================================================ */
+(function(){
+  const AUTH_DOC = db.collection('appAuth').doc('users');
+  const SESSION_KEY = 'econWipSession';
+  const DEFAULT_OWNER_ID = 'owner';
+  const DEFAULT_OWNER_PASSWORD = 'ChangeMe@2026';
+
+  let authUsers = {};
+  let currentUser = null;
+
+  async function hashPassword(password){
+    const data = new TextEncoder().encode(password);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest))
+      .map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function loadAuthUsers(){
+    const snap = await AUTH_DOC.get();
+    if(snap.exists){
+      authUsers = snap.data().users || {};
+      return;
+    }
+
+    const hash = await hashPassword(DEFAULT_OWNER_PASSWORD);
+    authUsers = {
+      [DEFAULT_OWNER_ID]: {
+        passwordHash: hash,
+        role: 'owner',
+        active: true,
+        createdAt: new Date().toISOString()
+      }
+    };
+    await AUTH_DOC.set({users: authUsers});
+  }
+
+  function saveSession(userId){
+    sessionStorage.setItem(SESSION_KEY, userId);
+  }
+
+  function clearSession(){
+    sessionStorage.removeItem(SESSION_KEY);
+    currentUser = null;
+  }
+
+  function getSessionUser(){
+    const id = sessionStorage.getItem(SESSION_KEY);
+    return id && authUsers[id] && authUsers[id].active ? id : null;
+  }
+
+  function showLogin(){
+    document.getElementById('shell').innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
+                  padding:24px;background:var(--paper);">
+        <div style="width:100%;max-width:390px;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <div style="font-size:24px;font-weight:700;">ECON WIP TrackeR</div>
+            <div style="font-size:12px;color:#77776F;margin-top:5px;
+                        font-family:var(--mono);text-transform:uppercase;">
+              Secure Login
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--rule);border-radius:18px;
+                      padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.08);">
+            <div class="field">
+              <label>User ID</label>
+              <input id="loginUserId" autocomplete="username"
+                     placeholder="Enter User ID">
+            </div>
+
+            <div class="field">
+              <label>Password</label>
+              <input id="loginPassword" type="password"
+                     autocomplete="current-password"
+                     placeholder="Enter password">
+            </div>
+
+            <button class="btn btn-primary" id="loginBtn"
+                    style="width:100%;margin-top:4px;">LOGIN</button>
+
+            <div id="loginMsg" style="display:none;text-align:center;margin-top:12px;
+                       color:var(--danger);font-size:13px;"></div>
+          </div>
+        </div>
+      </div>`;
+
+    const login = async ()=>{
+      const id = document.getElementById('loginUserId').value.trim();
+      const pw = document.getElementById('loginPassword').value;
+
+      if(!id || !pw){
+        showLoginMsg('Enter User ID and password');
+        return;
+      }
+
+      const u = authUsers[id];
+      if(!u || !u.active){
+        showLoginMsg('Invalid User ID or password');
+        return;
+      }
+
+      const hash = await hashPassword(pw);
+      if(hash !== u.passwordHash){
+        showLoginMsg('Invalid User ID or password');
+        return;
+      }
+
+      currentUser = id;
+      saveSession(id);
+      startTracker();
+    };
+
+    document.getElementById('loginBtn').onclick = login;
+    document.getElementById('loginPassword').addEventListener('keydown', e=>{
+      if(e.key === 'Enter') login();
+    });
+    document.getElementById('loginUserId').addEventListener('keydown', e=>{
+      if(e.key === 'Enter') login();
+    });
+  }
+
+  function showLoginMsg(msg){
+    const el = document.getElementById('loginMsg');
+    if(!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function showOwnerPanel(){
+    const rows = Object.entries(authUsers)
+      .filter(([id])=>id !== DEFAULT_OWNER_ID)
+      .map(([id,u])=>`
+        <div class="row" style="cursor:default;">
+          <div class="row-icon">👤</div>
+          <div class="row-body">
+            <div class="row-title">${escapeHtml(id)}</div>
+            <div class="row-sub">${u.active ? 'Active' : 'Disabled'}</div>
+          </div>
+          <button class="edit-btn" data-reset="${escapeAttr(id)}"
+                  title="Reset password">🔑</button>
+          <button class="del-btn" data-userdel="${escapeAttr(id)}"
+                  title="Delete user">${icon('trash')}</button>
+        </div>
+      `).join('');
+
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">User Management</div>
+
+      <div class="field">
+        <label>User ID</label>
+        <input id="newUserId" autocomplete="off" placeholder="e.g. EA001">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input id="newUserPassword" type="password"
+               autocomplete="new-password" placeholder="Minimum 6 characters">
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="closeUsers">Close</button>
+        <button class="btn btn-primary" id="createUser">Create User</button>
+      </div>
+
+      <div style="margin-top:20px;font-size:12px;font-weight:600;color:#77776F;
+                  text-transform:uppercase;">Users</div>
+      <div style="margin-top:8px;">${rows || '<div class="empty" style="padding:25px 5px;">No users created yet</div>'}</div>
+    `);
+
+    document.getElementById('closeUsers').onclick = closeSheet;
+
+    document.getElementById('createUser').onclick = async ()=>{
+      const id = document.getElementById('newUserId').value.trim();
+      const pw = document.getElementById('newUserPassword').value;
+
+      if(!id){
+        showToast('Enter a User ID');
+        return;
+      }
+      if(id.toLowerCase() === DEFAULT_OWNER_ID){
+        showToast('This User ID is reserved');
+        return;
+      }
+      if(!/^[A-Za-z0-9._-]{3,30}$/.test(id)){
+        showToast('Use 3-30 letters, numbers, dot, _ or -');
+        return;
+      }
+      if(pw.length < 6){
+        showToast('Password must be at least 6 characters');
+        return;
+      }
+      if(authUsers[id]){
+        showToast('User ID already exists');
+        return;
+      }
+
+      authUsers[id] = {
+        passwordHash: await hashPassword(pw),
+        role: 'user',
+        active: true,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser
+      };
+
+      await AUTH_DOC.set({users: authUsers});
+      showToast('User created');
+      closeSheet();
+      render();
+    };
+
+    document.querySelectorAll('[data-reset]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const id = btn.dataset.reset;
+        const pw = prompt(`New password for ${id}:`);
+        if(pw === null) return;
+        if(pw.length < 6){
+          showToast('Password must be at least 6 characters');
+          return;
+        }
+        authUsers[id].passwordHash = await hashPassword(pw);
+        await AUTH_DOC.set({users: authUsers});
+        showToast('Password updated');
+        closeSheet();
+      };
+    });
+
+    document.querySelectorAll('[data-userdel]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const id = btn.dataset.userdel;
+        confirmDelete(`Delete user "${id}"?`, async ()=>{
+          delete authUsers[id];
+          await AUTH_DOC.set({users: authUsers});
+          showToast('User deleted');
+          closeSheet();
+          render();
+        });
+      };
+    });
+  }
+
+  function logout(){
+    clearSession();
+    location.reload();
+  }
+
+  window.__auth = {
+    get currentUser(){ return currentUser; },
+    isOwner(){ return currentUser === DEFAULT_OWNER_ID; },
+    showOwnerPanel,
+    logout
+  };
+
+  async function bootAuth(){
+    try{
+      await loadAuthUsers();
+      currentUser = getSessionUser();
+      if(currentUser) startTracker();
+      else showLogin();
+    }catch(e){
+      console.error(e);
+      document.getElementById('shell').innerHTML =
+        '<div style="padding:30px;font-family:var(--sans);">Firebase connection error. Check Firestore rules and configuration.</div>';
+    }
+  }
+
+  function startTracker(){
+    // Restore the original shell markup expected by the tracker.
+    document.getElementById('shell').innerHTML = `
+      <div class="appbar" id="appbar"></div>
+      <div class="search-wrap" id="searchWrap" style="display:none;">
+        <div class="search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/>
+               <line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" placeholder="Search product" autocomplete="off">
+        </div>
+      </div>
+      <div class="scroll" id="scroll"></div>
+      <button class="fab" id="fab" aria-label="Add">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <div class="overlay" id="overlay"></div>
+      <div class="sheet" id="sheet"></div>
+      <div class="toast" id="toast"></div>`;
+
+    // The original tracker IIFE is defined below; start it once the DOM exists.
+    if(window.__startOriginalTracker) window.__startOriginalTracker();
+  }
+
+  // Delay boot until the original tracker functions have been registered.
+  window.__bootAuth = bootAuth;
+})();
 </script>
 
 <script>
 (function(){
+  // ===== AUTHENTICATION =====
+  // Owner ID is mapped internally to an email-style Firebase login.
+  // Create the OWNER account once in Firebase Authentication, then use this app.
+  const OWNER_ID = 'owner';
+  const AUTH_DOMAIN = '@econwip.local';
+  let currentUser = null;
+
+  function authEmail(id){ return String(id||'').trim().toLowerCase() + AUTH_DOMAIN; }
+  function authMessage(msg, ok=false){
+    const el=document.getElementById('authMsg'); el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A';
+  }
+  function ownerMessage(msg, ok=false){
+    const el=document.getElementById('ownerMsg'); el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A';
+  }
+  function showApp(user){
+    currentUser=user;
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('shell').style.display='flex';
+    const title=document.querySelector('.appbar-title.root');
+    if(title && user && user.email) title.setAttribute('title', user.email);
+  }
+  function showLogin(){
+    currentUser=null;
+    document.getElementById('shell').style.display='none';
+    document.getElementById('authScreen').style.display='flex';
+  }
+
+  document.getElementById('loginBtn').onclick=async()=>{
+    const id=document.getElementById('loginId').value.trim();
+    const pw=document.getElementById('loginPassword').value;
+    if(!id || !pw){ authMessage('Enter User ID and password'); return; }
+    authMessage('Signing in...', true);
+    try{ await auth.signInWithEmailAndPassword(authEmail(id), pw); }
+    catch(e){ console.error(e); authMessage('Invalid User ID or password'); }
+  };
+
+  document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+
+  window.openOwnerPanel=()=>{ document.getElementById('ownerPanel').classList.add('open'); ownerMessage(''); };
+  document.getElementById('closeOwnerBtn').onclick=()=>document.getElementById('ownerPanel').classList.remove('open');
+
+  document.getElementById('createUserBtn').onclick=async()=>{
+    const id=document.getElementById('newUserId').value.trim();
+    const pw=document.getElementById('newUserPassword').value;
+    if(!id || !pw){ ownerMessage('Enter User ID and password'); return; }
+    if(id.toLowerCase()==='owner'){ ownerMessage('OWNER ID is reserved'); return; }
+    if(pw.length<6){ ownerMessage('Password must be at least 6 characters'); return; }
+    ownerMessage('Creating user...', true);
+    try{
+      // Secondary Firebase app keeps the owner signed in while creating the new account.
+      const cred=await secondaryAuth.createUserWithEmailAndPassword(authEmail(id),pw);
+      await db.collection('users').doc(cred.user.uid).set({userId:id, role:'user', createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await secondaryAuth.signOut();
+      document.getElementById('newUserId').value='';
+      document.getElementById('newUserPassword').value='';
+      ownerMessage('User created successfully', true);
+    }catch(e){
+      console.error(e);
+      ownerMessage(e.code==='auth/email-already-in-use'?'User ID already exists':(e.message||'Could not create user'));
+    }
+  };
+
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      showApp(user);
+      // Start the existing WIP application only after authentication.
+      startWipApp(user);
+    } else { showLogin(); }
+  });
+
+  function startWipApp(user){
   let state = null;
   let syncStatus = 'connecting'; // connecting | on | err
   let nav = [{ view:'products' }]; // stack of {view, productId, stageId}
@@ -578,11 +1010,18 @@
     const dotClass = syncStatus==='on' ? 'on' : (syncStatus==='err' ? 'err' : '');
 
     if(n.view==='products'){
-      appbar.innerHTML = `<div class="appbar-row"><div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div></div>`;
+      appbar.innerHTML = `<div class="appbar-row">
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
+        ${window.__auth && window.__auth.isOwner() ? `<button class="btn btn-ghost" id="usersBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Users</button>` : ''}
+        <button class="btn btn-ghost" id="logoutBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Logout</button>
+      </div>`;
       searchWrap.style.display = 'block';
       renderProducts(scroll);
       fab.style.display = 'flex';
       fab.onclick = ()=>openProductSheet(null);
+      document.getElementById('logoutBtn').onclick = window.__auth.logout;
+      const usersBtn = document.getElementById('usersBtn');
+      if(usersBtn) usersBtn.onclick = window.__auth.showOwnerPanel;
     }
     else if(n.view==='stages'){
       const product = findProduct(n.productId);
@@ -775,11 +1214,39 @@
   });
 
   // ---------- Init ----------
-  setupSortable(document.getElementById('scroll'));
-  state = seed();
-  render();
-  subscribeState();
-})();
+  // Started by the authentication layer after successful login.
+
+  // Add owner controls to the app bar. Only the configured OWNER_ID gets this UI.
+  if((user.email||'').toLowerCase() === authEmail(OWNER_ID)){
+    const observer=new MutationObserver(()=>{
+      const bar=document.getElementById('appbar');
+      if(bar && !document.getElementById('ownerTools')){
+        const btn=document.createElement('button');
+        btn.id='ownerTools'; btn.textContent='Users';
+        btn.style.cssText='position:absolute;right:12px;top:16px;border:0;border-radius:8px;padding:7px 10px;background:#E8E8E5;color:#1C1C1E;font-weight:600;cursor:pointer;';
+        btn.onclick=window.openOwnerPanel; bar.appendChild(btn);
+        const logout=document.createElement('button');
+        logout.textContent='Logout';
+        logout.style.cssText='position:absolute;left:12px;top:16px;border:0;border-radius:8px;padding:7px 10px;background:#E8E8E5;color:#1C1C1E;font-weight:600;cursor:pointer;';
+        logout.onclick=()=>auth.signOut(); bar.appendChild(logout);
+      }
+    });
+    observer.observe(document.getElementById('appbar'),{childList:true,subtree:true});
+  } else {
+    const observer=new MutationObserver(()=>{
+      const bar=document.getElementById('appbar');
+      if(bar && !document.getElementById('userLogout')){
+        const logout=document.createElement('button');
+        logout.id='userLogout'; logout.textContent='Logout';
+        logout.style.cssText='position:absolute;left:12px;top:16px;border:0;border-radius:8px;padding:7px 10px;background:#E8E8E5;color:#1C1C1E;font-weight:600;cursor:pointer;';
+        logout.onclick=()=>auth.signOut(); bar.appendChild(logout);
+      }
+    });
+    observer.observe(document.getElementById('appbar'),{childList:true,subtree:true});
+  }
+  }
+};
+window.__bootAuth();
 </script>
 </body>
 </html>
