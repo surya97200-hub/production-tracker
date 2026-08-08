@@ -235,6 +235,43 @@
   .owner-actions button{flex:1;border:0;border-radius:12px;padding:13px;font-weight:600;cursor:pointer;}
   #createUserBtn{background:#1C1C1E;color:#fff;} #closeOwnerBtn{background:#E8E8E5;color:#1C1C1E;}
   #ownerMsg{font-size:13px;min-height:18px;margin-bottom:8px;}
+  .section-title{font-size:13px;font-weight:700;margin:18px 0 10px;padding-top:14px;border-top:1px solid #E8E8E5;}
+  .link-btn{background:none;border:none;color:#5B8DEF;font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-top:14px;display:block;text-align:center;width:100%;}
+  #forgotPanel{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;}
+  #forgotPanel.open{display:flex;}
+  #forgotCard{width:100%;max-width:380px;background:#F5F5F3;border-radius:20px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  #forgotCard h2{margin:0 0 6px;font-size:18px;}
+  #forgotCard p{margin:0 0 16px;color:#77776F;font-size:13px;}
+  #forgotCard input{width:100%;border:1px solid #D8D8D4;border-radius:11px;padding:12px 13px;font-size:15px;margin-bottom:10px;background:#fff;outline:none;box-sizing:border-box;}
+  #forgotCard .owner-actions{display:flex;gap:8px;margin-top:6px;}
+  #forgotCard .owner-actions button{flex:1;border:0;border-radius:12px;padding:12px;font-weight:600;cursor:pointer;}
+  #forgotCard #sendForgotBtn{background:#1C1C1E;color:#fff;}
+  #forgotCard #cancelForgotBtn{background:#E8E8E5;color:#1C1C1E;}
+  #forgotMsg{font-size:13px;min-height:16px;}
+  .req-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#D0564A;color:#fff;font-size:10px;font-weight:700;margin-left:4px;position:relative;top:-1px;}
+  .reset-req-row{background:#F5F5F3;border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .reset-req-row .rr-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;}
+  .reset-req-row .rr-type{font-weight:400;color:#7A7A72;font-size:11px;}
+  .reset-req-row .rr-sub{font-size:11px;color:#7A7A72;margin:2px 0 8px;}
+  .reset-req-row .rr-note{font-size:12px;color:#1C1C1E;margin:2px 0 8px;font-style:italic;}
+  .reset-req-row input{margin:0 0 8px;padding:9px 10px;font-size:13px;}
+  .reset-req-row .rr-actions{display:flex;gap:6px;}
+  .reset-req-row .rr-actions button{border:0;border-radius:9px;padding:9px 10px;font-size:12px;font-weight:600;cursor:pointer;}
+  .reset-req-row .rr-set{background:#1C1C1E;color:#fff;flex:1;}
+  .reset-req-row .rr-dismiss{background:#E8E8E5;color:#1C1C1E;}
+  #noRequests{font-size:13px;color:#7A7A72;}
+  .user-row{background:#F5F5F3;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .user-row .ur-id{font-family:var(--mono);font-weight:700;font-size:13px;}
+  .user-row .ur-pw{font-family:var(--mono);font-size:12px;color:#7A7A72;margin-top:2px;word-break:break-all;}
+  .user-row .ur-status{font-size:11px;padding:3px 8px;border-radius:20px;background:#DDEFE0;color:#2E7D46;font-weight:600;white-space:nowrap;flex:0 0 auto;}
+  .user-row .ur-status.inactive{background:#F5DAD6;color:#B23A2C;}
+  .user-row .ur-del{border:0;background:transparent;color:#B23A2C;width:30px;height:30px;flex:0 0 30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .user-row .ur-del:active{background:#00000010;}
+  #noUsers{font-size:13px;color:#7A7A72;}
+  .user-row{flex-wrap:wrap;}
+  .user-row .ur-main{flex:1 1 auto;min-width:120px;}
+  .ur-access{font-family:var(--sans);font-size:12px;font-weight:600;border:1px solid #D8D8D4;border-radius:8px;padding:6px 8px;background:#fff;color:#1C1C1E;flex:0 0 auto;}
+  .view-only-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#FBEBD2;color:#8A5A16;border:1px solid #E9CE9B;padding:3px 8px;border-radius:20px;margin-left:6px;white-space:nowrap;}
 </style>
 
 <div id="authScreen">
@@ -247,6 +284,22 @@
     <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password">
     <button id="loginBtn">LOGIN</button>
     <div id="authMsg"></div>
+    <button type="button" class="link-btn" id="forgotLink">Forgot password?</button>
+  </div>
+</div>
+
+<div id="forgotPanel">
+  <div id="forgotCard">
+    <h2>Forgot password</h2>
+    <p>Enter your User ID and the new password you'd like to use. It goes to the owner for approval before it becomes active.</p>
+    <input id="forgotUserId" placeholder="Your User ID" autocomplete="off">
+    <input id="forgotNewPw" type="password" placeholder="New password (min 6 chars)" autocomplete="new-password">
+    <input id="forgotNewPw2" type="password" placeholder="Confirm new password" autocomplete="new-password">
+    <div id="forgotMsg"></div>
+    <div class="owner-actions">
+      <button type="button" id="cancelForgotBtn">Cancel</button>
+      <button type="button" id="sendForgotBtn">Send Request</button>
+    </div>
   </div>
 </div>
 
@@ -257,10 +310,28 @@
     <input id="newUserId" placeholder="e.g. EA001" autocomplete="off">
     <label>Password</label>
     <input id="newUserPassword" type="password" placeholder="Minimum 6 characters" autocomplete="new-password">
+    <label>Access Level</label>
+    <select id="newUserAccess" style="width:100%;border:1px solid #D8D8D4;border-radius:11px;padding:12px 13px;font-size:15px;margin:6px 0 12px;background:#fff;">
+      <option value="write">Read &amp; Write (can add/edit/delete)</option>
+      <option value="read">Read Only (view only)</option>
+    </select>
     <div id="ownerMsg"></div>
     <div class="owner-actions">
       <button id="closeOwnerBtn">Cancel</button>
       <button id="createUserBtn">Create User</button>
+    </div>
+    <div class="section-title">All users</div>
+    <div id="allUsersList"><div id="noUsers">No users created yet</div></div>
+    <div class="section-title">Password requests</div>
+    <div id="resetRequestsList"><div id="noRequests">No pending requests</div></div>
+    <div class="section-title">Change owner password</div>
+    <label>Current password</label>
+    <input id="ownerCurPw" type="password" placeholder="Current owner password" autocomplete="off">
+    <label>New password</label>
+    <input id="ownerNewPw" type="password" placeholder="Minimum 6 characters" autocomplete="new-password">
+    <div id="ownerPwMsg" style="font-size:13px;min-height:18px;"></div>
+    <div class="owner-actions">
+      <button id="changeOwnerPwBtn" style="background:#1C1C1E;color:#fff;">Change Password</button>
     </div>
   </div>
 </div>
@@ -312,7 +383,6 @@
      ============================================================ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
   const firebaseConfig = {
@@ -327,396 +397,417 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const stateDocRef = db.collection('productionTracker').doc('sharedState');
-  const auth = firebase.auth();
-  const secondaryApp = firebase.initializeApp(firebaseConfig, 'userCreator');
-  const secondaryAuth = secondaryApp.auth();
 </script>
 
 
+
+
 <script>
-/* ============================================================
-   OWNER / USER LOGIN — User ID + Password only
-   ------------------------------------------------------------
-   Owner is created once automatically in Firestore on first run.
-   Change the default owner password immediately after first login.
-   Users are created/managed only from the Owner panel.
-   ============================================================ */
 (function(){
+  // ===== USER ID + PASSWORD AUTHENTICATION =====
   const AUTH_DOC = db.collection('appAuth').doc('users');
-  const SESSION_KEY = 'econWipSession';
-  const DEFAULT_OWNER_ID = 'owner';
+  const REQUESTS_DOC = db.collection('appAuth').doc('resetRequests');
+  const OWNER_ID = 'owner';
   const DEFAULT_OWNER_PASSWORD = 'ChangeMe@2026';
-
-  let authUsers = {};
   let currentUser = null;
+  let authUsers = {};
+  let resetRequests = {};
 
-  async function hashPassword(password){
-    const data = new TextEncoder().encode(password);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(digest))
-      .map(b => b.toString(16).padStart(2,'0')).join('');
+  function esc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  async function loadAuthUsers(){
-    const snap = await AUTH_DOC.get();
-    if(snap.exists){
-      authUsers = snap.data().users || {};
+  async function loadRequestsOnce(){
+    try{
+      const snap = await REQUESTS_DOC.get();
+      resetRequests = snap.exists ? (snap.data().requests || {}) : {};
+    }catch(e){ console.error(e); resetRequests = {}; }
+  }
+
+  function pendingCount(){
+    return Object.values(resetRequests).filter(r=>r && r.status==='pending').length;
+  }
+
+  function renderResetRequestsList(){
+    const list = document.getElementById('resetRequestsList');
+    if(!list) return;
+    const pending = Object.entries(resetRequests).filter(([id,r])=>r && r.status==='pending');
+    if(pending.length===0){
+      list.innerHTML = '<div id="noRequests">No pending requests</div>';
       return;
     }
-
-    const hash = await hashPassword(DEFAULT_OWNER_PASSWORD);
-    authUsers = {
-      [DEFAULT_OWNER_ID]: {
-        passwordHash: hash,
-        role: 'owner',
-        active: true,
-        createdAt: new Date().toISOString()
-      }
-    };
-    await AUTH_DOC.set({users: authUsers});
-  }
-
-  function saveSession(userId){
-    sessionStorage.setItem(SESSION_KEY, userId);
-  }
-
-  function clearSession(){
-    sessionStorage.removeItem(SESSION_KEY);
-    currentUser = null;
-  }
-
-  function getSessionUser(){
-    const id = sessionStorage.getItem(SESSION_KEY);
-    return id && authUsers[id] && authUsers[id].active ? id : null;
-  }
-
-  function showLogin(){
-    document.getElementById('shell').innerHTML = `
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
-                  padding:24px;background:var(--paper);">
-        <div style="width:100%;max-width:390px;">
-          <div style="text-align:center;margin-bottom:28px;">
-            <div style="font-size:24px;font-weight:700;">ECON WIP TrackeR</div>
-            <div style="font-size:12px;color:#77776F;margin-top:5px;
-                        font-family:var(--mono);text-transform:uppercase;">
-              Secure Login
-            </div>
-          </div>
-
-          <div style="background:#fff;border:1px solid var(--rule);border-radius:18px;
-                      padding:22px;box-shadow:0 8px 30px rgba(0,0,0,.08);">
-            <div class="field">
-              <label>User ID</label>
-              <input id="loginUserId" autocomplete="username"
-                     placeholder="Enter User ID">
-            </div>
-
-            <div class="field">
-              <label>Password</label>
-              <input id="loginPassword" type="password"
-                     autocomplete="current-password"
-                     placeholder="Enter password">
-            </div>
-
-            <button class="btn btn-primary" id="loginBtn"
-                    style="width:100%;margin-top:4px;">LOGIN</button>
-
-            <div id="loginMsg" style="display:none;text-align:center;margin-top:12px;
-                       color:var(--danger);font-size:13px;"></div>
-          </div>
+    list.innerHTML = pending.map(([reqId,r])=>`
+      <div class="reset-req-row">
+        <div class="rr-top"><span>${esc(r.userId)}</span><span class="rr-type">${r.type==='forgot'?'Forgot password':'Change request'}</span></div>
+        <div class="rr-sub">Requested ${new Date(r.requestedAt).toLocaleString()}</div>
+        <div class="rr-note">Requested new password: <strong>${esc(r.newPassword)}</strong></div>
+        <div class="rr-actions">
+          <button type="button" class="rr-set" data-approve="${reqId}">Approve</button>
+          <button type="button" class="rr-dismiss" data-reject="${reqId}">Reject</button>
         </div>
-      </div>`;
-
-    const login = async ()=>{
-      const id = document.getElementById('loginUserId').value.trim();
-      const pw = document.getElementById('loginPassword').value;
-
-      if(!id || !pw){
-        showLoginMsg('Enter User ID and password');
-        return;
-      }
-
-      const u = authUsers[id];
-      if(!u || !u.active){
-        showLoginMsg('Invalid User ID or password');
-        return;
-      }
-
-      const hash = await hashPassword(pw);
-      if(hash !== u.passwordHash){
-        showLoginMsg('Invalid User ID or password');
-        return;
-      }
-
-      currentUser = id;
-      saveSession(id);
-      startTracker();
-    };
-
-    document.getElementById('loginBtn').onclick = login;
-    document.getElementById('loginPassword').addEventListener('keydown', e=>{
-      if(e.key === 'Enter') login();
-    });
-    document.getElementById('loginUserId').addEventListener('keydown', e=>{
-      if(e.key === 'Enter') login();
-    });
-  }
-
-  function showLoginMsg(msg){
-    const el = document.getElementById('loginMsg');
-    if(!el) return;
-    el.textContent = msg;
-    el.style.display = 'block';
-  }
-
-  function showOwnerPanel(){
-    const rows = Object.entries(authUsers)
-      .filter(([id])=>id !== DEFAULT_OWNER_ID)
-      .map(([id,u])=>`
-        <div class="row" style="cursor:default;">
-          <div class="row-icon">👤</div>
-          <div class="row-body">
-            <div class="row-title">${escapeHtml(id)}</div>
-            <div class="row-sub">${u.active ? 'Active' : 'Disabled'}</div>
-          </div>
-          <button class="edit-btn" data-reset="${escapeAttr(id)}"
-                  title="Reset password">🔑</button>
-          <button class="del-btn" data-userdel="${escapeAttr(id)}"
-                  title="Delete user">${icon('trash')}</button>
-        </div>
-      `).join('');
-
-    openSheet(`
-      <div class="sheet-handle"></div>
-      <div class="sheet-title">User Management</div>
-
-      <div class="field">
-        <label>User ID</label>
-        <input id="newUserId" autocomplete="off" placeholder="e.g. EA001">
       </div>
-
-      <div class="field">
-        <label>Password</label>
-        <input id="newUserPassword" type="password"
-               autocomplete="new-password" placeholder="Minimum 6 characters">
-      </div>
-
-      <div class="sheet-actions">
-        <button class="btn btn-ghost" id="closeUsers">Close</button>
-        <button class="btn btn-primary" id="createUser">Create User</button>
-      </div>
-
-      <div style="margin-top:20px;font-size:12px;font-weight:600;color:#77776F;
-                  text-transform:uppercase;">Users</div>
-      <div style="margin-top:8px;">${rows || '<div class="empty" style="padding:25px 5px;">No users created yet</div>'}</div>
-    `);
-
-    document.getElementById('closeUsers').onclick = closeSheet;
-
-    document.getElementById('createUser').onclick = async ()=>{
-      const id = document.getElementById('newUserId').value.trim();
-      const pw = document.getElementById('newUserPassword').value;
-
-      if(!id){
-        showToast('Enter a User ID');
-        return;
-      }
-      if(id.toLowerCase() === DEFAULT_OWNER_ID){
-        showToast('This User ID is reserved');
-        return;
-      }
-      if(!/^[A-Za-z0-9._-]{3,30}$/.test(id)){
-        showToast('Use 3-30 letters, numbers, dot, _ or -');
-        return;
-      }
-      if(pw.length < 6){
-        showToast('Password must be at least 6 characters');
-        return;
-      }
-      if(authUsers[id]){
-        showToast('User ID already exists');
-        return;
-      }
-
-      authUsers[id] = {
-        passwordHash: await hashPassword(pw),
-        role: 'user',
-        active: true,
-        createdAt: new Date().toISOString(),
-        createdBy: currentUser
-      };
-
-      await AUTH_DOC.set({users: authUsers});
-      showToast('User created');
-      closeSheet();
-      render();
-    };
-
-    document.querySelectorAll('[data-reset]').forEach(btn=>{
+    `).join('');
+    list.querySelectorAll('[data-approve]').forEach(btn=>{
       btn.onclick = async ()=>{
-        const id = btn.dataset.reset;
-        const pw = prompt(`New password for ${id}:`);
-        if(pw === null) return;
-        if(pw.length < 6){
-          showToast('Password must be at least 6 characters');
-          return;
+        const reqId = btn.dataset.approve;
+        const r = resetRequests[reqId];
+        if(!authUsers[r.userId]){ ownerMessage('User no longer exists'); return; }
+        try{
+          authUsers[r.userId].password = r.newPassword;
+          resetRequests[reqId].status='resolved';
+          resetRequests[reqId].resolvedAt=new Date().toISOString();
+          await AUTH_DOC.set({users:authUsers});
+          await REQUESTS_DOC.set({requests:resetRequests});
+          ownerMessage('Password updated for '+r.userId, true);
+          renderResetRequestsList();
+          renderUsersList();
+        }catch(e){
+          console.error(e);
+          ownerMessage('Could not update. Check connection.');
         }
-        authUsers[id].passwordHash = await hashPassword(pw);
-        await AUTH_DOC.set({users: authUsers});
-        showToast('Password updated');
-        closeSheet();
       };
     });
-
-    document.querySelectorAll('[data-userdel]').forEach(btn=>{
-      btn.onclick = ()=>{
-        const id = btn.dataset.userdel;
-        confirmDelete(`Delete user "${id}"?`, async ()=>{
-          delete authUsers[id];
-          await AUTH_DOC.set({users: authUsers});
-          showToast('User deleted');
-          closeSheet();
-          render();
-        });
+    list.querySelectorAll('[data-reject]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const reqId = btn.dataset.reject;
+        try{
+          resetRequests[reqId].status='rejected';
+          await REQUESTS_DOC.set({requests:resetRequests});
+          renderResetRequestsList();
+        }catch(e){ console.error(e); }
       };
     });
   }
 
-  function logout(){
-    clearSession();
-    location.reload();
-  }
-
-  window.__auth = {
-    get currentUser(){ return currentUser; },
-    isOwner(){ return currentUser === DEFAULT_OWNER_ID; },
-    showOwnerPanel,
-    logout
-  };
-
-  async function bootAuth(){
-    try{
-      await loadAuthUsers();
-      currentUser = getSessionUser();
-      if(currentUser) startTracker();
-      else showLogin();
-    }catch(e){
-      console.error(e);
-      document.getElementById('shell').innerHTML =
-        '<div style="padding:30px;font-family:var(--sans);">Firebase connection error. Check Firestore rules and configuration.</div>';
+  function renderUsersList(){
+    const list = document.getElementById('allUsersList');
+    if(!list) return;
+    const entries = Object.entries(authUsers).filter(([id])=>id!==OWNER_ID);
+    if(entries.length===0){
+      list.innerHTML = '<div id="noUsers">No users created yet</div>';
+      return;
     }
-  }
-
-  function startTracker(){
-    // Restore the original shell markup expected by the tracker.
-    document.getElementById('shell').innerHTML = `
-      <div class="appbar" id="appbar"></div>
-      <div class="search-wrap" id="searchWrap" style="display:none;">
-        <div class="search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/>
-               <line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input id="searchInput" placeholder="Search product" autocomplete="off">
+    list.innerHTML = entries.map(([id,u])=>`
+      <div class="user-row">
+        <div class="ur-main">
+          <div class="ur-id">${esc(id)}</div>
+          <div class="ur-pw">Password: ${esc(u.password)}</div>
         </div>
+        <select class="ur-access" data-access="${esc(id)}" title="Access level">
+          <option value="write" ${u.access!=='read'?'selected':''}>Read &amp; Write</option>
+          <option value="read" ${u.access==='read'?'selected':''}>Read Only</option>
+        </select>
+        <span class="ur-status ${u.active?'':'inactive'}">${u.active?'Active':'Inactive'}</span>
+        <button type="button" class="ur-del" data-deluser="${esc(id)}" title="Delete user">${icon('trash')}</button>
       </div>
-      <div class="scroll" id="scroll"></div>
-      <button class="fab" id="fab" aria-label="Add">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </button>
-      <div class="overlay" id="overlay"></div>
-      <div class="sheet" id="sheet"></div>
-      <div class="toast" id="toast"></div>`;
-
-    // The original tracker IIFE is defined below; start it once the DOM exists.
-    if(window.__startOriginalTracker) window.__startOriginalTracker();
+    `).join('');
+    list.querySelectorAll('[data-access]').forEach(sel=>{
+      sel.onchange = async ()=>{
+        const id = sel.dataset.access;
+        const newAccess = sel.value==='read' ? 'read' : 'write';
+        try{
+          authUsers[id].access = newAccess;
+          await AUTH_DOC.set({users:authUsers});
+          ownerMessage('Access updated for '+id, true);
+          renderUsersList();
+        }catch(e){
+          console.error(e);
+          ownerMessage('Could not update access. Check connection.');
+        }
+      };
+    });
+    list.querySelectorAll('[data-deluser]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const id = btn.dataset.deluser;
+        if(!window.confirm('Delete user "'+id+'"? They will no longer be able to log in.')) return;
+        try{
+          delete authUsers[id];
+          await AUTH_DOC.set({users:authUsers});
+          ownerMessage('User "'+id+'" deleted', true);
+          renderUsersList();
+        }catch(e){
+          console.error(e);
+          ownerMessage('Could not delete user. Check connection.');
+        }
+      };
+    });
   }
 
-  // Delay boot until the original tracker functions have been registered.
-  window.__bootAuth = bootAuth;
-})();
-</script>
+  function icon(name){
+    if(name==='trash') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    return '';
+  }
 
-<script>
-(function(){
-  // ===== AUTHENTICATION =====
-  // Owner ID is mapped internally to an email-style Firebase login.
-  // Create the OWNER account once in Firebase Authentication, then use this app.
-  const OWNER_ID = 'owner';
-  const AUTH_DOMAIN = '@econwip.local';
-  let currentUser = null;
+  function authEmail(id){
+    return String(id || '').trim().toLowerCase() + '@econwip.local';
+  }
 
-  function authEmail(id){ return String(id||'').trim().toLowerCase() + AUTH_DOMAIN; }
   function authMessage(msg, ok=false){
-    const el=document.getElementById('authMsg'); el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A';
+    const el=document.getElementById('authMsg');
+    if(el){ el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A'; }
   }
+
   function ownerMessage(msg, ok=false){
-    const el=document.getElementById('ownerMsg'); el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A';
+    const el=document.getElementById('ownerMsg');
+    if(el){ el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A'; }
   }
-  function showApp(user){
-    currentUser=user;
-    document.getElementById('authScreen').style.display='none';
-    document.getElementById('shell').style.display='flex';
-    const title=document.querySelector('.appbar-title.root');
-    if(title && user && user.email) title.setAttribute('title', user.email);
+
+  async function loadUsers(){
+    const snap=await AUTH_DOC.get();
+    if(snap.exists){
+      authUsers=snap.data().users || {};
+      // Migration: older versions of this app stored a hashed password
+      // (field passwordHash) instead of plain "password". Any account still
+      // missing a "password" field is repaired here so logins keep working.
+      let needsSave=false;
+      if(!authUsers[OWNER_ID]){
+        authUsers[OWNER_ID]={ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, createdAt:new Date().toISOString() };
+        needsSave=true;
+      } else if(!authUsers[OWNER_ID].password){
+        authUsers[OWNER_ID].password=DEFAULT_OWNER_PASSWORD;
+        needsSave=true;
+      }
+      Object.keys(authUsers).forEach(id=>{
+        if(id===OWNER_ID) return;
+        if(!authUsers[id].password){
+          authUsers[id].password='ResetMe@123';
+          needsSave=true;
+        }
+      });
+      if(needsSave){ await AUTH_DOC.set({users:authUsers}); }
+      return;
+    }
+    authUsers={
+      [OWNER_ID]:{
+        password:DEFAULT_OWNER_PASSWORD,
+        role:'owner',
+        active:true,
+        createdAt:new Date().toISOString()
+      }
+    };
+    await AUTH_DOC.set({users:authUsers});
   }
+
   function showLogin(){
-    currentUser=null;
     document.getElementById('shell').style.display='none';
     document.getElementById('authScreen').style.display='flex';
   }
 
-  document.getElementById('loginBtn').onclick=async()=>{
+  function showApp(user){
+    currentUser=user;
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('shell').style.display='flex';
+  }
+
+  async function login(){
     const id=document.getElementById('loginId').value.trim();
     const pw=document.getElementById('loginPassword').value;
     if(!id || !pw){ authMessage('Enter User ID and password'); return; }
-    authMessage('Signing in...', true);
-    try{ await auth.signInWithEmailAndPassword(authEmail(id), pw); }
-    catch(e){ console.error(e); authMessage('Invalid User ID or password'); }
+
+    const u=authUsers[id];
+    if(!u || !u.active){ authMessage('Invalid User ID or password'); return; }
+
+    if(pw!==u.password){ authMessage('Invalid User ID or password'); return; }
+
+    currentUser={id, role:u.role, access:(u.access==='read' ? 'read' : 'write')};
+    showApp(currentUser);
+    startWipApp(currentUser);
+  }
+
+  document.getElementById('loginBtn').onclick=login;
+  document.getElementById('loginPassword').addEventListener('keydown',e=>{
+    if(e.key==='Enter') login();
+  });
+
+  window.openOwnerPanel=()=>{
+    if(!currentUser || currentUser.role!=='owner') return;
+    document.getElementById('ownerPanel').classList.add('open');
+    ownerMessage('');
+    renderUsersList();
+    renderResetRequestsList();
   };
 
-  document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+  document.getElementById('closeOwnerBtn').onclick=()=>{
+    document.getElementById('ownerPanel').classList.remove('open');
+  };
 
-  window.openOwnerPanel=()=>{ document.getElementById('ownerPanel').classList.add('open'); ownerMessage(''); };
-  document.getElementById('closeOwnerBtn').onclick=()=>document.getElementById('ownerPanel').classList.remove('open');
-
-  document.getElementById('createUserBtn').onclick=async()=>{
-    const id=document.getElementById('newUserId').value.trim();
-    const pw=document.getElementById('newUserPassword').value;
-    if(!id || !pw){ ownerMessage('Enter User ID and password'); return; }
-    if(id.toLowerCase()==='owner'){ ownerMessage('OWNER ID is reserved'); return; }
-    if(pw.length<6){ ownerMessage('Password must be at least 6 characters'); return; }
-    ownerMessage('Creating user...', true);
+  document.getElementById('changeOwnerPwBtn').onclick=async()=>{
+    if(!currentUser || currentUser.role!=='owner') return;
+    const msgEl=document.getElementById('ownerPwMsg');
+    const curPw=document.getElementById('ownerCurPw').value;
+    const newPw=document.getElementById('ownerNewPw').value;
+    msgEl.style.color='#D0564A';
+    if(!curPw || !newPw){ msgEl.textContent='Enter current and new password'; return; }
+    if(curPw!==authUsers[OWNER_ID].password){ msgEl.textContent='Current password is wrong'; return; }
+    if(newPw.length<6){ msgEl.textContent='New password must be at least 6 characters'; return; }
     try{
-      // Secondary Firebase app keeps the owner signed in while creating the new account.
-      const cred=await secondaryAuth.createUserWithEmailAndPassword(authEmail(id),pw);
-      await db.collection('users').doc(cred.user.uid).set({userId:id, role:'user', createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      await secondaryAuth.signOut();
-      document.getElementById('newUserId').value='';
-      document.getElementById('newUserPassword').value='';
-      ownerMessage('User created successfully', true);
+      authUsers[OWNER_ID].password=newPw;
+      await AUTH_DOC.set({users:authUsers});
+      msgEl.style.color='#4CAF6D';
+      msgEl.textContent='Owner password changed successfully';
+      document.getElementById('ownerCurPw').value='';
+      document.getElementById('ownerNewPw').value='';
     }catch(e){
       console.error(e);
-      ownerMessage(e.code==='auth/email-already-in-use'?'User ID already exists':(e.message||'Could not create user'));
+      msgEl.style.color='#D0564A';
+      msgEl.textContent='Could not update. Check connection.';
     }
   };
 
-  auth.onAuthStateChanged(user=>{
-    if(user){
-      showApp(user);
-      // Start the existing WIP application only after authentication.
-      startWipApp(user);
-    } else { showLogin(); }
-  });
+  // ----- Forgot password (login screen) -----
+  document.getElementById('forgotLink').onclick=()=>{
+    document.getElementById('forgotPanel').classList.add('open');
+    document.getElementById('forgotMsg').textContent='';
+    document.getElementById('forgotUserId').value='';
+    document.getElementById('forgotNewPw').value='';
+    document.getElementById('forgotNewPw2').value='';
+  };
+  document.getElementById('cancelForgotBtn').onclick=()=>{
+    document.getElementById('forgotPanel').classList.remove('open');
+  };
+  document.getElementById('sendForgotBtn').onclick=async()=>{
+    const id=document.getElementById('forgotUserId').value.trim();
+    const pw1=document.getElementById('forgotNewPw').value;
+    const pw2=document.getElementById('forgotNewPw2').value;
+    const msgEl=document.getElementById('forgotMsg');
+    msgEl.style.color='#D0564A';
+    if(!id){ msgEl.textContent='Enter your User ID'; return; }
+    if(!authUsers[id]){ msgEl.textContent='User ID not found'; return; }
+    if(id.toLowerCase()===OWNER_ID){ msgEl.textContent='Contact admin directly for the owner account'; return; }
+    if(pw1.length<6){ msgEl.textContent='New password must be at least 6 characters'; return; }
+    if(pw1!==pw2){ msgEl.textContent='Passwords do not match'; return; }
+    try{
+      const snap = await REQUESTS_DOC.get();
+      const requests = snap.exists ? (snap.data().requests||{}) : {};
+      const reqId = 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      requests[reqId] = { userId:id, requestedAt:new Date().toISOString(), status:'pending', type:'forgot', newPassword:pw1 };
+      await REQUESTS_DOC.set({requests});
+      msgEl.style.color='#4CAF6D';
+      msgEl.textContent='Request sent to owner for approval.';
+      document.getElementById('forgotUserId').value='';
+      document.getElementById('forgotNewPw').value='';
+      document.getElementById('forgotNewPw2').value='';
+    }catch(e){
+      console.error(e);
+      msgEl.style.color='#D0564A';
+      msgEl.textContent='Could not send request. Try again.';
+    }
+  };
+
+  document.getElementById('createUserBtn').onclick=async()=>{
+    if(!currentUser || currentUser.role!=='owner') return;
+
+    const id=document.getElementById('newUserId').value.trim();
+    const pw=document.getElementById('newUserPassword').value;
+    const access=document.getElementById('newUserAccess').value==='read' ? 'read' : 'write';
+
+    if(!/^[A-Za-z0-9._-]{3,30}$/.test(id)){
+      ownerMessage('User ID: 3-30 letters, numbers, dot, _ or -');
+      return;
+    }
+    if(id.toLowerCase()===OWNER_ID){
+      ownerMessage('OWNER ID is reserved');
+      return;
+    }
+    if(pw.length<6){
+      ownerMessage('Password must be at least 6 characters');
+      return;
+    }
+    if(authUsers[id]){
+      ownerMessage('User ID already exists');
+      return;
+    }
+
+    authUsers[id]={
+      password:pw,
+      role:'user',
+      access:access,
+      active:true,
+      createdAt:new Date().toISOString(),
+      createdBy:OWNER_ID
+    };
+
+    try{
+      await AUTH_DOC.set({users:authUsers});
+      document.getElementById('newUserId').value='';
+      document.getElementById('newUserPassword').value='';
+      document.getElementById('newUserAccess').value='write';
+      ownerMessage('User created successfully',true);
+      renderUsersList();
+    }catch(e){
+      console.error(e);
+      ownerMessage('Could not save user. Check Firestore rules.');
+    }
+  };
+
+  // Compatibility helpers used by the existing tracker UI.
+  window.auth={
+    signOut:()=>{
+      location.reload();
+    }
+  };
+
+  window.__auth={
+    isOwner:()=> !!currentUser && currentUser.role==='owner',
+    logout:()=> auth.signOut(),
+    showOwnerPanel:()=> window.openOwnerPanel(),
+    openChangePasswordRequest:()=>{
+      if(!currentUser) return;
+      const sheet = document.getElementById('sheet');
+      const overlay = document.getElementById('overlay');
+      sheet.innerHTML = `
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Request password change</div>
+        <div class="field">
+          <label>New password</label>
+          <input type="password" id="cpNewPw" placeholder="Minimum 6 characters">
+        </div>
+        <div class="field">
+          <label>Confirm new password</label>
+          <input type="password" id="cpNewPw2" placeholder="Re-enter new password">
+        </div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" id="cpCancel">Cancel</button>
+          <button class="btn btn-primary" id="cpSend">Send request</button>
+        </div>
+      `;
+      overlay.classList.add('open');
+      requestAnimationFrame(()=>sheet.classList.add('open'));
+      const closeIt=()=>{ sheet.classList.remove('open'); overlay.classList.remove('open'); };
+      document.getElementById('cpCancel').onclick = closeIt;
+      document.getElementById('cpSend').onclick = async ()=>{
+        const pw1 = document.getElementById('cpNewPw').value;
+        const pw2 = document.getElementById('cpNewPw2').value;
+        const toast = document.getElementById('toast');
+        if(pw1.length<6){ alert('New password must be at least 6 characters'); return; }
+        if(pw1!==pw2){ alert('Passwords do not match'); return; }
+        try{
+          const snap = await REQUESTS_DOC.get();
+          const requests = snap.exists ? (snap.data().requests||{}) : {};
+          const reqId = 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+          requests[reqId] = { userId: currentUser.id, requestedAt:new Date().toISOString(), status:'pending', type:'change', newPassword:pw1 };
+          await REQUESTS_DOC.set({requests});
+          closeIt();
+          if(toast){ toast.textContent='Request sent to owner for approval'; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1600); }
+        }catch(e){
+          console.error(e);
+          alert('Could not send request. Check connection and try again.');
+        }
+      };
+    }
+  };
 
   function startWipApp(user){
   let state = null;
   let syncStatus = 'connecting'; // connecting | on | err
   let nav = [{ view:'products' }]; // stack of {view, productId, stageId}
   let searchTerm = '';
+
+  // Read-only users can view everything but cannot add, edit, delete or reorder.
+  // Only the owner can grant write access (see Users panel).
+  function canWrite(){
+    return user.role==='owner' || user.access!=='read';
+  }
 
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
@@ -973,6 +1064,7 @@
     }
 
     container.addEventListener('pointerdown', (e)=>{
+      if(!canWrite()) return;
       const handle = e.target.closest('.drag-handle');
       if(!handle) return;
       const row = handle.closest('[data-id]');
@@ -1010,18 +1102,22 @@
     const dotClass = syncStatus==='on' ? 'on' : (syncStatus==='err' ? 'err' : '');
 
     if(n.view==='products'){
+      const isOwnerUser = window.__auth && window.__auth.isOwner();
       appbar.innerHTML = `<div class="appbar-row">
-        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
-        ${window.__auth && window.__auth.isOwner() ? `<button class="btn btn-ghost" id="usersBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Users</button>` : ''}
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR${!canWrite() ? `<span class="view-only-badge">View only</span>` : ''}</div>
+        ${isOwnerUser ? `<button class="btn btn-ghost" id="usersBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Users${pendingCount()>0 ? `<span class="req-badge">${pendingCount()}</span>` : ''}</button>` : ''}
+        ${!isOwnerUser ? `<button class="btn btn-ghost" id="changePwBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Change PW</button>` : ''}
         <button class="btn btn-ghost" id="logoutBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Logout</button>
       </div>`;
       searchWrap.style.display = 'block';
       renderProducts(scroll);
-      fab.style.display = 'flex';
+      fab.style.display = canWrite() ? 'flex' : 'none';
       fab.onclick = ()=>openProductSheet(null);
       document.getElementById('logoutBtn').onclick = window.__auth.logout;
       const usersBtn = document.getElementById('usersBtn');
       if(usersBtn) usersBtn.onclick = window.__auth.showOwnerPanel;
+      const cpBtn = document.getElementById('changePwBtn');
+      if(cpBtn) cpBtn.onclick = window.__auth.openChangePasswordRequest;
     }
     else if(n.view==='stages'){
       const product = findProduct(n.productId);
@@ -1035,7 +1131,7 @@
       `;
       searchWrap.style.display = 'none';
       renderStages(scroll, product);
-      fab.style.display = 'flex';
+      fab.style.display = canWrite() ? 'flex' : 'none';
       fab.onclick = ()=>openStageSheet(product.id, null);
       document.getElementById('backBtn').onclick = ()=>{ nav.pop(); render(); };
     }
@@ -1052,7 +1148,7 @@
       `;
       searchWrap.style.display = 'none';
       renderEntries(scroll, product, stage);
-      fab.style.display = 'flex';
+      fab.style.display = canWrite() ? 'flex' : 'none';
       fab.onclick = ()=>openEntrySheet(product.id, stage.id, null);
       document.getElementById('backBtn').onclick = ()=>{ nav.pop(); render(); };
     }
@@ -1069,7 +1165,7 @@
       scroll.innerHTML = emptyState('crate','No matches','Try a different search term');
       return;
     }
-    const canDrag = term==='';
+    const canDrag = term==='' && canWrite();
     scroll.innerHTML = list.map(p=>`
       <div class="row" data-id="${p.id}">
         ${canDrag ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
@@ -1078,8 +1174,8 @@
           <div class="row-title">${escapeHtml(p.code)}</div>
           <div class="row-sub">${p.stages.length} stage${p.stages.length===1?'':'s'}</div>
         </div>
-        <button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>
-        <button class="del-btn" data-del="${p.id}">${icon('trash')}</button>
+        ${canWrite() ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
+        ${canWrite() ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
         <div class="chev">${icon('chev')}</div>
       </div>
     `).join('');
@@ -1116,15 +1212,15 @@
     }
     scroll.innerHTML = product.stages.map(s=>`
       <div class="row" data-id="${s.id}">
-        <div class="drag-handle">${icon('drag')}</div>
+        ${canWrite() ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
         <div class="row-icon">${icon('layer')}</div>
         <div class="row-body">
           <div class="row-title" style="font-family:var(--sans);">${escapeHtml(s.name)}</div>
           <div class="row-sub">${s.entries.length} entr${s.entries.length===1?'y':'ies'}</div>
         </div>
         <div class="pill">${stageQty(s)} B</div>
-        <button class="edit-btn" data-edit="${s.id}">${icon('pencil')}</button>
-        <button class="del-btn" data-del="${s.id}">${icon('trash')}</button>
+        ${canWrite() ? `<button class="edit-btn" data-edit="${s.id}">${icon('pencil')}</button>` : ''}
+        ${canWrite() ? `<button class="del-btn" data-del="${s.id}">${icon('trash')}</button>` : ''}
         <div class="chev">${icon('chev')}</div>
       </div>
     `).join('');
@@ -1169,14 +1265,14 @@
     } else {
       html += stage.entries.map(e=>`
         <div class="entry-card" data-id="${e.id}">
-          <div class="drag-handle">${icon('drag')}</div>
+          ${canWrite() ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
           <div style="flex:1; min-width:0;">
             <div class="entry-date">${formatDate(e.date)}</div>
             ${e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : ''}
           </div>
           <div class="pill">${e.qty} B</div>
-          <button class="edit-btn" data-edit="${e.id}">${icon('pencil')}</button>
-          <button class="del-btn" data-del="${e.id}">${icon('trash')}</button>
+          ${canWrite() ? `<button class="edit-btn" data-edit="${e.id}">${icon('pencil')}</button>` : ''}
+          ${canWrite() ? `<button class="del-btn" data-del="${e.id}">${icon('trash')}</button>` : ''}
         </div>
       `).join('');
     }
@@ -1213,40 +1309,38 @@
     render();
   });
 
-  // ---------- Init ----------
-  // Started by the authentication layer after successful login.
+  // ---------- Start data sync ----------
+  subscribeState();
+  setupSortable(document.getElementById('scroll'));
 
-  // Add owner controls to the app bar. Only the configured OWNER_ID gets this UI.
-  if((user.email||'').toLowerCase() === authEmail(OWNER_ID)){
-    const observer=new MutationObserver(()=>{
-      const bar=document.getElementById('appbar');
-      if(bar && !document.getElementById('ownerTools')){
-        const btn=document.createElement('button');
-        btn.id='ownerTools'; btn.textContent='Users';
-        btn.style.cssText='position:absolute;right:12px;top:16px;border:0;border-radius:8px;padding:7px 10px;background:#E8E8E5;color:#1C1C1E;font-weight:600;cursor:pointer;';
-        btn.onclick=window.openOwnerPanel; bar.appendChild(btn);
-        const logout=document.createElement('button');
-        logout.textContent='Logout';
-        logout.style.cssText='position:absolute;left:12px;top:16px;border:0;border-radius:8px;padding:7px 10px;background:#E8E8E5;color:#1C1C1E;font-weight:600;cursor:pointer;';
-        logout.onclick=()=>auth.signOut(); bar.appendChild(logout);
-      }
-    });
-    observer.observe(document.getElementById('appbar'),{childList:true,subtree:true});
-  } else {
-    const observer=new MutationObserver(()=>{
-      const bar=document.getElementById('appbar');
-      if(bar && !document.getElementById('userLogout')){
-        const logout=document.createElement('button');
-        logout.id='userLogout'; logout.textContent='Logout';
-        logout.style.cssText='position:absolute;left:12px;top:16px;border:0;border-radius:8px;padding:7px 10px;background:#E8E8E5;color:#1C1C1E;font-weight:600;cursor:pointer;';
-        logout.onclick=()=>auth.signOut(); bar.appendChild(logout);
-      }
-    });
-    observer.observe(document.getElementById('appbar'),{childList:true,subtree:true});
+  // Owner gets a live notification badge when a new password request comes in,
+  // and the users list stays in sync with Firestore in real time.
+  if(user.role==='owner'){
+    AUTH_DOC.onSnapshot((snap)=>{
+      authUsers = snap.exists ? (snap.data().users || {}) : authUsers;
+      renderUsersList();
+    }, (err)=>{ console.error('Users sync error', err); });
+    REQUESTS_DOC.onSnapshot((snap)=>{
+      resetRequests = snap.exists ? (snap.data().requests || {}) : {};
+      render();
+      renderResetRequestsList();
+    }, (err)=>{ console.error('Requests sync error', err); });
   }
   }
-};
-window.__bootAuth();
+
+  // ---------- Init ----------
+  // Every time the page is opened, the login screen is shown — no auto login.
+  (async function(){
+    try{
+      await loadUsers();
+      await loadRequestsOnce();
+      showLogin();
+    }catch(e){
+      console.error(e);
+      authMessage('Firebase connection error — check Firestore rules/config');
+    }
+  })();
+})();
 </script>
 </body>
 </html>
