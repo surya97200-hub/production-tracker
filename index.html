@@ -410,6 +410,7 @@
   const OWNER_ID = 'owner';
   const DEFAULT_OWNER_PASSWORD = 'ChangeMe@2026';
   let currentUser = null;
+  let wipPopstateHandler = null; // active popstate listener for in-app back navigation
   let authUsers = {};
   let resetRequests = {};
 
@@ -852,6 +853,22 @@
 
   function currentNav(){ return nav[nav.length-1]; }
 
+  // ---------- One-step back navigation (mobile hardware/gesture back) ----------
+  // Home -> Product -> Stage -> Entry, each forward step pushes a browser
+  // history entry carrying a snapshot of the nav stack. The device Back
+  // button/gesture fires a native 'popstate' event, which we use to step
+  // back through that stack one level at a time. Only once the stack is
+  // back at Home (depth 1) does a further Back press have no history entry
+  // of ours left to consume, so it falls through and exits the site.
+  function goTo(entry){
+    nav.push(entry);
+    history.pushState({ wipNav: nav.slice() }, '');
+    render();
+  }
+  function goBack(){
+    if(nav.length>1) history.back();
+  }
+
   function findProduct(id){ return state.products.find(p=>p.id===id); }
   function findStage(productId, stageId){
     const p = findProduct(productId);
@@ -1121,7 +1138,7 @@
     }
     else if(n.view==='stages'){
       const product = findProduct(n.productId);
-      if(!product){ nav = [{view:'products'}]; render(); return; }
+      if(!product){ nav = [{view:'products'}]; history.replaceState({ wipNav: nav.slice() }, ''); render(); return; }
       appbar.innerHTML = `
         <div class="appbar-row">
           <button class="back-btn" id="backBtn">${icon('back')}</button>
@@ -1133,12 +1150,12 @@
       renderStages(scroll, product);
       fab.style.display = canWrite() ? 'flex' : 'none';
       fab.onclick = ()=>openStageSheet(product.id, null);
-      document.getElementById('backBtn').onclick = ()=>{ nav.pop(); render(); };
+      document.getElementById('backBtn').onclick = ()=>{ goBack(); };
     }
     else if(n.view==='entries'){
       const product = findProduct(n.productId);
       const stage = product ? findStage(n.productId, n.stageId) : null;
-      if(!product || !stage){ nav = [{view:'products'}]; render(); return; }
+      if(!product || !stage){ nav = [{view:'products'}]; history.replaceState({ wipNav: nav.slice() }, ''); render(); return; }
       appbar.innerHTML = `
         <div class="appbar-row">
           <button class="back-btn" id="backBtn">${icon('back')}</button>
@@ -1150,7 +1167,7 @@
       renderEntries(scroll, product, stage);
       fab.style.display = canWrite() ? 'flex' : 'none';
       fab.onclick = ()=>openEntrySheet(product.id, stage.id, null);
-      document.getElementById('backBtn').onclick = ()=>{ nav.pop(); render(); };
+      document.getElementById('backBtn').onclick = ()=>{ goBack(); };
     }
   }
 
@@ -1182,8 +1199,7 @@
     scroll.querySelectorAll('.row').forEach(row=>{
       row.addEventListener('click', (e)=>{
         if(e.target.closest('[data-del]') || e.target.closest('[data-edit]') || e.target.closest('.drag-handle')) return;
-        nav.push({ view:'stages', productId: row.dataset.id });
-        render();
+        goTo({ view:'stages', productId: row.dataset.id });
       });
     });
     scroll.querySelectorAll('[data-edit]').forEach(btn=>{
@@ -1227,8 +1243,7 @@
     scroll.querySelectorAll('.row').forEach(row=>{
       row.addEventListener('click',(e)=>{
         if(e.target.closest('[data-del]') || e.target.closest('[data-edit]') || e.target.closest('.drag-handle')) return;
-        nav.push({ view:'entries', productId: product.id, stageId: row.dataset.id });
-        render();
+        goTo({ view:'entries', productId: product.id, stageId: row.dataset.id });
       });
     });
     scroll.querySelectorAll('[data-edit]').forEach(btn=>{
@@ -1312,6 +1327,17 @@
   // ---------- Start data sync ----------
   subscribeState();
   setupSortable(document.getElementById('scroll'));
+
+  // Sync the mobile hardware/gesture Back button to our in-app nav stack.
+  // Replace (not push) the current history entry so the very first screen
+  // (Home) stays the single entry a Back press can fall through to exit.
+  history.replaceState({ wipNav: nav.slice() }, '');
+  if(wipPopstateHandler) window.removeEventListener('popstate', wipPopstateHandler);
+  wipPopstateHandler = function(e){
+    nav = (e.state && e.state.wipNav) ? e.state.wipNav : [{ view:'products' }];
+    render();
+  };
+  window.addEventListener('popstate', wipPopstateHandler);
 
   // Owner gets a live notification badge when a new password request comes in,
   // and the users list stays in sync with Firestore in real time.
