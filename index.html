@@ -70,7 +70,7 @@
     flex:1; text-align:center; margin-right:32px;
   }
   .appbar-title.mono{ font-family:var(--mono); font-size:17px; letter-spacing:0; }
-  .appbar-title.root{ margin-right:0; }
+  .appbar-title.root{ margin-right:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; font-size:17px; }
   .appbar-sub{
     text-align:center; font-size:12px; color:#77776F; margin-top:3px;
     font-family:var(--mono); text-transform:uppercase; letter-spacing:0.06em;
@@ -188,13 +188,17 @@
   .sheet-title{ font-size:17px; font-weight:700; margin-bottom:16px; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:12px; font-weight:600; color:#7A7A72; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
-  .field input, .field textarea{
+  .field input, .field textarea, .field select{
     width:100%; border:1px solid var(--rule); border-radius:11px; padding:12px 13px;
     font-family:var(--sans); font-size:15px; background:var(--paper); color:var(--ink); outline:none;
   }
-  .field input:focus, .field textarea:focus{ border-color:var(--blue); }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--blue); }
   .field input.mono{ font-family:var(--mono); }
   .field textarea{ resize:none; min-height:64px; font-family:var(--sans); }
+  .field select{ -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237A7A72' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center; background-size:16px; padding-right:36px;
+  }
   .sheet-actions{ display:flex; gap:6px; margin-top:6px; }
   .btn{
     flex:1; border:none; border-radius:12px; padding:13px; font-family:var(--sans);
@@ -260,18 +264,17 @@
   .reset-req-row .rr-set{background:#1C1C1E;color:#fff;flex:1;}
   .reset-req-row .rr-dismiss{background:#E8E8E5;color:#1C1C1E;}
   #noRequests{font-size:13px;color:#7A7A72;}
-  .user-row{background:#F5F5F3;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .user-row{background:#F5F5F3;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
   .user-row .ur-id{font-family:var(--mono);font-weight:700;font-size:13px;}
   .user-row .ur-pw{font-family:var(--mono);font-size:12px;color:#7A7A72;margin-top:2px;word-break:break-all;}
   .user-row .ur-status{font-size:11px;padding:3px 8px;border-radius:20px;background:#DDEFE0;color:#2E7D46;font-weight:600;white-space:nowrap;flex:0 0 auto;}
   .user-row .ur-status.inactive{background:#F5DAD6;color:#B23A2C;}
+  .user-row .ur-access{font-size:11px;padding:3px 8px;border-radius:20px;background:#DCE8FB;color:#2A5CA8;font-weight:600;white-space:nowrap;flex:0 0 auto;border:0;cursor:pointer;}
+  .user-row .ur-access.read{background:#F1EAD8;color:#8A5A16;}
   .user-row .ur-del{border:0;background:transparent;color:#B23A2C;width:30px;height:30px;flex:0 0 30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .user-row .ur-del:active{background:#00000010;}
+  #ownerSheet select{width:100%;border:1px solid #D8D8D4;border-radius:11px;padding:12px 13px;font-size:15px;margin:6px 0 12px;box-sizing:border-box;background:#fff;-webkit-appearance:none;appearance:none;}
   #noUsers{font-size:13px;color:#7A7A72;}
-  .user-row{flex-wrap:wrap;}
-  .user-row .ur-main{flex:1 1 auto;min-width:120px;}
-  .ur-access{font-family:var(--sans);font-size:12px;font-weight:600;border:1px solid #D8D8D4;border-radius:8px;padding:6px 8px;background:#fff;color:#1C1C1E;flex:0 0 auto;}
-  .view-only-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#FBEBD2;color:#8A5A16;border:1px solid #E9CE9B;padding:3px 8px;border-radius:20px;margin-left:6px;white-space:nowrap;}
 </style>
 
 <div id="authScreen">
@@ -310,10 +313,10 @@
     <input id="newUserId" placeholder="e.g. EA001" autocomplete="off">
     <label>Password</label>
     <input id="newUserPassword" type="password" placeholder="Minimum 6 characters" autocomplete="new-password">
-    <label>Access Level</label>
-    <select id="newUserAccess" style="width:100%;border:1px solid #D8D8D4;border-radius:11px;padding:12px 13px;font-size:15px;margin:6px 0 12px;background:#fff;">
-      <option value="write">Read &amp; Write (can add/edit/delete)</option>
-      <option value="read">Read Only (view only)</option>
+    <label>Access</label>
+    <select id="newUserAccess">
+      <option value="write" selected>Write access (can add/edit/delete)</option>
+      <option value="read">Read only (view &amp; export)</option>
     </select>
     <div id="ownerMsg"></div>
     <div class="owner-actions">
@@ -383,6 +386,7 @@
      ============================================================ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 
 <script>
   const firebaseConfig = {
@@ -410,7 +414,6 @@
   const OWNER_ID = 'owner';
   const DEFAULT_OWNER_PASSWORD = 'ChangeMe@2026';
   let currentUser = null;
-  let wipPopstateHandler = null; // active popstate listener for in-app back navigation
   let authUsers = {};
   let resetRequests = {};
 
@@ -490,26 +493,24 @@
     }
     list.innerHTML = entries.map(([id,u])=>`
       <div class="user-row">
-        <div class="ur-main">
+        <div>
           <div class="ur-id">${esc(id)}</div>
           <div class="ur-pw">Password: ${esc(u.password)}</div>
         </div>
-        <select class="ur-access" data-access="${esc(id)}" title="Access level">
-          <option value="write" ${u.access!=='read'?'selected':''}>Read &amp; Write</option>
-          <option value="read" ${u.access==='read'?'selected':''}>Read Only</option>
-        </select>
         <span class="ur-status ${u.active?'':'inactive'}">${u.active?'Active':'Inactive'}</span>
+        <button type="button" class="ur-access ${u.access==='read'?'read':''}" data-toggleaccess="${esc(id)}" title="Tap to toggle access">${u.access==='read'?'Read':'Write'}</button>
         <button type="button" class="ur-del" data-deluser="${esc(id)}" title="Delete user">${icon('trash')}</button>
       </div>
     `).join('');
-    list.querySelectorAll('[data-access]').forEach(sel=>{
-      sel.onchange = async ()=>{
-        const id = sel.dataset.access;
-        const newAccess = sel.value==='read' ? 'read' : 'write';
+    list.querySelectorAll('[data-toggleaccess]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const id = btn.dataset.toggleaccess;
+        const u = authUsers[id];
+        if(!u) return;
+        u.access = (u.access==='read') ? 'write' : 'read';
         try{
-          authUsers[id].access = newAccess;
           await AUTH_DOC.set({users:authUsers});
-          ownerMessage('Access updated for '+id, true);
+          ownerMessage(`${id} is now ${u.access==='read'?'read-only':'write'} access`, true);
           renderUsersList();
         }catch(e){
           console.error(e);
@@ -574,6 +575,10 @@
           authUsers[id].password='ResetMe@123';
           needsSave=true;
         }
+        if(authUsers[id].access!=='read' && authUsers[id].access!=='write'){
+          authUsers[id].access='write';
+          needsSave=true;
+        }
       });
       if(needsSave){ await AUTH_DOC.set({users:authUsers}); }
       return;
@@ -610,7 +615,7 @@
 
     if(pw!==u.password){ authMessage('Invalid User ID or password'); return; }
 
-    currentUser={id, role:u.role, access:(u.access==='read' ? 'read' : 'write')};
+    currentUser={id, role:u.role, access:u.access || 'write'};
     showApp(currentUser);
     startWipApp(currentUser);
   }
@@ -700,7 +705,8 @@
 
     const id=document.getElementById('newUserId').value.trim();
     const pw=document.getElementById('newUserPassword').value;
-    const access=document.getElementById('newUserAccess').value==='read' ? 'read' : 'write';
+    const accessSel=document.getElementById('newUserAccess');
+    const access=(accessSel && accessSel.value==='read') ? 'read' : 'write';
 
     if(!/^[A-Za-z0-9._-]{3,30}$/.test(id)){
       ownerMessage('User ID: 3-30 letters, numbers, dot, _ or -');
@@ -732,7 +738,7 @@
       await AUTH_DOC.set({users:authUsers});
       document.getElementById('newUserId').value='';
       document.getElementById('newUserPassword').value='';
-      document.getElementById('newUserAccess').value='write';
+      if(accessSel) accessSel.value='write';
       ownerMessage('User created successfully',true);
       renderUsersList();
     }catch(e){
@@ -750,6 +756,7 @@
 
   window.__auth={
     isOwner:()=> !!currentUser && currentUser.role==='owner',
+    canWrite:()=> !!currentUser && (currentUser.role==='owner' || currentUser.access==='write'),
     logout:()=> auth.signOut(),
     showOwnerPanel:()=> window.openOwnerPanel(),
     openChangePasswordRequest:()=>{
@@ -803,21 +810,35 @@
   let syncStatus = 'connecting'; // connecting | on | err
   let nav = [{ view:'products' }]; // stack of {view, productId, stageId}
   let searchTerm = '';
-
-  // Read-only users can view everything but cannot add, edit, delete or reorder.
-  // Only the owner can grant write access (see Users panel).
-  function canWrite(){
-    return user.role==='owner' || user.access!=='read';
-  }
+  const canWrite = user.role==='owner' || user.access==='write';
 
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
+  // ---------- Fixed stage list (used for stage picker + Excel export columns) ----------
+  const STAGE_COLUMNS = [
+    'KIT QTY','INCOMMING','SHIPPED','PACKING','OQA','LOG','FQC','TESTING2','TESTING1',
+    'MERGING','SENSOR CLEANING','PROGRAM','FAIL','REWORK','DEBUG','RW IN DEBUG',
+    'SENSOR ISSUE','SCRAP'
+  ];
+  const OTHERS_KEY = 'OTHERS';
+  const OTHERS_LABEL = 'OTHERS(MANUAL ENTRY)';
+  const TOTAL_LABEL = 'TOTAL(SUM OF SHIPPED:OTHERS)';
+  // Columns included in the TOTAL sum: everything from SHIPPED through OTHERS (i.e. excludes KIT QTY & INCOMMING)
+  const TOTAL_COLUMNS = STAGE_COLUMNS.slice(2).concat([OTHERS_KEY]);
+
+  function resolveStageKey(stage){
+    if(stage.stageKey) return stage.stageKey;
+    const norm = String(stage.name||'').trim().toUpperCase();
+    return STAGE_COLUMNS.includes(norm) ? norm : OTHERS_KEY;
+  }
+
   function seed(){
+    const now = new Date().toISOString();
     return {
       products:[
-        { id:uid(), code:'A897-064-3206-00', stages:[] },
-        { id:uid(), code:'A897-064-3207-00', stages:[] },
-        { id:uid(), code:'A897-064-3208-00', stages:[] }
+        { id:uid(), code:'A897-064-3206-00', stages:[], createdAt:now, updatedAt:now },
+        { id:uid(), code:'A897-064-3207-00', stages:[], createdAt:now, updatedAt:now },
+        { id:uid(), code:'A897-064-3208-00', stages:[], createdAt:now, updatedAt:now }
       ]
     };
   }
@@ -852,22 +873,6 @@
   }
 
   function currentNav(){ return nav[nav.length-1]; }
-
-  // ---------- One-step back navigation (mobile hardware/gesture back) ----------
-  // Home -> Product -> Stage -> Entry, each forward step pushes a browser
-  // history entry carrying a snapshot of the nav stack. The device Back
-  // button/gesture fires a native 'popstate' event, which we use to step
-  // back through that stack one level at a time. Only once the stack is
-  // back at Home (depth 1) does a further Back press have no history entry
-  // of ours left to consume, so it falls through and exits the site.
-  function goTo(entry){
-    nav.push(entry);
-    history.pushState({ wipNav: nav.slice() }, '');
-    render();
-  }
-  function goBack(){
-    if(nav.length>1) history.back();
-  }
 
   function findProduct(id){ return state.products.find(p=>p.id===id); }
   function findStage(productId, stageId){
@@ -948,6 +953,7 @@
   document.getElementById('overlay').addEventListener('click', closeSheet);
 
   function openProductSheet(existing){
+    if(!canWrite){ showToast('Read-only access'); return; }
     const isEdit = !!existing;
     openSheet(`
       <div class="sheet-handle"></div>
@@ -965,8 +971,9 @@
     document.getElementById('saveBtn').onclick = ()=>{
       const code = document.getElementById('inpCode').value.trim();
       if(!code){ showToast('Enter a product code'); return; }
-      if(isEdit){ existing.code = code; showToast('Product updated'); }
-      else { state.products.push({ id:uid(), code, stages:[] }); showToast('Product added'); }
+      const now = new Date().toISOString();
+      if(isEdit){ existing.code = code; existing.updatedAt = now; showToast('Product updated'); }
+      else { state.products.push({ id:uid(), code, stages:[], createdAt:now, updatedAt:now }); showToast('Product added'); }
       saveState();
       closeSheet();
       render();
@@ -974,13 +981,26 @@
   }
 
   function openStageSheet(productId, existing){
+    if(!canWrite){ showToast('Read-only access'); return; }
     const isEdit = !!existing;
+    const currentKey = isEdit ? resolveStageKey(existing) : '';
+    const isOthers = currentKey === OTHERS_KEY;
+    const optionsHtml = STAGE_COLUMNS.map(c=>
+      `<option value="${c}" ${(!isOthers && currentKey===c) ? 'selected':''}>${c}</option>`
+    ).join('') + `<option value="${OTHERS_KEY}" ${isOthers?'selected':''}>${OTHERS_LABEL}</option>`;
     openSheet(`
       <div class="sheet-handle"></div>
       <div class="sheet-title">${isEdit ? 'Edit stage' : 'Add stage'}</div>
       <div class="field">
-        <label>Stage name</label>
-        <input id="inpStage" placeholder="e.g. Cutting, Welding, Painting" value="${isEdit ? escapeAttr(existing.name) : ''}">
+        <label>Stage</label>
+        <select id="inpStageSelect">
+          <option value="" disabled ${currentKey?'':'selected'}>Select a stage</option>
+          ${optionsHtml}
+        </select>
+      </div>
+      <div class="field" id="othersField" style="display:${isOthers?'block':'none'};">
+        <label>Custom stage name</label>
+        <input id="inpStageOther" placeholder="Enter stage name" value="${isOthers ? escapeAttr(existing.name) : ''}">
       </div>
       <div class="sheet-actions">
         <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
@@ -988,22 +1008,133 @@
       </div>
     `);
     document.getElementById('cancelBtn').onclick = closeSheet;
+    const selectEl = document.getElementById('inpStageSelect');
+    const othersField = document.getElementById('othersField');
+    selectEl.addEventListener('change', ()=>{
+      othersField.style.display = selectEl.value===OTHERS_KEY ? 'block' : 'none';
+    });
     document.getElementById('saveBtn').onclick = ()=>{
-      const name = document.getElementById('inpStage').value.trim();
-      if(!name){ showToast('Enter a stage name'); return; }
-      if(isEdit){ existing.name = name; showToast('Stage updated'); }
-      else {
+      const key = selectEl.value;
+      if(!key){ showToast('Select a stage'); return; }
+      let name;
+      if(key===OTHERS_KEY){
+        name = document.getElementById('inpStageOther').value.trim();
+        if(!name){ showToast('Enter a custom stage name'); return; }
+      } else {
+        name = key;
+      }
+      if(isEdit){
+        existing.name = name; existing.stageKey = key;
+        showToast('Stage updated');
+      } else {
         const p = findProduct(productId);
-        p.stages.push({ id:uid(), name, entries:[] });
+        p.stages.push({ id:uid(), name, stageKey:key, entries:[] });
         showToast('Stage added');
       }
+      const pp = findProduct(productId);
+      if(pp) pp.updatedAt = new Date().toISOString();
       saveState();
       closeSheet();
       render();
     };
   }
 
+  // ---------- Excel export: consolidated sheet across all products ----------
+  function sortedProducts(){
+    return state.products.slice().sort((a,b)=>{
+      const av = a.updatedAt || a.createdAt || '';
+      const bv = b.updatedAt || b.createdAt || '';
+      return bv.localeCompare(av); // most recently modified first
+    });
+  }
+
+  async function exportExcel(){
+    if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
+    if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
+    showToast('Preparing export…');
+    const headerLabels = ['PRODUCT', ...STAGE_COLUMNS, 'OTHERS', 'TOTAL', 'REMARKS'];
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Consol', { views:[{ state:'frozen', xSplit:1, ySplit:1 }] });
+
+    ws.addRow(headerLabels);
+    const headerRow = ws.getRow(1);
+    headerRow.height = 34;
+    headerRow.eachCell(cell=>{
+      cell.font = { bold:true, color:{ argb:'FF1C1C1E' } };
+      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFBEDCEA' } };
+      cell.border = {
+        top:{style:'thin', color:{argb:'FFAAB6BE'}}, left:{style:'thin', color:{argb:'FFAAB6BE'}},
+        bottom:{style:'thin', color:{argb:'FFAAB6BE'}}, right:{style:'thin', color:{argb:'FFAAB6BE'}}
+      };
+    });
+
+    sortedProducts().forEach(p=>{
+      const colSums = {};
+      STAGE_COLUMNS.forEach(c=>{ colSums[c] = 0; });
+      colSums[OTHERS_KEY] = 0;
+      const othersBreakdown = [];
+      p.stages.forEach(s=>{
+        const key = resolveStageKey(s);
+        const qty = stageQty(s);
+        if(key===OTHERS_KEY){
+          colSums[OTHERS_KEY] += qty;
+          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
+        } else if(Object.prototype.hasOwnProperty.call(colSums, key)){
+          colSums[key] += qty;
+        } else {
+          colSums[OTHERS_KEY] += qty;
+          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
+        }
+      });
+      const total = TOTAL_COLUMNS.reduce((sum,c)=> sum + (colSums[c]||0), 0);
+      const rowValues = [
+        p.code,
+        ...STAGE_COLUMNS.map(c => colSums[c] ? colSums[c] : null),
+        colSums[OTHERS_KEY] ? colSums[OTHERS_KEY] : null,
+        total ? total : null,
+        othersBreakdown.join('\n')
+      ];
+      const row = ws.addRow(rowValues);
+      const lineCount = othersBreakdown.length || 1;
+      row.height = Math.max(18, lineCount * 15);
+      row.eachCell((cell, colNumber)=>{
+        const isProductCol = colNumber===1;
+        const isRemarksCol = colNumber===headerLabels.length;
+        cell.alignment = {
+          vertical:'middle',
+          horizontal: (isProductCol || isRemarksCol) ? 'left' : 'center',
+          wrapText:true
+        };
+        cell.border = {
+          top:{style:'thin', color:{argb:'FFDDDDDD'}}, left:{style:'thin', color:{argb:'FFDDDDDD'}},
+          bottom:{style:'thin', color:{argb:'FFDDDDDD'}}, right:{style:'thin', color:{argb:'FFDDDDDD'}}
+        };
+        if(isProductCol) cell.font = { bold:true };
+      });
+    });
+
+    ws.columns.forEach((col,i)=>{
+      if(i===0) col.width = 20;
+      else if(i===headerLabels.length-1) col.width = 34;
+      else col.width = 13;
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ECON_WIP_Consol_${todayISO()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Excel report exported');
+  }
+
   function openEntrySheet(productId, stageId, existing){
+    if(!canWrite){ showToast('Read-only access'); return; }
     const isEdit = !!existing;
     openSheet(`
       <div class="sheet-handle"></div>
@@ -1038,6 +1169,8 @@
         stage.entries.unshift({ id:uid(), date, remarks, qty });
         showToast('Entry saved');
       }
+      const pp = findProduct(productId);
+      if(pp) pp.updatedAt = new Date().toISOString();
       saveState();
       closeSheet();
       render();
@@ -1077,11 +1210,15 @@
       const arr = getCurrentArray();
       arr.sort((a,b)=> ids.indexOf(a.id) - ids.indexOf(b.id));
       dragEl = null; placeholder = null;
+      const n = currentNav();
+      if(n.view!=='products' && n.productId){
+        const p = findProduct(n.productId);
+        if(p) p.updatedAt = new Date().toISOString();
+      }
       saveState();
     }
 
     container.addEventListener('pointerdown', (e)=>{
-      if(!canWrite()) return;
       const handle = e.target.closest('.drag-handle');
       if(!handle) return;
       const row = handle.closest('[data-id]');
@@ -1121,15 +1258,17 @@
     if(n.view==='products'){
       const isOwnerUser = window.__auth && window.__auth.isOwner();
       appbar.innerHTML = `<div class="appbar-row">
-        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR${!canWrite() ? `<span class="view-only-badge">View only</span>` : ''}</div>
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
+        <button class="btn btn-ghost" id="exportBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Export</button>
         ${isOwnerUser ? `<button class="btn btn-ghost" id="usersBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Users${pendingCount()>0 ? `<span class="req-badge">${pendingCount()}</span>` : ''}</button>` : ''}
         ${!isOwnerUser ? `<button class="btn btn-ghost" id="changePwBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Change PW</button>` : ''}
         <button class="btn btn-ghost" id="logoutBtn" style="flex:0 0 auto;padding:8px 10px;font-size:12px;">Logout</button>
       </div>`;
       searchWrap.style.display = 'block';
       renderProducts(scroll);
-      fab.style.display = canWrite() ? 'flex' : 'none';
+      fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openProductSheet(null);
+      document.getElementById('exportBtn').onclick = exportExcel;
       document.getElementById('logoutBtn').onclick = window.__auth.logout;
       const usersBtn = document.getElementById('usersBtn');
       if(usersBtn) usersBtn.onclick = window.__auth.showOwnerPanel;
@@ -1138,7 +1277,7 @@
     }
     else if(n.view==='stages'){
       const product = findProduct(n.productId);
-      if(!product){ nav = [{view:'products'}]; history.replaceState({ wipNav: nav.slice() }, ''); render(); return; }
+      if(!product){ nav = [{view:'products'}]; render(); return; }
       appbar.innerHTML = `
         <div class="appbar-row">
           <button class="back-btn" id="backBtn">${icon('back')}</button>
@@ -1148,14 +1287,14 @@
       `;
       searchWrap.style.display = 'none';
       renderStages(scroll, product);
-      fab.style.display = canWrite() ? 'flex' : 'none';
+      fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openStageSheet(product.id, null);
-      document.getElementById('backBtn').onclick = ()=>{ goBack(); };
+      document.getElementById('backBtn').onclick = ()=>{ nav.pop(); render(); };
     }
     else if(n.view==='entries'){
       const product = findProduct(n.productId);
       const stage = product ? findStage(n.productId, n.stageId) : null;
-      if(!product || !stage){ nav = [{view:'products'}]; history.replaceState({ wipNav: nav.slice() }, ''); render(); return; }
+      if(!product || !stage){ nav = [{view:'products'}]; render(); return; }
       appbar.innerHTML = `
         <div class="appbar-row">
           <button class="back-btn" id="backBtn">${icon('back')}</button>
@@ -1165,15 +1304,15 @@
       `;
       searchWrap.style.display = 'none';
       renderEntries(scroll, product, stage);
-      fab.style.display = canWrite() ? 'flex' : 'none';
+      fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openEntrySheet(product.id, stage.id, null);
-      document.getElementById('backBtn').onclick = ()=>{ goBack(); };
+      document.getElementById('backBtn').onclick = ()=>{ nav.pop(); render(); };
     }
   }
 
   function renderProducts(scroll){
     const term = searchTerm.trim().toLowerCase();
-    const list = state.products.filter(p=>p.code.toLowerCase().includes(term));
+    const list = sortedProducts().filter(p=>p.code.toLowerCase().includes(term));
     if(state.products.length===0){
       scroll.innerHTML = emptyState('crate','No products yet','Tap + to add your first product');
       return;
@@ -1182,24 +1321,23 @@
       scroll.innerHTML = emptyState('crate','No matches','Try a different search term');
       return;
     }
-    const canDrag = term==='' && canWrite();
     scroll.innerHTML = list.map(p=>`
       <div class="row" data-id="${p.id}">
-        ${canDrag ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
         <div class="row-icon">${icon('crate')}</div>
         <div class="row-body">
           <div class="row-title">${escapeHtml(p.code)}</div>
           <div class="row-sub">${p.stages.length} stage${p.stages.length===1?'':'s'}</div>
         </div>
-        ${canWrite() ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
-        ${canWrite() ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
+        ${canWrite ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
+        ${canWrite ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
         <div class="chev">${icon('chev')}</div>
       </div>
     `).join('');
     scroll.querySelectorAll('.row').forEach(row=>{
       row.addEventListener('click', (e)=>{
-        if(e.target.closest('[data-del]') || e.target.closest('[data-edit]') || e.target.closest('.drag-handle')) return;
-        goTo({ view:'stages', productId: row.dataset.id });
+        if(e.target.closest('[data-del]') || e.target.closest('[data-edit]')) return;
+        nav.push({ view:'stages', productId: row.dataset.id });
+        render();
       });
     });
     scroll.querySelectorAll('[data-edit]').forEach(btn=>{
@@ -1211,6 +1349,7 @@
     scroll.querySelectorAll('[data-del]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
+        if(!canWrite){ showToast('Read-only access'); return; }
         const id = btn.dataset.del;
         const p = findProduct(id);
         confirmDelete(`Delete product ${p.code}? This removes all its stages and entries.`, ()=>{
@@ -1228,22 +1367,23 @@
     }
     scroll.innerHTML = product.stages.map(s=>`
       <div class="row" data-id="${s.id}">
-        ${canWrite() ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
+        ${canWrite ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
         <div class="row-icon">${icon('layer')}</div>
         <div class="row-body">
           <div class="row-title" style="font-family:var(--sans);">${escapeHtml(s.name)}</div>
           <div class="row-sub">${s.entries.length} entr${s.entries.length===1?'y':'ies'}</div>
         </div>
         <div class="pill">${stageQty(s)} B</div>
-        ${canWrite() ? `<button class="edit-btn" data-edit="${s.id}">${icon('pencil')}</button>` : ''}
-        ${canWrite() ? `<button class="del-btn" data-del="${s.id}">${icon('trash')}</button>` : ''}
+        ${canWrite ? `<button class="edit-btn" data-edit="${s.id}">${icon('pencil')}</button>` : ''}
+        ${canWrite ? `<button class="del-btn" data-del="${s.id}">${icon('trash')}</button>` : ''}
         <div class="chev">${icon('chev')}</div>
       </div>
     `).join('');
     scroll.querySelectorAll('.row').forEach(row=>{
       row.addEventListener('click',(e)=>{
         if(e.target.closest('[data-del]') || e.target.closest('[data-edit]') || e.target.closest('.drag-handle')) return;
-        goTo({ view:'entries', productId: product.id, stageId: row.dataset.id });
+        nav.push({ view:'entries', productId: product.id, stageId: row.dataset.id });
+        render();
       });
     });
     scroll.querySelectorAll('[data-edit]').forEach(btn=>{
@@ -1255,10 +1395,12 @@
     scroll.querySelectorAll('[data-del]').forEach(btn=>{
       btn.addEventListener('click',(e)=>{
         e.stopPropagation();
+        if(!canWrite){ showToast('Read-only access'); return; }
         const id = btn.dataset.del;
         const s = findStage(product.id, id);
         confirmDelete(`Delete stage "${s.name}"? This removes all its logged entries.`, ()=>{
           product.stages = product.stages.filter(x=>x.id!==id);
+          product.updatedAt = new Date().toISOString();
           saveState(); render();
         });
       });
@@ -1280,14 +1422,14 @@
     } else {
       html += stage.entries.map(e=>`
         <div class="entry-card" data-id="${e.id}">
-          ${canWrite() ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
+          ${canWrite ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
           <div style="flex:1; min-width:0;">
             <div class="entry-date">${formatDate(e.date)}</div>
             ${e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : ''}
           </div>
           <div class="pill">${e.qty} B</div>
-          ${canWrite() ? `<button class="edit-btn" data-edit="${e.id}">${icon('pencil')}</button>` : ''}
-          ${canWrite() ? `<button class="del-btn" data-del="${e.id}">${icon('trash')}</button>` : ''}
+          ${canWrite ? `<button class="edit-btn" data-edit="${e.id}">${icon('pencil')}</button>` : ''}
+          ${canWrite ? `<button class="del-btn" data-del="${e.id}">${icon('trash')}</button>` : ''}
         </div>
       `).join('');
     }
@@ -1302,9 +1444,11 @@
     scroll.querySelectorAll('[data-del]').forEach(btn=>{
       btn.addEventListener('click',(e)=>{
         e.stopPropagation();
+        if(!canWrite){ showToast('Read-only access'); return; }
         const id = btn.dataset.del;
         confirmDelete('Delete this entry?', ()=>{
           stage.entries = stage.entries.filter(x=>x.id!==id);
+          product.updatedAt = new Date().toISOString();
           saveState(); render();
         });
       });
@@ -1327,17 +1471,6 @@
   // ---------- Start data sync ----------
   subscribeState();
   setupSortable(document.getElementById('scroll'));
-
-  // Sync the mobile hardware/gesture Back button to our in-app nav stack.
-  // Replace (not push) the current history entry so the very first screen
-  // (Home) stays the single entry a Back press can fall through to exit.
-  history.replaceState({ wipNav: nav.slice() }, '');
-  if(wipPopstateHandler) window.removeEventListener('popstate', wipPopstateHandler);
-  wipPopstateHandler = function(e){
-    nav = (e.state && e.state.wipNav) ? e.state.wipNav : [{ view:'products' }];
-    render();
-  };
-  window.addEventListener('popstate', wipPopstateHandler);
 
   // Owner gets a live notification badge when a new password request comes in,
   // and the users list stays in sync with Firestore in real time.
