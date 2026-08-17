@@ -1184,11 +1184,11 @@
       product.stages.forEach(s=>{
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0,y,width,rowHeight);
-        ctx.fillStyle = '#1155CC';
+        ctx.fillStyle = '#000000';
         ctx.font = '13px Arial, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(String(s.name).toUpperCase(), 12, y+rowHeight/2);
-        ctx.fillStyle = '#111111';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(s.name).toUpperCase(), colSplit/2, y+rowHeight/2);
+        ctx.fillStyle = '#000000';
         ctx.font = 'bold 13px Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(String(stageQty(s)), colSplit+(width-colSplit)/2, y+rowHeight/2);
@@ -1200,8 +1200,8 @@
       ctx.fillRect(0,y,width,rowHeight);
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 13px Arial, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('TOTAL', 12, y+rowHeight/2);
+      ctx.textAlign = 'center';
+      ctx.fillText('TOTAL', colSplit/2, y+rowHeight/2);
       ctx.textAlign = 'center';
       ctx.fillText(String(productTotalQty(product)), colSplit+(width-colSplit)/2, y+rowHeight/2);
       y += rowHeight;
@@ -1493,6 +1493,7 @@
         <div class="row-icon">${icon('layer')}</div>
         <div class="row-body">
           <div class="row-title" style="font-family:var(--sans);">TOTAL</div>
+          <div class="row-sub">Excl. Kit Qty &amp; Incomming</div>
         </div>
         <div class="pill">${productTotalQty(product)} B</div>
       </div>
