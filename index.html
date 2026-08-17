@@ -1149,6 +1149,94 @@
     showToast('Excel report exported');
   }
 
+  // ---------- Image export: single product's stage table as a PNG (matches the product detail screen) ----------
+  function exportProductStageImage(product){
+    if(!product || !product.stages || product.stages.length===0){ showToast('No stages to export'); return; }
+    try{
+      const SCALE = 2; // render at 2x for a crisp image
+      const width = 380;
+      const headerHeight = 42;
+      const rowHeight = 38;
+      const rowCount = product.stages.length + 1; // + TOTAL row
+      const height = headerHeight + rowCount*rowHeight;
+      const colSplit = Math.round(width*0.64);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width*SCALE;
+      canvas.height = height*SCALE;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(SCALE, SCALE);
+
+      // background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,width,height);
+
+      // header row — product code, light blue
+      ctx.fillStyle = '#BEDCEA';
+      ctx.fillRect(0,0,width,headerHeight);
+      ctx.fillStyle = '#1C1C1E';
+      ctx.font = 'bold 15px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(product.code, width/2, headerHeight/2);
+
+      let y = headerHeight;
+      product.stages.forEach(s=>{
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0,y,width,rowHeight);
+        ctx.fillStyle = '#1155CC';
+        ctx.font = '13px Arial, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(String(s.name).toUpperCase(), 12, y+rowHeight/2);
+        ctx.fillStyle = '#111111';
+        ctx.font = 'bold 13px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(stageQty(s)), colSplit+(width-colSplit)/2, y+rowHeight/2);
+        y += rowHeight;
+      });
+
+      // TOTAL row — bold
+      ctx.fillStyle = '#F0F0F5';
+      ctx.fillRect(0,y,width,rowHeight);
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 13px Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('TOTAL', 12, y+rowHeight/2);
+      ctx.textAlign = 'center';
+      ctx.fillText(String(productTotalQty(product)), colSplit+(width-colSplit)/2, y+rowHeight/2);
+      y += rowHeight;
+
+      // grid lines
+      ctx.strokeStyle = '#AAAAAA';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5,0.5,width-1,height-1);
+      ctx.beginPath();
+      for(let gy=headerHeight; gy<=height; gy+=rowHeight){
+        ctx.moveTo(0, Math.round(gy)+0.5);
+        ctx.lineTo(width, Math.round(gy)+0.5);
+      }
+      ctx.moveTo(colSplit+0.5, headerHeight);
+      ctx.lineTo(colSplit+0.5, height);
+      ctx.stroke();
+
+      canvas.toBlob(blob=>{
+        if(!blob){ showToast('Download failed — try again'); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${product.code}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Downloaded');
+      }, 'image/png');
+    }catch(e){
+      console.error('Product image export failed', e);
+      showToast('Download failed — try again');
+    }
+  }
+
   function openEntrySheet(productId, stageId, existing){
     if(!canWrite){ showToast('Read-only access'); return; }
     const isEdit = !!existing;
@@ -1305,6 +1393,7 @@
         <div class="appbar-row">
           <button class="back-btn" id="backBtn">${icon('back')}</button>
           <div class="appbar-title mono">${escapeHtml(product.code)}</div>
+          <button class="icon-btn" id="stageExportBtn" title="Download">${icon('export')}</button>
         </div>
       `;
       searchWrap.classList.remove('open');
@@ -1312,6 +1401,7 @@
       fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openStageSheet(product.id, null);
       document.getElementById('backBtn').onclick = goBack;
+      document.getElementById('stageExportBtn').onclick = ()=>exportProductStageImage(product);
     }
     else if(n.view==='entries'){
       const product = findProduct(n.productId);
@@ -1349,6 +1439,7 @@
         <div class="row-body">
           <div class="row-title">${escapeHtml(p.code)}</div>
         </div>
+        <div class="pill">${productTotalQty(p)} B</div>
         ${canWrite ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
         ${canWrite ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
         <div class="chev">${icon('chev')}</div>
@@ -1402,6 +1493,7 @@
         <div class="row-icon">${icon('layer')}</div>
         <div class="row-body">
           <div class="row-title" style="font-family:var(--sans);">TOTAL</div>
+          <div class="row-sub">Excl. Kit Qty &amp; Incomming</div>
         </div>
         <div class="pill">${productTotalQty(product)} B</div>
       </div>
