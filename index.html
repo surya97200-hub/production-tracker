@@ -838,6 +838,38 @@
     }
   });
 
+  // ---------- Desktop keyboard shortcuts ----------
+  // Esc  -> close an open Add/Edit sheet, otherwise go back one level (any page)
+  // Enter-> save the currently open sheet (ignored while typing in a textarea, so remarks can wrap lines)
+  // +    -> trigger the current page's Add ("+") button, when not typing in a field
+  document.addEventListener('keydown', (e)=>{
+    const overlayEl = document.getElementById('overlay');
+    const sheetOpen = !!overlayEl && overlayEl.classList.contains('open');
+    const active = document.activeElement;
+    const isTypingField = !!active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT');
+
+    if(e.key==='Escape'){
+      e.preventDefault();
+      if(sheetOpen){ closeSheet(); return; }
+      if(nav.length>1){ goBack(); }
+      return;
+    }
+
+    if(e.key==='Enter'){
+      if(sheetOpen && !(active && active.tagName==='TEXTAREA')){
+        const saveBtn = document.getElementById('saveBtn');
+        if(saveBtn){ e.preventDefault(); saveBtn.click(); }
+      }
+      return;
+    }
+
+    if(e.key==='+'){
+      if(isTypingField || sheetOpen) return;
+      const fab = document.getElementById('fab');
+      if(fab && fab.style.display!=='none'){ e.preventDefault(); fab.click(); }
+    }
+  });
+
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
   // ---------- Fixed stage list (used for stage picker + Excel export columns) ----------
