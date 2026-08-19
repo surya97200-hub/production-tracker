@@ -428,6 +428,20 @@
   .excel-table td[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px #5B8CFF;background:#F7FBFF;}
   .excel-table td.remarks-cell{text-align:left;min-width:220px;white-space:pre-wrap;}
   .excel-note{font-size:10px;color:var(--dim);margin-top:8px;}
+  .report-accordion{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .report-accordion-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;text-align:left;border:1px solid var(--rule);border-radius:12px;
+    background:#17102F;color:#fff;padding:13px 14px;cursor:pointer;
+  }
+  .report-accordion-btn span:first-child{display:flex;flex-direction:column;gap:3px;}
+  .report-accordion-btn strong{font-size:13px;}
+  .report-accordion-btn small{font-size:10px;color:var(--dim);font-weight:500;}
+  .report-chevron{font-size:18px;line-height:1;transition:transform .15s ease;}
+  .report-accordion-btn.open .report-chevron{transform:rotate(180deg);}
+  .report-accordion-panel{display:none;}
+  .report-accordion-panel.open{display:block;}
+
   .category-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
   .category-card{border:1px solid var(--rule);background:linear-gradient(145deg,#211A42,#181230);border-radius:14px;padding:13px;cursor:pointer;}
   .category-card:hover{border-color:#5947A0;transform:translateY(-1px);}
@@ -1067,27 +1081,49 @@
   function startWipApp(user){
   let state = null;
   let syncStatus = 'connecting'; // connecting | on | err
-  let nav = [{ view:'dashboard' }]; // stack of {view, productId, stageId}
+  let nav = [{ view:'products' }]; // app always opens at WIP Tracker
   let searchTerm = '';
   let searchOpen = false;
   const canWrite = user.role==='owner' || user.access==='write';
 
   // ---------- Back-button handling ----------
-  // Every time we go one level deeper (products -> stages -> entries) we push
-  // a history entry. The mobile/hardware back button then triggers a
-  // popstate event that we intercept to pop just one level of our own nav
-  // stack instead of letting the browser navigate away from the app.
+  // Keep browser/mobile Back inside the WIP app. The first/root screen is
+  // always WIP Tracker, so Back from Dashboard/Reports returns to WIP Tracker
+  // instead of closing the page/app.
+  const WIP_HISTORY_KEY = 'econWipInternal';
+  try{ history.replaceState({ wipNavDepth: nav.length, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+
+  function pushInternalHistory(){
+    try{ history.pushState({ wipNavDepth: nav.length, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+  }
+
   function goTo(navState){
     nav.push(navState);
-    try{ history.pushState({ wipNavDepth: nav.length }, ''); }catch(e){}
+    pushInternalHistory();
     render();
   }
+
   function goBack(){
-    if(nav.length>1){ history.back(); }
+    if(nav.length>1){
+      history.back();
+    }else{
+      // Root is WIP Tracker. Do not allow browser Back to leave the app.
+      nav=[{view:'products'}];
+      try{ history.pushState({ wipNavDepth: 1, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+      render();
+    }
   }
-  window.addEventListener('popstate', ()=>{
+
+  window.addEventListener('popstate', (event)=>{
     if(nav.length>1){
       nav.pop();
+      render();
+      // Re-arm an internal history state so another Back remains inside app.
+      try{ history.replaceState({ wipNavDepth: nav.length, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+    }else{
+      // Back at root: stay on WIP Tracker.
+      nav=[{view:'products'}];
+      try{ history.pushState({ wipNavDepth: 1, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
       render();
     }
   });
@@ -1408,20 +1444,17 @@
   }
 
   function navigateSidebar(view){
-    if(view==='dashboard'){
-      nav = [{view:'dashboard'}];
+    if(view==='dashboard' || view==='reports'){
+      nav = [{view:'products'}, {view}];
       searchOpen = false; searchTerm = '';
       closeDashboardModal();
+      pushInternalHistory();
       render();
     }else if(view==='products'){
       nav = [{view:'products'}];
       searchOpen = false; searchTerm = '';
       closeDashboardModal();
-      render();
-    }else if(view==='reports'){
-      nav = [{view:'reports'}];
-      searchOpen = false; searchTerm = '';
-      closeDashboardModal();
+      pushInternalHistory();
       render();
     }else{
       showToast('Analytics page coming next');
@@ -2201,46 +2234,83 @@
         </div>
       </div>
 
-      <div class="excel-panel consolidated-panel">
-        <div class="excel-toolbar">
-          <div>
-            <div class="excel-toolbar-title">Consolidated Report</div>
-            <div class="excel-toolbar-sub">View only • Product-wise stage quantity summary</div>
+      <div class="report-accordion">
+        <button class="report-accordion-btn" id="excelReportToggle" type="button">
+          <span><strong>Excel Report</strong><small>View-only detailed report • click to open</small></span>
+          <span class="report-chevron">⌄</span>
+        </button>
+        <div class="report-accordion-panel" id="excelReportPanel">
+          <div class="excel-panel detailed-report-panel">
+            <div class="excel-toolbar">
+              <div>
+                <div class="excel-toolbar-title">Excel Report</div>
+                <div class="excel-toolbar-sub">Read-only detailed table.</div>
+              </div>
+              <button class="excel-export-btn" id="reportExportBtn">EXPORT XLSX</button>
+            </div>
+            <div class="excel-wrap">
+              <table class="excel-table" id="excelReportTable">
+                <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+                <tbody>
+                  ${rows.map((r,ri)=>`
+                    <tr data-report-row="${ri}">
+                      <td>${escapeHtml(r.product)}</td>
+                      ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
+                      <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
+                      <td class="report-total" data-col="TOTAL">${r.total||''}</td>
+                      <td class="remarks-cell" data-col="REMARKS">${escapeHtml(r.remarks)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="excel-note">Read-only report. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report and are not editable in the web view.</div>
           </div>
-          <button class="excel-export-btn" id="reportExportBtn">EXPORT XLSX</button>
         </div>
-        <div class="consolidated-grid">
-          ${buildConsolidatedReportHTML()}
-        </div>
-      </div>
 
-      <div class="excel-panel detailed-report-panel">
-        <div class="excel-toolbar">
-          <div>
-            <div class="excel-toolbar-title">Excel Report</div>
-            <div class="excel-toolbar-sub">Read-only detailed table.</div>
+        <button class="report-accordion-btn" id="consolidatedReportToggle" type="button">
+          <span><strong>Consolidated Report</strong><small>Product-wise stage quantity summary • click to open</small></span>
+          <span class="report-chevron">⌄</span>
+        </button>
+        <div class="report-accordion-panel" id="consolidatedReportPanel">
+          <div class="excel-panel consolidated-panel">
+            <div class="excel-toolbar">
+              <div>
+                <div class="excel-toolbar-title">Consolidated Report</div>
+                <div class="excel-toolbar-sub">View only • Product-wise stage quantity summary</div>
+              </div>
+            </div>
+            <div class="consolidated-grid">
+              ${buildConsolidatedReportHTML()}
+            </div>
           </div>
         </div>
-        <div class="excel-wrap">
-          <table class="excel-table" id="excelReportTable">
-            <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
-            <tbody>
-              ${rows.map((r,ri)=>`
-                <tr data-report-row="${ri}">
-                  <td>${escapeHtml(r.product)}</td>
-                  ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
-                  <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
-                  <td class="report-total" data-col="TOTAL">${r.total||''}</td>
-                  <td class="remarks-cell" data-col="REMARKS">${escapeHtml(r.remarks)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-        <div class="excel-note">Read-only report. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report and are not editable in the web view.</div>
       </div>
     `;
 
+
+    const excelToggle=document.getElementById('excelReportToggle');
+    const excelPanel=document.getElementById('excelReportPanel');
+    const consolidatedToggle=document.getElementById('consolidatedReportToggle');
+    const consolidatedPanel=document.getElementById('consolidatedReportPanel');
+
+    const closeReportPanels=()=>{
+      [excelToggle,consolidatedToggle].forEach(b=>b?.classList.remove('open'));
+      [excelPanel,consolidatedPanel].forEach(p=>p?.classList.remove('open'));
+    };
+    const bindReportAccordion=(button,panel,otherButton,otherPanel)=>{
+      button?.addEventListener('click',()=>{
+        const willOpen=!panel.classList.contains('open');
+        closeReportPanels();
+        if(willOpen){
+          button.classList.add('open');
+          panel.classList.add('open');
+        }
+      });
+    };
+    bindReportAccordion(excelToggle,excelPanel,consolidatedToggle,consolidatedPanel);
+    bindReportAccordion(consolidatedToggle,consolidatedPanel,excelToggle,excelPanel);
+    // Both reports stay closed until the user clicks one.
     const table=document.getElementById('excelReportTable');
     document.getElementById('reportExportBtn').onclick=()=>exportEditableExcel(table);
   }
@@ -2300,7 +2370,7 @@
       renderExcelReport(scroll);
       fab.style.display='none';
       document.getElementById('logoutBtn').onclick=window.__auth.logout;
-      document.getElementById('reportsBackBtn').onclick=()=>navigateSidebar('products');
+      document.getElementById('reportsBackBtn').onclick=()=>goBack();
       const sideToggle=document.getElementById('sideToggleBtn');
       if(sideToggle) sideToggle.onclick=()=>sidebar?.classList.toggle('open');
     }
