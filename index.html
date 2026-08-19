@@ -290,6 +290,229 @@
 
   ::-webkit-scrollbar{ display:none; }
 </style>
+
+<style id="dashboard-enhancement-css">
+  /* ===== Dashboard / Sidebar enhancement ===== */
+  .app-layout{display:flex;flex:1;min-height:0;overflow:hidden;}
+  .sidebar{
+    width:220px;flex:0 0 220px;background:rgba(16,12,34,.94);
+    border-right:1px solid var(--rule);padding:14px 10px;display:flex;
+    flex-direction:column;gap:7px;overflow-y:auto;
+  }
+  .sidebar-brand{
+    padding:8px 10px 14px;font-size:12px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+  }
+  .side-nav-btn{
+    width:100%;border:1px solid transparent;background:transparent;color:var(--dim);
+    border-radius:11px;padding:11px 12px;display:flex;align-items:center;gap:10px;
+    font-family:var(--sans);font-size:13px;font-weight:600;text-align:left;cursor:pointer;
+    transition:.15s ease;
+  }
+  .side-nav-btn:hover{background:#1B1438;color:var(--ink);}
+  .side-nav-btn.active{
+    background:linear-gradient(100deg,rgba(124,92,255,.28),rgba(255,93,162,.16));
+    border-color:rgba(124,92,255,.45);color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.18);
+  }
+  .side-nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex:0 0 18px;}
+  .sidebar-spacer{flex:1;}
+  .dashboard-main{min-width:0;flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .dashboard-scroll{flex:1;overflow-y:auto;padding:18px 22px 30px;-webkit-overflow-scrolling:touch;}
+  .dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;}
+  .dashboard-kicker{font-size:11px;color:var(--c3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+  .dashboard-title{font-size:25px;font-weight:700;letter-spacing:-.03em;margin-top:3px;}
+  .dashboard-subtitle{font-size:12px;color:var(--dim);margin-top:4px;}
+  .dashboard-total-card{
+    min-width:145px;background:linear-gradient(120deg,var(--c1),var(--c2));
+    border-radius:15px;padding:12px 15px;box-shadow:0 8px 22px rgba(124,92,255,.22);
+  }
+  .dashboard-total-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.75);}
+  .dashboard-total-num{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:2px;}
+  .stage-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .stage-card{
+    border:1px solid var(--rule);background:linear-gradient(145deg,#211A42,#181230);
+    border-radius:13px;padding:11px 12px;cursor:pointer;min-width:0;
+    transition:transform .12s ease,border-color .12s ease,background .12s ease;
+  }
+  .stage-card:hover{transform:translateY(-1px);border-color:#5947A0;background:#251D4A;}
+  .stage-card:active{transform:scale(.99);}
+  .stage-card-name{font-size:10px;color:var(--dim);font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stage-card-qty{font-family:var(--mono);font-size:20px;font-weight:700;margin-top:6px;color:#fff;}
+  .stage-card-unit{font-size:10px;color:var(--dim);margin-left:2px;}
+  .chart-panel{
+    background:rgba(23,15,48,.9);border:1px solid var(--rule);border-radius:16px;padding:15px 16px 17px;
+  }
+  .chart-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .chart-help{font-size:11px;color:var(--dim);margin-bottom:15px;}
+  .stage-bars{display:flex;flex-direction:column;gap:9px;}
+  .stage-bar-row{display:grid;grid-template-columns:145px minmax(0,1fr) 65px;align-items:center;gap:10px;cursor:pointer;}
+  .stage-bar-label{font-size:11px;color:#EDEAFF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stage-bar-track{height:22px;background:#120D28;border:1px solid #2A2050;border-radius:7px;overflow:hidden;}
+  .stage-bar-fill{
+    height:100%;min-width:0;border-radius:6px;
+    background:linear-gradient(90deg,var(--c1),var(--c2));
+    transition:width .35s ease;
+  }
+  .stage-bar-value{font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;color:#fff;white-space:nowrap;}
+  .dashboard-empty{padding:55px 20px;text-align:center;color:var(--dim);}
+  .dashboard-empty strong{display:block;color:#fff;margin-bottom:5px;}
+  .dashboard-modal{
+    position:absolute;inset:0;background:rgba(5,3,15,.72);z-index:80;display:none;
+    align-items:center;justify-content:center;padding:18px;
+  }
+  .dashboard-modal.open{display:flex;}
+  .dashboard-modal-card{
+    width:min(720px,100%);max-height:min(82vh,720px);overflow:hidden;
+    background:#17102F;border:1px solid #3B2C70;border-radius:18px;
+    box-shadow:0 25px 70px rgba(0,0,0,.55);display:flex;flex-direction:column;
+  }
+  .dashboard-modal-head{padding:15px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:10px;}
+  .dashboard-modal-title{flex:1;font-size:16px;font-weight:700;}
+  .dashboard-modal-total{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--c3);}
+  .dashboard-modal-close{width:31px;height:31px;border:0;border-radius:9px;background:#241B48;color:#fff;cursor:pointer;font-size:18px;}
+  .dashboard-modal-body{overflow:auto;padding:12px 14px 16px;}
+  .drill-row{
+    display:flex;align-items:center;gap:10px;background:#211A42;border:1px solid #2D2354;
+    border-radius:11px;padding:10px 11px;margin-bottom:7px;cursor:pointer;
+  }
+  .drill-row:hover{border-color:#5947A0;background:#261E4D;}
+  .drill-product{font-family:var(--mono);font-size:12px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .drill-qty{font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;white-space:nowrap;}
+  .drill-arrow{color:#8E85C0;display:flex;}
+  .drill-total{display:flex;justify-content:space-between;padding:12px 11px;margin-top:4px;border-radius:11px;background:#2A2050;color:#fff;font-weight:700;}
+  @media (max-width:1100px){
+    .stage-cards{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media (max-width:899px){
+    #shell{max-width:none;}
+    .app-layout{display:block;overflow:hidden;}
+    .sidebar{
+      position:absolute;left:0;top:0;bottom:0;width:225px;z-index:60;
+      transform:translateX(-105%);transition:transform .22s ease;
+      box-shadow:16px 0 40px rgba(0,0,0,.45);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .dashboard-main{height:100%;}
+    .dashboard-scroll{padding:13px 12px 84px;}
+    .dashboard-head{align-items:flex-start;flex-direction:column;}
+    .dashboard-total-card{width:100%;min-width:0;}
+    .stage-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .stage-bar-row{grid-template-columns:105px minmax(0,1fr) 56px;gap:7px;}
+    .stage-bar-label{font-size:10px;}
+  }
+  @media (min-width:900px){
+    .app-layout > .dashboard-main > .appbar{border-bottom:1px solid var(--rule);}
+    .app-layout > .dashboard-main > .scroll{max-width:none;}
+  }
+  .side-toggle{
+    display:none;width:30px;height:30px;border:0;border-radius:9px;background:var(--card);
+    color:var(--ink);cursor:pointer;align-items:center;justify-content:center;flex:0 0 30px;
+  }
+  @media (max-width:899px){.side-toggle{display:flex;}}
+
+  .wip-tabs{display:flex;gap:7px;margin-bottom:14px;padding:4px;background:#17102F;border:1px solid var(--rule);border-radius:12px;}
+  .wip-tab{flex:1;border:0;background:transparent;color:var(--dim);border-radius:9px;padding:9px 11px;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;}
+  .wip-tab.active{background:linear-gradient(100deg,rgba(124,92,255,.3),rgba(255,93,162,.18));color:#fff;border:1px solid rgba(124,92,255,.45);}
+  .excel-panel{background:#17102F;border:1px solid var(--rule);border-radius:15px;padding:12px;overflow:hidden;}
+  .excel-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .excel-toolbar-title{font-size:14px;font-weight:700;flex:1;min-width:160px;}
+  .excel-toolbar-sub{font-size:10px;color:var(--dim);width:100%;}
+  .excel-export-btn{border:0;border-radius:10px;padding:9px 13px;background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;font-weight:700;cursor:pointer;}
+  .excel-wrap{overflow:auto;border:1px solid #34275F;border-radius:10px;max-height:62vh;background:#fff;}
+  .excel-table{border-collapse:collapse;width:max-content;min-width:100%;font-family:Arial,sans-serif;font-size:11px;color:#171233;background:#fff;}
+  .excel-table th,.excel-table td{border:1px solid #D5D9DD;padding:6px 8px;min-width:82px;height:28px;white-space:nowrap;}
+  .excel-table th{position:sticky;top:0;z-index:2;background:#BEDCEA;font-weight:700;text-align:center;}
+  .excel-table th:first-child,.excel-table td:first-child{position:sticky;left:0;z-index:3;background:#EAF4F8;min-width:180px;text-align:left;}
+  .excel-table td{background:#fff;text-align:center;}
+  .excel-table td[contenteditable="true"]{outline:none;cursor:text;}
+  .excel-table td[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px #5B8CFF;background:#F7FBFF;}
+  .excel-table td.remarks-cell{text-align:left;min-width:220px;white-space:pre-wrap;}
+  .excel-note{font-size:10px;color:var(--dim);margin-top:8px;}
+  .category-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .category-card{border:1px solid var(--rule);background:linear-gradient(145deg,#211A42,#181230);border-radius:14px;padding:13px;cursor:pointer;}
+  .category-card:hover{border-color:#5947A0;transform:translateY(-1px);}
+  .category-card-name{font-size:10px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+  .category-card-pct{font-family:var(--mono);font-size:27px;font-weight:700;color:#fff;margin-top:4px;}
+  .category-card-qty{font-size:11px;color:var(--dim);margin-top:3px;}
+  .category-card.done{border-left:3px solid var(--c5);}
+  .category-card.process{border-left:3px solid var(--c6);}
+  .category-card.fail{border-left:3px solid var(--danger);}
+  .category-card.other{border-left:3px solid var(--amber);}
+  .category-bars{display:flex;flex-direction:column;gap:10px;}
+  .category-bar-row{display:grid;grid-template-columns:145px minmax(0,1fr) 62px;align-items:center;gap:10px;}
+  .category-bar-label{font-size:11px;font-weight:700;color:#EDEAFF;}
+  .category-bar-track{height:24px;background:#120D28;border:1px solid #2A2050;border-radius:7px;overflow:hidden;}
+  .category-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width .35s ease;}
+  .category-bar-value{font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;color:#fff;}
+  .dashboard-section-gap{margin-top:16px;}
+  .stage-summary-panel{margin-top:16px;}
+  .stage-summary-panel .chart-help{margin-bottom:12px;}
+  .stage-summary-panel .stage-bars{gap:8px;}
+  .stage-summary-panel .stage-bar-row{
+    display:grid;
+    grid-template-columns:180px minmax(0,1fr) 120px;
+    align-items:center;
+    column-gap:16px;
+    width:100%;
+    box-sizing:border-box;
+    cursor:pointer;
+  }
+  .stage-summary-panel .stage-bar-track{
+    height:20px;
+    width:100%;
+    min-width:0;
+  }
+  .stage-summary-panel .stage-bar-label{
+    font-size:11px;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .stage-summary-panel .stage-bar-value{
+    font-size:11px;
+    width:120px;
+    min-width:120px;
+    display:grid;
+    grid-template-columns:62px 42px;
+    justify-content:end;
+    column-gap:14px;
+    align-items:center;
+    text-align:right;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .stage-summary-panel .stage-bar-percent{
+    display:block;
+    min-width:42px;
+    margin-left:0;
+    opacity:.8;
+    font-size:10px;
+    font-weight:600;
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .stage-summary-panel .stage-bar-percent{margin-left:5px;opacity:.75;font-size:10px;font-weight:600;}
+
+  @media (max-width:899px){
+    .stage-summary-panel .stage-bar-row{
+      grid-template-columns:105px minmax(0,1fr) 108px;
+      column-gap:8px;
+    }
+    .stage-summary-panel .stage-bar-value{
+      width:108px;
+      min-width:108px;
+      grid-template-columns:55px 38px;
+      column-gap:10px;
+    }
+  }
+
+  @media (max-width:899px){
+    .category-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .category-bar-row{grid-template-columns:100px minmax(0,1fr) 52px;gap:7px;}
+  }
+</style>
+
 </head>
 <body>
 <style>
@@ -384,25 +607,56 @@
 </div>
 
 <div id="shell" style="display:none;">
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">ECON WIP TRACKER</div>
+      <button class="side-nav-btn active" data-side-nav="dashboard">
+        <span class="side-nav-icon">⌂</span><span>Dashboard</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="products">
+        <span class="side-nav-icon">▦</span><span>WIP Tracker</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="reports">
+        <span class="side-nav-icon">▤</span><span>Reports</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="analytics">
+        <span class="side-nav-icon">◒</span><span>Analytics</span>
+      </button>
+      <div class="sidebar-spacer"></div>
+      <div style="padding:8px 10px;font-size:10px;color:#6C6699;">Live data • Firebase</div>
+    </aside>
 
-  <div class="appbar" id="appbar"></div>
-  <div class="search-wrap" id="searchWrap">
-    <div class="search">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="searchInput" placeholder="Search product" autocomplete="off">
-    </div>
+    <main class="dashboard-main">
+      <div class="appbar" id="appbar"></div>
+      <div class="search-wrap" id="searchWrap">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" placeholder="Search product" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="scroll" id="scroll"></div>
+
+      <button class="fab" id="fab" aria-label="Add">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <div class="overlay" id="overlay"></div>
+      <div class="sheet" id="sheet"></div>
+      <div class="toast" id="toast"></div>
+    </main>
   </div>
 
-  <div class="scroll" id="scroll"></div>
-
-  <button class="fab" id="fab" aria-label="Add">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-
-  <div class="overlay" id="overlay"></div>
-  <div class="sheet" id="sheet"></div>
-  <div class="toast" id="toast"></div>
-
+  <div class="dashboard-modal" id="dashboardModal">
+    <div class="dashboard-modal-card">
+      <div class="dashboard-modal-head">
+        <div class="dashboard-modal-title" id="dashboardModalTitle">Stage Details</div>
+        <div class="dashboard-modal-total" id="dashboardModalTotal"></div>
+        <button class="dashboard-modal-close" id="dashboardModalClose" aria-label="Close">×</button>
+      </div>
+      <div class="dashboard-modal-body" id="dashboardModalBody"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ============================================================
@@ -813,7 +1067,7 @@
   function startWipApp(user){
   let state = null;
   let syncStatus = 'connecting'; // connecting | on | err
-  let nav = [{ view:'products' }]; // stack of {view, productId, stageId}
+  let nav = [{ view:'dashboard' }]; // stack of {view, productId, stageId}
   let searchTerm = '';
   let searchOpen = false;
   const canWrite = user.role==='owner' || user.access==='write';
@@ -851,6 +1105,10 @@
     if(e.key==='Escape'){
       e.preventDefault();
       if(sheetOpen){ closeSheet(); return; }
+      const dashboardModal = document.getElementById('dashboardModal');
+      if(dashboardModal && dashboardModal.classList.contains('open')){ closeDashboardModal(); return; }
+      const ownerPanel = document.getElementById('ownerPanel');
+      if(ownerPanel && ownerPanel.classList.contains('open')){ ownerPanel.classList.remove('open'); return; }
       if(nav.length>1){ goBack(); }
       return;
     }
@@ -944,8 +1202,236 @@
     return product.stages.reduce((sum,s)=> TOTAL_COLUMNS.includes(resolveStageKey(s)) ? sum+stageQty(s) : sum, 0);
   }
 
+  // ---------- Dashboard ----------
+  const DASHBOARD_CATEGORIES = [
+    { key:'done', name:'Process Done', stages:['PACKING','OQA','LOG'], cls:'done' },
+    { key:'process', name:'Under Process', stages:['FQC','TESTING2','TESTING1','MERGING','SENSOR CLEANING','PROGRAM'], cls:'process' },
+    { key:'fail', name:'Failures', stages:['FAIL','REWORK','DEBUG','RW IN DEBUG','SENSOR ISSUE','SCRAP'], cls:'fail' },
+    { key:'other', name:'Others', stages:[OTHERS_KEY], cls:'other' }
+  ];
+
+  function getDashboardCategoryData(){
+    const stageData = {};
+    [...STAGE_COLUMNS, OTHERS_KEY].forEach(key=>stageData[key]=[]);
+    (state.products || []).forEach(product=>{
+      (product.stages || []).forEach(stage=>{
+        const key = resolveStageKey(stage);
+        const qty = stageQty(stage);
+        if(qty <= 0) return;
+        const existing = stageData[key].find(x=>x.productId===product.id);
+        if(existing) existing.qty += qty;
+        else stageData[key].push({productId:product.id, code:product.code, qty});
+      });
+    });
+    const categories = DASHBOARD_CATEGORIES.map(cat=>{
+      const itemsByProduct = {};
+      cat.stages.forEach(stageKey=>{
+        (stageData[stageKey] || []).forEach(item=>{
+          if(!itemsByProduct[item.productId]) itemsByProduct[item.productId]={productId:item.productId,code:item.code,qty:0};
+          itemsByProduct[item.productId].qty += item.qty;
+        });
+      });
+      const items = Object.values(itemsByProduct).sort((a,b)=>b.qty-a.qty);
+      return {...cat, items, total:items.reduce((sum,x)=>sum+x.qty,0)};
+    });
+    const grandTotal = categories.reduce((sum,x)=>sum+x.total,0);
+    categories.forEach(cat=>cat.pct = grandTotal ? (cat.total/grandTotal)*100 : 0);
+    return {categories, grandTotal};
+  }
+
+  function closeDashboardModal(){
+    const modal = document.getElementById('dashboardModal');
+    if(modal) modal.classList.remove('open');
+  }
+
+  // Overall stage chart: exclude KIT QTY and SHIPPED.
+  // INCOMMING is intentionally retained because the latest dashboard requirement
+  // only excludes KIT QTY and SHIPPED from this section.
+  const OVERALL_STAGE_KEYS = STAGE_COLUMNS.filter(key=>key!=='KIT QTY' && key!=='INCOMMING' && key!=='SHIPPED').concat([OTHERS_KEY]);
+
+  function getOverallStageData(){
+    const data = {};
+    OVERALL_STAGE_KEYS.forEach(key=>data[key]=[]);
+    (state.products || []).forEach(product=>{
+      (product.stages || []).forEach(stage=>{
+        const key = resolveStageKey(stage);
+        if(!data[key]) return;
+        const qty = stageQty(stage);
+        if(qty <= 0) return;
+        const existing = data[key].find(x=>x.productId===product.id);
+        if(existing) existing.qty += qty;
+        else data[key].push({productId:product.id, code:product.code, qty});
+      });
+    });
+    OVERALL_STAGE_KEYS.forEach(key=>data[key].sort((a,b)=>b.qty-a.qty));
+    return data;
+  }
+
+  function openDashboardStage(stageKey){
+    const data = getOverallStageData();
+    const items = data[stageKey] || [];
+    const total = items.reduce((sum,x)=>sum+Number(x.qty||0),0);
+    const modal = document.getElementById('dashboardModal');
+    const title = document.getElementById('dashboardModalTitle');
+    const totalEl = document.getElementById('dashboardModalTotal');
+    const body = document.getElementById('dashboardModalBody');
+    if(!modal || !title || !totalEl || !body) return;
+
+    title.textContent = stageKey===OTHERS_KEY ? OTHERS_LABEL : stageKey;
+    totalEl.textContent = `${total} B`;
+
+    if(items.length===0){
+      body.innerHTML = `<div class="dashboard-empty"><strong>No quantity in this stage</strong>Products with quantity 0 are hidden.</div>`;
+    }else{
+      body.innerHTML = items.map(item=>`
+        <div class="drill-row" data-dashboard-product="${escapeAttr(item.productId)}">
+          <div class="drill-product">${escapeHtml(item.code)}</div>
+          <div class="drill-qty">${item.qty} B</div>
+          <div class="drill-arrow">${icon('chev')}</div>
+        </div>
+      `).join('') + `<div class="drill-total"><span>TOTAL</span><span>${total} B</span></div>`;
+
+      body.querySelectorAll('[data-dashboard-product]').forEach(row=>{
+        row.onclick=()=>{
+          const productId=row.dataset.dashboardProduct;
+          closeDashboardModal();
+          goTo({view:'stages',productId});
+        };
+      });
+    }
+    modal.classList.add('open');
+  }
+
+
+  function openDashboardCategory(categoryKey){
+    const info = getDashboardCategoryData();
+    const cat = info.categories.find(x=>x.key===categoryKey);
+    if(!cat) return;
+    const modal = document.getElementById('dashboardModal');
+    const title = document.getElementById('dashboardModalTitle');
+    const totalEl = document.getElementById('dashboardModalTotal');
+    const body = document.getElementById('dashboardModalBody');
+    if(!modal || !title || !totalEl || !body) return;
+    title.textContent = cat.name;
+    totalEl.textContent = `${cat.total} B • ${cat.pct.toFixed(0)}%`;
+    if(cat.items.length===0){
+      body.innerHTML = `<div class="dashboard-empty"><strong>No quantity in this category</strong>Products with quantity 0 are hidden.</div>`;
+    }else{
+      body.innerHTML = cat.items.map(item=>`
+        <div class="drill-row" data-dashboard-product="${escapeAttr(item.productId)}">
+          <div class="drill-product">${escapeHtml(item.code)}</div>
+          <div class="drill-qty">${item.qty} B</div>
+          <div class="drill-arrow">${icon('chev')}</div>
+        </div>
+      `).join('') + `<div class="drill-total"><span>TOTAL</span><span>${cat.total} B</span></div>`;
+      body.querySelectorAll('[data-dashboard-product]').forEach(row=>{
+        row.onclick=()=>{
+          const productId=row.dataset.dashboardProduct;
+          closeDashboardModal();
+          goTo({view:'stages',productId});
+        };
+      });
+    }
+    modal.classList.add('open');
+  }
+
+  function renderDashboard(scroll){
+    const info = getDashboardCategoryData();
+    const categories = info.categories;
+    const stageData = getOverallStageData();
+    const stageTotals = OVERALL_STAGE_KEYS.map(key=>({
+      key,
+      total:(stageData[key] || []).reduce((sum,x)=>sum+Number(x.qty||0),0)
+    }));
+    const overallStageQty = stageTotals.reduce((sum,x)=>sum+x.total,0);
+    const maxStageTotal = Math.max(1,...stageTotals.map(x=>x.total));
+    const maxPct = Math.max(1,...categories.map(x=>x.pct));
+
+    scroll.className='dashboard-scroll';
+    scroll.innerHTML=`
+      <div class="dashboard-head">
+        <div>
+          <div class="dashboard-kicker">Live WIP Overview</div>
+          <div class="dashboard-title">Dashboard</div>
+          <div class="dashboard-subtitle">Production status summary • category percentages exclude Kit Qty, Incomming and Shipped</div>
+        </div>
+        <div class="dashboard-total-card">
+          <div class="dashboard-total-label">Dashboard Qty</div>
+          <div class="dashboard-total-num">${info.grandTotal} B</div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-title">WIP Category Summary</div>
+        <div class="chart-help">Process Done, Under Process, Failures and Others. Click a category to see the products included in it.</div>
+        <div class="category-bars">
+          ${categories.map(cat=>`
+            <div class="category-bar-row" data-dashboard-category="${cat.key}">
+              <div class="category-bar-label">${escapeHtml(cat.name)}</div>
+              <div class="category-bar-track"><div class="category-bar-fill" style="width:${cat.pct>0?Math.max(2,(cat.pct/maxPct)*100):0}%"></div></div>
+              <div class="category-bar-value">${cat.pct.toFixed(0)}%</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="chart-panel stage-summary-panel">
+        <div class="chart-title">Overall Quantity by Stage</div>
+        <div class="chart-help">KIT QTY, INCOMMING and SHIPPED are excluded from this list. Percentage is based on the total quantity shown in this stage section. Click a stage to view its products.</div>
+        <div class="stage-bars">
+          ${stageTotals.map(item=>{
+            const width = item.total > 0 ? Math.max(2,(item.total/maxStageTotal)*100) : 0;
+            return `
+              <div class="stage-bar-row" data-dashboard-stage="${escapeAttr(item.key)}" title="Open ${escapeAttr(item.key===OTHERS_KEY?OTHERS_LABEL:item.key)} details">
+                <div class="stage-bar-label">${escapeHtml(item.key===OTHERS_KEY?OTHERS_LABEL:item.key)}</div>
+                <div class="stage-bar-track"><div class="stage-bar-fill" style="width:${width}%"></div></div>
+                <div class="stage-bar-value">${item.total} B <span class="stage-bar-percent">${overallStageQty ? ((item.total/overallStageQty)*100).toFixed(0) : 0}%</span></div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    scroll.querySelectorAll('[data-dashboard-category]').forEach(el=>{
+      el.onclick=()=>openDashboardCategory(el.dataset.dashboardCategory);
+    });
+    scroll.querySelectorAll('[data-dashboard-stage]').forEach(el=>{
+      el.onclick=()=>openDashboardStage(el.dataset.dashboardStage);
+    });
+  }
+
+  function setSideActive(view){
+    document.querySelectorAll('[data-side-nav]').forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.sideNav===view);
+    });
+  }
+
+  function navigateSidebar(view){
+    if(view==='dashboard'){
+      nav = [{view:'dashboard'}];
+      searchOpen = false; searchTerm = '';
+      closeDashboardModal();
+      render();
+    }else if(view==='products'){
+      nav = [{view:'products'}];
+      searchOpen = false; searchTerm = '';
+      closeDashboardModal();
+      render();
+    }else if(view==='reports'){
+      nav = [{view:'reports'}];
+      searchOpen = false; searchTerm = '';
+      closeDashboardModal();
+      render();
+    }else{
+      showToast('Analytics page coming next');
+    }
+    document.getElementById('sidebar')?.classList.remove('open');
+  }
+
   function getCurrentArray(){
     const n = currentNav();
+    if(n.view==='dashboard') return [];
     if(n.view==='products') return state.products;
     if(n.view==='stages'){ const p = findProduct(n.productId); return p ? p.stages : []; }
     if(n.view==='entries'){ const s = findStage(n.productId, n.stageId); return s ? s.entries : []; }
@@ -1654,6 +2140,143 @@
     });
   }
 
+
+  function buildExcelRowsFromState(){
+    return sortedProducts().map(p=>{
+      const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
+      const remarks=[];
+      (p.stages||[]).forEach(s=>{
+        const key=resolveStageKey(s), qty=stageQty(s);
+        if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
+        else sums[OTHERS_KEY]+=qty;
+        if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
+      });
+      const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
+      return {product:p.code,sums,total,remarks:remarks.join('\\n')};
+    });
+  }
+
+  function buildConsolidatedReportHTML(){
+    const products = sortedProducts();
+    if(!products.length) return `<div class="consolidated-empty">No products available.</div>`;
+    return products.map(product=>{
+      const stageRows = (product.stages||[]).map(stage=>({
+        key: resolveStageKey(stage),
+        name: resolveStageKey(stage)===OTHERS_KEY ? OTHERS_LABEL : resolveStageKey(stage),
+        qty: stageQty(stage)
+      }));
+      const total = productTotalQty(product);
+      return `
+        <div class="consolidated-card">
+          <div class="consolidated-product">${escapeHtml(product.code)}</div>
+          <div class="consolidated-rows">
+            ${stageRows.map(row=>`
+              <div class="consolidated-row">
+                <span>${escapeHtml(row.name)}</span>
+                <span>${row.qty}</span>
+              </div>
+            `).join('')}
+            <div class="consolidated-row consolidated-total">
+              <span>TOTAL</span><span>${total}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderExcelReport(scroll){
+    const rows=buildExcelRowsFromState();
+    const headers=['PRODUCT',...STAGE_COLUMNS,'OTHERS','TOTAL','REMARKS'];
+    scroll.className='dashboard-scroll';
+    scroll.innerHTML=`
+      <div class="dashboard-head">
+        <div>
+          <div class="dashboard-kicker">REPORTS</div>
+          <div class="dashboard-title">Excel Report</div>
+          <div class="dashboard-subtitle">Read-only consolidated report. Use EXPORT XLSX to download the detailed report.</div>
+        </div>
+        <div class="dashboard-total-card">
+          <div class="dashboard-total-label">Rows</div>
+          <div class="dashboard-total-num">${rows.length}</div>
+        </div>
+      </div>
+
+      <div class="excel-panel consolidated-panel">
+        <div class="excel-toolbar">
+          <div>
+            <div class="excel-toolbar-title">Consolidated Report</div>
+            <div class="excel-toolbar-sub">View only • Product-wise stage quantity summary</div>
+          </div>
+          <button class="excel-export-btn" id="reportExportBtn">EXPORT XLSX</button>
+        </div>
+        <div class="consolidated-grid">
+          ${buildConsolidatedReportHTML()}
+        </div>
+      </div>
+
+      <div class="excel-panel detailed-report-panel">
+        <div class="excel-toolbar">
+          <div>
+            <div class="excel-toolbar-title">Excel Report</div>
+            <div class="excel-toolbar-sub">Read-only detailed table.</div>
+          </div>
+        </div>
+        <div class="excel-wrap">
+          <table class="excel-table" id="excelReportTable">
+            <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${rows.map((r,ri)=>`
+                <tr data-report-row="${ri}">
+                  <td>${escapeHtml(r.product)}</td>
+                  ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
+                  <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
+                  <td class="report-total" data-col="TOTAL">${r.total||''}</td>
+                  <td class="remarks-cell" data-col="REMARKS">${escapeHtml(r.remarks)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="excel-note">Read-only report. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report and are not editable in the web view.</div>
+      </div>
+    `;
+
+    const table=document.getElementById('excelReportTable');
+    document.getElementById('reportExportBtn').onclick=()=>exportEditableExcel(table);
+  }
+
+  async function exportEditableExcel(table){
+    if(typeof ExcelJS==='undefined'){showToast('Export library failed to load — check connection');return;}
+    const wb=new ExcelJS.Workbook();
+    const ws=wb.addWorksheet('Export',{views:[{state:'frozen',xSplit:1,ySplit:1}]});
+    const headers=Array.from(table.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+    ws.addRow(headers);
+    ws.getRow(1).eachCell(cell=>{
+      cell.font={bold:true,color:{argb:'FF1C1C1E'}};
+      cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFBEDCEA'}};
+      cell.border={top:{style:'thin',color:{argb:'FFAAB6BE'}},left:{style:'thin',color:{argb:'FFAAB6BE'}},bottom:{style:'thin',color:{argb:'FFAAB6BE'}},right:{style:'thin',color:{argb:'FFAAB6BE'}}};
+    });
+    table.querySelectorAll('tbody tr').forEach(tr=>{
+      const vals=Array.from(tr.children).map((td,i)=>{
+        const raw=td.textContent.trim();
+        if(i>0 && i<headers.length-1 && raw!==''){
+          const n=Number(raw.replace(/,/g,''));
+          return Number.isFinite(n)?n:raw;
+        }
+        return raw;
+      });
+      ws.addRow(vals);
+    });
+    ws.columns.forEach((col,i)=>col.width=i===0?20:(i===headers.length-1?34:13));
+    const buffer=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Excel_Report_${todayISO()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Editable Excel report exported');
+  }
+
   // ---------- Rendering ----------
   function render(){
     if(!state) return;
@@ -1663,10 +2286,43 @@
     const scroll = document.getElementById('scroll');
     const fab = document.getElementById('fab');
     const dotClass = syncStatus==='on' ? 'on' : (syncStatus==='err' ? 'err' : '');
+    const sidebar = document.getElementById('sidebar');
 
-    if(n.view==='products'){
+    if(n.view==='reports'){
+      setSideActive('reports');
+      appbar.innerHTML = `<div class="appbar-row">
+        <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+        <button class="back-btn" id="reportsBackBtn" title="Back">${icon('back')}</button>
+        <div class="appbar-title root">Excel Report</div>
+        <button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button>
+      </div>`;
+      searchWrap.classList.remove('open');
+      renderExcelReport(scroll);
+      fab.style.display='none';
+      document.getElementById('logoutBtn').onclick=window.__auth.logout;
+      document.getElementById('reportsBackBtn').onclick=()=>navigateSidebar('products');
+      const sideToggle=document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick=()=>sidebar?.classList.toggle('open');
+    }
+    else if(n.view==='dashboard'){
+      setSideActive('dashboard');
+      appbar.innerHTML = `<div class="appbar-row">
+        <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
+        <button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button>
+      </div>`;
+      searchWrap.classList.remove('open');
+      renderDashboard(scroll);
+      fab.style.display = 'none';
+      document.getElementById('logoutBtn').onclick = window.__auth.logout;
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
+    }
+    else if(n.view==='products'){
+      setSideActive('products');
       const isOwnerUser = window.__auth && window.__auth.isOwner();
       appbar.innerHTML = `<div class="appbar-row">
+        <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
         <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
         <button class="icon-btn search-btn" id="searchToggleBtn" title="Search">${icon('search')}</button>
         <button class="icon-btn" id="consolBtn" title="CONSOL">${icon('consol')}</button>
@@ -1676,6 +2332,7 @@
         <button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button>
       </div>`;
       searchWrap.classList.toggle('open', searchOpen);
+      scroll.className = 'scroll';
       renderProducts(scroll);
       fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openProductSheet(null);
@@ -1693,55 +2350,68 @@
       if(usersBtn) usersBtn.onclick = window.__auth.showOwnerPanel;
       const cpBtn = document.getElementById('changePwBtn');
       if(cpBtn) cpBtn.onclick = window.__auth.openChangePasswordRequest;
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
     }
     else if(n.view==='stages'){
+      setSideActive('products');
       const product = findProduct(n.productId);
       if(!product){ nav = [{view:'products'}]; render(); return; }
       appbar.innerHTML = `
         <div class="appbar-row">
+          <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
           <button class="back-btn" id="backBtn">${icon('back')}</button>
           <div class="appbar-title mono">${escapeHtml(product.code)}</div>
           <button class="icon-btn" id="stageExportBtn" title="Share">${icon('share')}</button>
         </div>
       `;
       searchWrap.classList.remove('open');
+      scroll.className = 'scroll';
       renderStages(scroll, product);
       fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openStageSheet(product.id, null);
       document.getElementById('backBtn').onclick = goBack;
       document.getElementById('stageExportBtn').onclick = ()=>exportProductStageImage(product);
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
     }
     else if(n.view==='entries'){
+      setSideActive('products');
       const product = findProduct(n.productId);
       const stage = product ? findStage(n.productId, n.stageId) : null;
       if(!product || !stage){ nav = [{view:'products'}]; render(); return; }
       appbar.innerHTML = `
         <div class="appbar-row">
+          <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
           <button class="back-btn" id="backBtn">${icon('back')}</button>
           <div class="appbar-title">${escapeHtml(stage.name)}</div>
         </div>
         <div class="appbar-sub">${escapeHtml(product.code)}</div>
       `;
       searchWrap.classList.remove('open');
+      scroll.className = 'scroll';
       renderEntries(scroll, product, stage);
       fab.style.display = canWrite ? 'flex' : 'none';
       fab.onclick = ()=>openEntrySheet(product.id, stage.id, null);
       document.getElementById('backBtn').onclick = goBack;
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
     }
   }
 
   function renderProducts(scroll){
     const term = searchTerm.trim().toLowerCase();
+    const tabs = '';
     const list = sortedProducts().filter(p=>p.code.toLowerCase().includes(term));
     if(state.products.length===0){
-      scroll.innerHTML = emptyState('crate','No products yet','Tap + to add your first product');
+      scroll.innerHTML = tabs + emptyState('crate','No products yet','Tap + to add your first product');
       return;
     }
     if(list.length===0){
-      scroll.innerHTML = emptyState('crate','No matches','Try a different search term');
+      scroll.innerHTML = tabs + emptyState('crate','No matches','Try a different search term');
       return;
     }
-    scroll.innerHTML = list.map((p,i)=>`
+    scroll.innerHTML = tabs + list.map((p,i)=>`
       <div class="row c${(i%6)+1}" data-id="${p.id}">
         <div class="row-icon">${icon('crate')}</div>
         <div class="row-body">
@@ -1893,6 +2563,14 @@
     render();
   });
 
+  document.querySelectorAll('[data-side-nav]').forEach(btn=>{
+    btn.addEventListener('click', ()=>navigateSidebar(btn.dataset.sideNav));
+  });
+  document.getElementById('dashboardModalClose')?.addEventListener('click', closeDashboardModal);
+  document.getElementById('dashboardModal')?.addEventListener('click', (e)=>{
+    if(e.target.id==='dashboardModal') closeDashboardModal();
+  });
+
   // ---------- Start data sync ----------
   subscribeState();
   setupSortable(document.getElementById('scroll'));
@@ -1928,3 +2606,42 @@
 </script>
 </body>
 </html>
+<style>
+
+  .consolidated-panel{margin-bottom:16px;}
+  .consolidated-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 26px;background:#fff;padding:0;border-radius:12px;overflow:auto;}
+  .consolidated-card{min-width:250px;background:#fff;border:1px solid #c8c8c8;color:#111;}
+  .consolidated-product{background:#3fd38a;color:#10251d;font-size:18px;font-weight:800;text-align:center;padding:6px 8px;border-bottom:1px solid #bdbdbd;}
+  .consolidated-rows{background:#fff;}
+  .consolidated-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;min-height:24px;border-bottom:1px solid #d2d2d2;font-size:14px;font-weight:700;line-height:1.2;}
+  .consolidated-row span{padding:4px 8px;border-right:1px solid #d2d2d2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .consolidated-row span:last-child{text-align:center;border-right:0;font-weight:500;}
+  .consolidated-total{background:#e9e9e9;font-weight:800;}
+  .consolidated-total span:last-child{font-weight:800;}
+  .detailed-report-panel{margin-top:16px;}
+  @media(max-width:1100px){.consolidated-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:700px){.consolidated-grid{grid-template-columns:1fr;}}
+
+  /* Excel Report is read-only in the web UI. */
+  #excelReportView [contenteditable="true"],
+  #excelReportView .edit-cell,
+  #excelReportView .cell-edit,
+  #excelReportView .save-report,
+  #excelReportView .save-changes,
+  #excelReportView .edit-report { pointer-events:none; }
+  #excelReportView table td { cursor:default !important; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const root = document.getElementById('excelReportView');
+  if(!root) return;
+  root.querySelectorAll('[contenteditable]').forEach(el=>{
+    el.removeAttribute('contenteditable');
+    el.classList.remove('edit-cell','cell-edit');
+  });
+  root.querySelectorAll('td,th').forEach(el=>{
+    el.oninput = null;
+    el.onkeydown = null;
+  });
+});
+</script>
