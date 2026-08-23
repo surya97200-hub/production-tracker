@@ -901,8 +901,16 @@
       if(!AUTH_DOC) return;
       const snap=await AUTH_DOC.get();
       if(snap.exists){
-        authUsers=snap.data().users || {};
+        const rawUsers=snap.data().users || {};
+        // Normalize all stored user IDs so login is case-insensitive and old users continue to work.
+        authUsers={};
         let needsSave=false;
+        Object.entries(rawUsers).forEach(([storedId,user])=>{
+          const normalizedId=String(storedId).trim().toLowerCase();
+          if(!normalizedId) return;
+          if(authUsers[normalizedId] && normalizedId!==storedId) needsSave=true;
+          authUsers[normalizedId]={...(user||{})};
+        });
         if(!authUsers[OWNER_ID]){ authUsers[OWNER_ID]=localOwner; needsSave=true; }
         else if(!authUsers[OWNER_ID].password){ authUsers[OWNER_ID].password=DEFAULT_OWNER_PASSWORD; needsSave=true; }
         Object.keys(authUsers).forEach(id=>{
@@ -933,7 +941,7 @@
 
   async function login(){
     const rawId=document.getElementById('loginId').value.trim();
-    const id=rawId.toLowerCase();
+    const id=rawId.trim().toLowerCase();
     const pw=document.getElementById('loginPassword').value;
     if(!id || !pw){ authMessage('Enter User ID and password'); return; }
 
@@ -1007,7 +1015,7 @@
   document.getElementById('createUserBtn').onclick=async()=>{
     if(!currentUser || currentUser.role!=='owner') return;
 
-    const id=document.getElementById('newUserId').value.trim();
+    const id=document.getElementById('newUserId').value.trim().toLowerCase();
     const pw=document.getElementById('newUserPassword').value;
     const accessSel=document.getElementById('newUserAccess');
     const access=(accessSel && accessSel.value==='read') ? 'read' : 'write';
