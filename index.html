@@ -328,6 +328,13 @@
   }
   .dashboard-total-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.75);}
   .dashboard-total-num{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:2px;}
+  .attendance-today-card .dashboard-total-label{font-weight:800;letter-spacing:.08em;}
+  .attendance-today-card .dashboard-total-num{font-size:22px;display:flex;align-items:center;gap:10px;white-space:nowrap;}
+  .attendance-today-card .today-total{color:#fff;}
+  .attendance-today-card .today-present{color:#42e8a1;}
+  .attendance-today-card .today-absent{color:#ff9aaa;}
+  .attendance-today-card .today-unmarked{color:#ffe49a;}
+  .attendance-today-card .today-sep{color:rgba(255,255,255,.72);font-weight:500;}
   .stage-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
   .stage-card{
     border:1px solid var(--rule);background:linear-gradient(145deg,#211A42,#181230);
@@ -717,10 +724,21 @@
   appId: "1:1065634177485:web:f642f1dc90b1efe004a484",
   measurementId: "G-SE5Q84YPJH"
 };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const stateDocRef = db.collection('productionTracker').doc('sharedState');
-  const attendanceDocRef = db.collection('attendance').doc('sharedAttendance');
+  // Firebase is optional for the login screen. If the CDN is blocked/offline,
+  // the owner login must still respond instead of stopping the whole script.
+  let db = null;
+  let stateDocRef = null;
+  let attendanceDocRef = null;
+  try {
+    if (window.firebase && firebase.initializeApp) {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      stateDocRef = db.collection('productionTracker').doc('sharedState');
+      attendanceDocRef = db.collection('attendance').doc('sharedAttendance');
+    }
+  } catch (e) {
+    console.warn('Firebase unavailable; running with local login fallback.', e);
+  }
 </script>
 
 
@@ -729,8 +747,8 @@
 <script>
 (function(){
   // ===== USER ID + PASSWORD AUTHENTICATION =====
-  const AUTH_DOC = db.collection('appAuth').doc('users');
-  const REQUESTS_DOC = db.collection('appAuth').doc('resetRequests');
+  const AUTH_DOC = db ? db.collection('appAuth').doc('users') : null;
+  const REQUESTS_DOC = db ? db.collection('appAuth').doc('resetRequests') : null;
   const OWNER_ID = 'owner';
   const DEFAULT_OWNER_PASSWORD = 'ChangeMe@2026';
   let currentUser = null;
@@ -743,6 +761,7 @@
 
   async function loadRequestsOnce(){
     try{
+      if(!REQUESTS_DOC) { resetRequests={}; return; }
       const snap = await REQUESTS_DOC.get();
       resetRequests = snap.exists ? (snap.data().requests || {}) : {};
     }catch(e){ console.error(e); resetRequests = {}; }
@@ -875,55 +894,29 @@
   }
 
   async function loadUsers(){
+    // Always keep a local owner fallback so the login screen never waits for Firebase.
+    const localOwner={ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, access:'write', createdAt:new Date().toISOString() };
+    authUsers={ [OWNER_ID]: localOwner };
     try{
+      if(!AUTH_DOC) return;
       const snap=await AUTH_DOC.get();
-    if(snap.exists){
-      authUsers=snap.data().users || {};
-      // Migration: older versions of this app stored a hashed password
-      // (field passwordHash) instead of plain "password". Any account still
-      // missing a "password" field is repaired here so logins keep working.
-      let needsSave=false;
-      if(!authUsers[OWNER_ID]){
-        authUsers[OWNER_ID]={ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, createdAt:new Date().toISOString() };
-        needsSave=true;
-      } else if(!authUsers[OWNER_ID].password){
-        authUsers[OWNER_ID].password=DEFAULT_OWNER_PASSWORD;
-        needsSave=true;
+      if(snap.exists){
+        authUsers=snap.data().users || {};
+        let needsSave=false;
+        if(!authUsers[OWNER_ID]){ authUsers[OWNER_ID]=localOwner; needsSave=true; }
+        else if(!authUsers[OWNER_ID].password){ authUsers[OWNER_ID].password=DEFAULT_OWNER_PASSWORD; needsSave=true; }
+        Object.keys(authUsers).forEach(id=>{
+          if(id===OWNER_ID) return;
+          if(!authUsers[id].password){ authUsers[id].password='ResetMe@123'; needsSave=true; }
+          if(authUsers[id].access!=='read' && authUsers[id].access!=='write'){ authUsers[id].access='write'; needsSave=true; }
+        });
+        if(needsSave){ try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Auth migration save skipped',e); } }
+      }else{
+        try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Initial auth save skipped',e); }
       }
-      Object.keys(authUsers).forEach(id=>{
-        if(id===OWNER_ID) return;
-        if(!authUsers[id].password){
-          authUsers[id].password='ResetMe@123';
-          needsSave=true;
-        }
-        if(authUsers[id].access!=='read' && authUsers[id].access!=='write'){
-          authUsers[id].access='write';
-          needsSave=true;
-        }
-      });
-      if(needsSave){ await AUTH_DOC.set({users:authUsers}); }
-      return;
-    }
-    authUsers={
-      [OWNER_ID]:{
-        password:DEFAULT_OWNER_PASSWORD,
-        role:'owner',
-        active:true,
-        createdAt:new Date().toISOString()
-      }
-    };
-      await AUTH_DOC.set({users:authUsers});
     }catch(e){
-      console.error('loadUsers / Firestore error:', e);
-      // Keep the login screen usable if Firestore is temporarily blocked or
-      // its rules have not been published yet. Shared users will load once
-      // the Firestore connection/rules are fixed.
-      if(!authUsers[OWNER_ID]){
-        authUsers={
-          [OWNER_ID]:{ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, createdAt:new Date().toISOString() }
-        };
-      }
-      authMessage('Firebase unavailable. Owner offline login is available.');
+      console.warn('Firebase auth load failed; using local owner fallback',e);
+      authUsers={ [OWNER_ID]: localOwner };
     }
   }
 
@@ -938,39 +931,39 @@
     document.getElementById('shell').style.display='flex';
   }
 
-  let usersLoaded = false;
-  let usersLoadError = null;
-
   async function login(){
     const rawId=document.getElementById('loginId').value.trim();
+    const id=rawId.toLowerCase();
     const pw=document.getElementById('loginPassword').value;
-    if(!rawId || !pw){ authMessage('Enter User ID and password'); return; }
+    if(!id || !pw){ authMessage('Enter User ID and password'); return; }
 
-    const matchedId=Object.keys(authUsers).find(k=>k.toLowerCase()===rawId.toLowerCase());
-    const id=matchedId || rawId.toLowerCase();
-
-    // Built-in owner login must not depend on Firestore being available.
-    if(id===OWNER_ID && pw===DEFAULT_OWNER_PASSWORD && !usersLoaded){
-      currentUser={id:OWNER_ID, role:'owner', access:'write'};
-      showApp(currentUser);
-      try{ startWipApp(currentUser); }catch(e){ console.error(e); }
-      return;
+    // Owner can always log in immediately, even while Firebase is loading/offline.
+    let u=authUsers[id];
+    if(!u && id===OWNER_ID && pw===DEFAULT_OWNER_PASSWORD){
+      u={password:DEFAULT_OWNER_PASSWORD,role:'owner',active:true,access:'write'};
+      authUsers[OWNER_ID]=u;
     }
-
-    const u=authUsers[id];
-    if(!u || u.active===false){
-      authMessage(usersLoadError ? 'Firebase connection failed. Owner login is available.' : 'Invalid User ID or password');
-      return;
-    }
-    if(String(pw)!==String(u.password || '')){ authMessage('Invalid User ID or password'); return; }
+    if(!u || u.active===false){ authMessage('Invalid User ID or password'); return; }
+    if(pw!==u.password){ authMessage('Invalid User ID or password'); return; }
 
     currentUser={id, role:u.role || 'user', access:u.access || 'write'};
     showApp(currentUser);
-    try{ startWipApp(currentUser); }
-    catch(e){ console.error('App start error:',e); authMessage('Login OK, but app could not start.'); }
+    authMessage('');
+    try{
+      startWipApp(currentUser);
+    }catch(e){
+      console.error(e);
+      // Login itself succeeded; keep the user informed instead of silently returning to login.
+      showApp(currentUser);
+      authMessage('Login successful, but app startup failed. Check Firebase/internet connection.');
+    }
   }
 
-  document.getElementById('loginBtn').onclick=login;
+  const loginBtn = document.getElementById('loginBtn');
+  if(loginBtn){
+    loginBtn.type='button';
+    loginBtn.onclick = (e)=>{ e.preventDefault(); login(); };
+  }
   document.getElementById('loginPassword').addEventListener('keydown',e=>{
     if(e.key==='Enter') login();
   });
@@ -1871,16 +1864,34 @@
       };
     });
 
-    buildExcelRowsFromState().forEach(r=>{
+    sortedProducts().forEach(p=>{
+      const colSums = {};
+      STAGE_COLUMNS.forEach(c=>{ colSums[c] = 0; });
+      colSums[OTHERS_KEY] = 0;
+      const othersBreakdown = [];
+      p.stages.forEach(s=>{
+        const key = resolveStageKey(s);
+        const qty = stageQty(s);
+        if(key===OTHERS_KEY){
+          colSums[OTHERS_KEY] += qty;
+          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
+        } else if(Object.prototype.hasOwnProperty.call(colSums, key)){
+          colSums[key] += qty;
+        } else {
+          colSums[OTHERS_KEY] += qty;
+          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
+        }
+      });
+      const total = TOTAL_COLUMNS.reduce((sum,c)=> sum + (colSums[c]||0), 0);
       const rowValues = [
-        r.product,
-        ...STAGE_COLUMNS.map(c => r.sums[c] ? r.sums[c] : null),
-        r.sums[OTHERS_KEY] ? r.sums[OTHERS_KEY] : null,
-        r.total ? r.total : null,
-        r.remarks
+        p.code,
+        ...STAGE_COLUMNS.map(c => colSums[c] ? colSums[c] : null),
+        colSums[OTHERS_KEY] ? colSums[OTHERS_KEY] : null,
+        total ? total : null,
+        othersBreakdown.join('\n')
       ];
       const row = ws.addRow(rowValues);
-      const lineCount = r.remarks ? r.remarks.split('\\n').length : 1;
+      const lineCount = othersBreakdown.length || 1;
       row.height = Math.max(18, lineCount * 15);
       row.eachCell((cell, colNumber)=>{
         const isProductCol = colNumber===1;
@@ -1894,8 +1905,7 @@
           top:{style:'thin', color:{argb:'FFDDDDDD'}}, left:{style:'thin', color:{argb:'FFDDDDDD'}},
           bottom:{style:'thin', color:{argb:'FFDDDDDD'}}, right:{style:'thin', color:{argb:'FFDDDDDD'}}
         };
-        if(isProductCol) cell.font = { bold: !r.isSub, italic: r.isSub };
-        if(r.isSub) cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFF5F8FA'} };
+        if(isProductCol) cell.font = { bold:true };
       });
     });
 
@@ -2274,28 +2284,19 @@
   }
 
 
-  // Build Excel report rows for both main products and sub-products.
   function buildExcelRowsFromState(){
-    const rows=[];
-    sortedProducts().forEach(p=>{
-      const makeRow=(code, stages, isSub=false)=>{
-        const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
-        const remarks=[];
-        (stages||[]).forEach(s=>{
-          const key=resolveStageKey(s), qty=stageQty(s);
-          if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
-          else sums[OTHERS_KEY]+=qty;
-          if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
-        });
-        const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
-        return {product:code,sums,total,remarks:remarks.join('\n'),isSub};
-      };
-      rows.push(makeRow(p.code,p.stages,false));
-      ensureSubProducts(p).forEach(sp=>{
-        rows.push(makeRow('  ↳ '+sp.code,sp.stages,true));
+    return sortedProducts().map(p=>{
+      const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
+      const remarks=[];
+      (p.stages||[]).forEach(s=>{
+        const key=resolveStageKey(s), qty=stageQty(s);
+        if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
+        else sums[OTHERS_KEY]+=qty;
+        if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
       });
+      const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
+      return {product:p.code,sums,total,remarks:remarks.join('\\n')};
     });
-    return rows;
   }
 
   function buildConsolidatedReportHTML(){
@@ -2334,7 +2335,7 @@
         <div>
           <div class="dashboard-kicker">REPORTS</div>
           <div class="dashboard-title">Excel Report</div>
-          <div class="dashboard-subtitle">Read-only detailed report. Main product and sub-product quantities are included. Use EXPORT XLSX to download.</div>
+          <div class="dashboard-subtitle">Read-only consolidated report. Use EXPORT XLSX to download the detailed report.</div>
         </div>
         <div class="dashboard-total-card">
           <div class="dashboard-total-label">Rows</div>
@@ -2372,7 +2373,7 @@
                 </tbody>
               </table>
             </div>
-            <div class="excel-note">Read-only report. Main product and sub-product stage quantities are included. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report.</div>
+            <div class="excel-note">Read-only report. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report and are not editable in the web view.</div>
           </div>
         </div>
 
@@ -2593,11 +2594,33 @@
     const monthWorking=emps.reduce((sum,e)=>sum+attendanceEmpSummary(e.id,ym).working,0);
     const monthPresent=emps.reduce((sum,e)=>sum+attendanceEmpSummary(e.id,ym).present,0);
     const monthAbsent=emps.reduce((sum,e)=>sum+attendanceEmpSummary(e.id,ym).absent,0);
+
+    // Top-right card: show TODAY's attendance, independent of the selected backup month.
+    const todayISODate=todayISO();
+    const todayYm=todayISODate.slice(0,7);
+    const todayDay=Number(todayISODate.slice(8,10));
+    const todayTotal=emps.length;
+    let todayPresent=0, todayAbsent=0, todayNotMarked=0;
+    if(todayYm===ym && todayDay>=1 && todayDay<=days){
+      emps.forEach(e=>{
+        const st=attendanceStatus(todayYm,e.id,todayDay);
+        if(st==='P') todayPresent++;
+        else if(st==='A') todayAbsent++;
+        else if(st==='-') todayNotMarked++;
+      });
+    } else if(todayDay>=1 && todayDay<=attendanceDaysInMonth(todayYm)){
+      emps.forEach(e=>{
+        const st=attendanceStatus(todayYm,e.id,todayDay);
+        if(st==='P') todayPresent++;
+        else if(st==='A') todayAbsent++;
+        else if(st==='-') todayNotMarked++;
+      });
+    }
     const monthOptions=attendanceMonthOptions().map(m=>`<option value="${m}" ${m===ym?'selected':''}>${attendanceMonthLabel(m)}</option>`).join('');
     let html=`
       <div class="dashboard-head">
         <div><div class="dashboard-kicker">DEPARTMENT / ATTENDANCE</div><div class="dashboard-title">Dept Attendance</div><div class="dashboard-subtitle">Month-wise backup • Sunday = S • Holiday = H • Unmarked = -</div></div>
-        <div class="dashboard-total-card"><div class="dashboard-total-label">${attendanceMonthLabel(ym)}</div><div class="dashboard-total-num">W ${monthWorking} / P ${monthPresent} / A ${monthAbsent}</div></div>
+        <div class="dashboard-total-card attendance-today-card"><div class="dashboard-total-label">TODAY</div><div class="dashboard-total-num"><span class="today-total">T-${todayTotal}</span><span class="today-sep">|</span><span class="today-present">P:${todayPresent}</span><span class="today-sep">|</span><span class="today-absent">A:${todayAbsent}</span><span class="today-sep">|</span><span class="today-unmarked">N:${todayNotMarked}</span></div></div>
       </div>
       <div class="attendance-toolbar">
         <label class="attendance-month-filter">Month <select id="attendanceMonth">${monthOptions}</select></label>
@@ -2606,7 +2629,8 @@
       <div class="attendance-legend"><span class="att-p">P Present</span><span class="att-a">A Absent</span><span class="att-h">H Holiday</span><span class="att-s">S Sunday</span><span class="att-empty">- Not Marked</span></div>
       <div class="attendance-wrap"><table class="attendance-table"><thead><tr><th>Emp No</th><th>Employee Name</th>${Array.from({length:days},(_,i)=>`<th>${i+1}<small>${new Date(Number(ym.slice(0,4)),Number(ym.slice(5))-1,i+1).toLocaleDateString('en-US',{weekday:'short'}).slice(0,1)}</small></th>`).join('')}<th>Working</th><th>Present</th><th>Absent</th>${owner?'<th>Edit / Delete</th>':''}</tr></thead><tbody>
       ${emps.length?emps.map(emp=>{const sum=attendanceEmpSummary(emp.id,ym); return `<tr><td class="mono-cell"><span class="att-order">${Number(emp.order)||0}</span> ${escapeHtml(emp.empNo)}</td><td class="name-cell">${escapeHtml(emp.name)}</td>${Array.from({length:days},(_,i)=>{const d=i+1,iso=attendanceDate(ym,d),st=attendanceStatus(ym,emp.id,d); const cls=st==='P'?'att-p':st==='A'?'att-a':st==='S'?'att-s':st==='H'?'att-h':'att-empty'; return `<td class="${cls}" data-att="${emp.id}|${d}">${st}</td>`}).join('')}<td>${sum.working}</td><td>${sum.present}</td><td>${sum.absent}</td>${owner?`<td><button class="edit-btn" data-att-edit="${emp.id}" title="Edit">${icon('pencil')}</button><button class="att-delete" data-att-del="${emp.id}" title="Delete">${icon('trash')}</button></td>`:''}</tr>`}).join(''):`<tr><td colspan="${days+(owner?6:5)}" class="att-empty-row">No employees. Owner can add employees.</td></tr>`}
-      </tbody></table></div>`;
+      </tbody></table></div>
+    `;
     scroll.className='dashboard-scroll'; scroll.innerHTML=html;
     document.getElementById('attendanceMonth')?.addEventListener('change',e=>{attendanceMonth=e.target.value||todayISO().slice(0,7);render();});
     document.getElementById('addEmployeeBtn')?.addEventListener('click',addEmployee);
@@ -2966,7 +2990,7 @@
 
   // Owner gets a live notification badge when a new password request comes in,
   // and the users list stays in sync with Firestore in real time.
-  if(user.role==='owner'){
+  if(user.role==='owner' && AUTH_DOC){
     AUTH_DOC.onSnapshot((snap)=>{
       authUsers = snap.exists ? (snap.data().users || {}) : authUsers;
       renderUsersList();
@@ -2980,20 +3004,10 @@
   }
 
   // ---------- Init ----------
-  // IMPORTANT: show login immediately. Firestore must not block the login UI.
+  // Show login immediately. Firebase loading must never block the login button.
   showLogin();
-  (async function(){
-    try{
-      await loadUsers();
-      usersLoaded = true;
-      usersLoadError = null;
-      await loadRequestsOnce();
-    }catch(e){
-      console.error('Firebase auth initialization error:',e);
-      usersLoadError = e;
-      authMessage('Firebase unavailable. You can still use owner login.');
-    }
-  })();
+  loadUsers().catch(e=>console.warn('loadUsers failed',e));
+  loadRequestsOnce().catch(e=>console.warn('loadRequests failed',e));
 })();
 </script>
 </body>
@@ -3021,7 +3035,7 @@
   #excelReportView .save-report,
   #excelReportView .save-changes,
   #excelReportView .edit-report { pointer-events:none; }
-  #excelReportView table td { cursor:default !important; }\n  #excelReportView .subproduct-report-row td { background:#F5F8FA; }\n  #excelReportView .subproduct-report-row td:first-child { padding-left:18px; font-style:italic; }
+  #excelReportView table td { cursor:default !important; }
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
