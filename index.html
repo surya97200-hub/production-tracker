@@ -1,0 +1,3083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ECON WIP TrackeR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#F5F4FF;
+    --paper:#100C22;
+    --paper2:#170F30;
+    --card:#211A42;
+    --input:#1B1438;
+    --steel:#FFFFFF;
+    --steel-press:#ECECFC;
+    --dim:#A79FD6;
+    --dark-text:#171233;
+    --blue:#5B8CFF;
+    --blue-press:#3E6FE0;
+    --amber:#FFB23E;
+    --amber-tint:#FFEBD0;
+    --rule:#2E2358;
+    --danger:#FF5D77;
+    --c1:#7C5CFF;
+    --c2:#FF5DA2;
+    --c3:#22D3C9;
+    --c4:#FF9F43;
+    --c5:#3DD68C;
+    --c6:#5B8CFF;
+    --sans:'IBM Plex Sans', -apple-system, sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; margin:0; overflow:hidden; }
+  body{
+    font-family:var(--sans);
+    background:#000;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    overscroll-behavior:none;
+  }
+  #shell{
+    width:100%;
+    max-width:480px;
+    height:100vh;
+    height:100dvh;
+    background:radial-gradient(120% 55% at 15% 0%, #2A1E5C 0%, var(--paper) 45%), var(--paper);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 0 60px rgba(0,0,0,0.6);
+  }
+  /* Desktop / wide viewports: drop the phone-card frame and use the full window */
+  @media (min-width:900px){
+    body{ align-items:stretch; }
+    #shell{
+      max-width:none;
+      width:100vw;
+      height:100vh;
+      box-shadow:none;
+    }
+    .scroll{
+      max-width:900px;
+      margin:0 auto;
+      width:100%;
+    }
+    .appbar-row, .search-wrap.open .search{
+      max-width:900px;
+      margin:0 auto;
+    }
+  }
+
+  /* App bar */
+  .appbar{
+    flex:0 0 auto;
+    padding:10px 12px 8px;
+    background:transparent;
+    border-bottom:1px solid var(--rule);
+    position:relative;
+    z-index:5;
+  }
+  .appbar-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    min-height:28px;
+  }
+  .back-btn{
+    width:30px; height:30px; flex:0 0 30px;
+    border:none; background:var(--card); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:9px; color:var(--ink);
+  }
+  .back-btn:active{ background:#2E2358; }
+  .appbar-title{
+    font-size:16px; font-weight:700; letter-spacing:-0.01em;
+    flex:1; text-align:center; margin-right:30px;
+    background:linear-gradient(90deg, var(--c3), var(--c2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .appbar-title.mono{ font-family:var(--mono); font-size:14px; letter-spacing:0; }
+  .appbar-title.root{ margin-right:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; font-size:15px; }
+  .appbar-sub{
+    text-align:center; font-size:11px; color:var(--dim); margin-top:2px;
+    font-family:var(--mono); text-transform:uppercase; letter-spacing:0.06em;
+  }
+  .sync-dot{
+    display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px;
+    background:#5A5D68; vertical-align:middle;
+  }
+  .sync-dot.on{ background:#3DD68C; box-shadow:0 0 6px #3DD68C; }
+  .sync-dot.err{ background:var(--danger); }
+
+  /* Icon-only header buttons (Export / Users / Change PW / Logout) */
+  .icon-btn{
+    flex:0 0 auto; width:30px; height:30px; border:none; border-radius:9px;
+    background:var(--card); color:var(--ink); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; position:relative;
+  }
+  .icon-btn:active{ background:#2E2358; }
+  .icon-btn .req-badge{ position:absolute; top:-3px; right:-3px; }
+  .icon-btn.search-btn{ color:var(--c3); }
+
+  .search-wrap{ padding:0 12px; max-height:0; overflow:hidden; transition:max-height .2s ease, padding .2s ease; }
+  .search-wrap.open{ padding:8px 12px 4px; max-height:54px; }
+  .search{
+    display:flex; align-items:center; gap:8px;
+    background:var(--input); border:1px solid var(--rule); border-radius:20px;
+    padding:7px 12px; color:var(--c3);
+  }
+  .search input{
+    border:none; outline:none; background:transparent; font-family:var(--sans);
+    font-size:13px; color:var(--ink); width:100%;
+  }
+  .search input::placeholder{ color:#6C6699; }
+
+  /* Scroll area */
+  .scroll{
+    flex:1; overflow-y:auto; padding:8px 12px 84px;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .summary-card{
+    background:linear-gradient(120deg, var(--c1), var(--c2)); color:#fff; border-radius:14px;
+    padding:14px 16px; margin-bottom:10px; display:flex; align-items:baseline; justify-content:space-between;
+    box-shadow:0 8px 20px rgba(124,92,255,0.25);
+  }
+  .summary-num{ font-family:var(--mono); font-size:28px; font-weight:600; letter-spacing:-0.02em; }
+  .summary-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.75); }
+
+  .row{
+    background:var(--steel);
+    border-radius:12px;
+    padding:9px 9px;
+    display:flex; align-items:center; gap:5px;
+    margin-bottom:6px;
+    cursor:pointer;
+    transition:background .12s ease, transform .12s ease;
+    position:relative;
+    border-left:3px solid transparent;
+  }
+  .row:active{ background:var(--steel-press); transform:scale(0.99); }
+  .row.dragging{ box-shadow:0 14px 28px rgba(0,0,0,0.4); background:#fff; }
+  .row-icon{
+    width:28px; height:28px; flex:0 0 28px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; background:linear-gradient(135deg, var(--c1), var(--c2));
+  }
+  .row-body{ flex:1; min-width:0; }
+  .row-title{ font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:-0.01em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--dark-text); }
+  .row-sub{ font-size:11px; color:#8A85A8; margin-top:1px; }
+  .pill{
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    background:var(--amber-tint); color:#8A5A16; border:1px solid #E9CE9B;
+    padding:3px 8px; border-radius:20px; white-space:nowrap; flex:0 0 auto;
+  }
+  .chev{ color:#C4C0E0; flex:0 0 auto; }
+  .drag-handle{
+    width:20px; flex:0 0 20px; display:flex; align-items:center; justify-content:center;
+    color:#C4C0E0; cursor:grab; touch-action:none; margin-left:-4px;
+  }
+  .drag-handle:active{ cursor:grabbing; color:var(--dark-text); }
+  .drag-placeholder{
+    border:2px dashed rgba(255,255,255,0.25); border-radius:12px; margin-bottom:10px; background:transparent;
+  }
+  .edit-btn, .del-btn{
+    width:26px; height:26px; flex:0 0 26px; border:none; background:transparent;
+    color:#B9B4DA; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .edit-btn:active{ background:#00000010; color:#B8860B; }
+  .del-btn:active{ background:#00000010; color:var(--danger); }
+
+  /* Colorful row accents, cycled */
+  .row.c1 .row-icon{ background:linear-gradient(135deg, var(--c1), #A78BFA); } .row.c1{ border-left-color:var(--c1); }
+  .row.c2 .row-icon{ background:linear-gradient(135deg, var(--c2), #FF8FC4); } .row.c2{ border-left-color:var(--c2); }
+  .row.c3 .row-icon{ background:linear-gradient(135deg, var(--c3), #6EE9E1); } .row.c3{ border-left-color:var(--c3); }
+  .row.c4 .row-icon{ background:linear-gradient(135deg, var(--c4), #FFC178); } .row.c4{ border-left-color:var(--c4); }
+  .row.c5 .row-icon{ background:linear-gradient(135deg, var(--c5), #7EE8B2); } .row.c5{ border-left-color:var(--c5); }
+  .row.c6 .row-icon{ background:linear-gradient(135deg, var(--c6), #9BB8FF); } .row.c6{ border-left-color:var(--c6); }
+
+  .row.row-total{
+    background:linear-gradient(120deg, #1B1438, #2A1E5C);
+    border-left:3px solid var(--amber);
+    cursor:default;
+  }
+  .row.row-total:active{ transform:none; background:linear-gradient(120deg, #1B1438, #2A1E5C); }
+  .row.row-total .row-icon{ background:linear-gradient(135deg, var(--amber), #FFD98A); color:#171233; }
+  .row.row-total .row-title{ color:#fff; font-size:12.5px; letter-spacing:0.03em; }
+  .row.row-total .row-sub{ color:#B9B4DA; }
+  .row.row-total .pill{ background:var(--amber); color:#171233; border-color:var(--amber); font-size:12px; }
+
+  .entry-card{
+    background:var(--steel); border-radius:12px; padding:9px; margin-bottom:7px;
+    display:flex; align-items:flex-start; gap:2px;
+  }
+  .entry-date{ font-family:var(--mono); font-size:11px; color:#8A85A8; letter-spacing:0.02em; }
+  .entry-remark{ font-size:14px; margin-top:3px; line-height:1.32; word-break:break-word; color:var(--dark-text); }
+
+  .empty{
+    text-align:center; padding:44px 20px; color:var(--dim);
+  }
+  .empty-icon{ font-size:32px; margin-bottom:8px; opacity:.7; }
+  .empty-title{ font-weight:600; color:var(--ink); font-size:14px; margin-bottom:4px; }
+  .empty-sub{ font-size:12px; }
+
+  /* FAB */
+  .fab{
+    position:absolute; right:14px; bottom:78px; width:50px; height:50px; border-radius:16px;
+    background:linear-gradient(135deg, var(--c1), var(--c2)); color:#fff; border:none; box-shadow:0 8px 20px rgba(124,92,255,0.4);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:20;
+  }
+  .fab:active{ transform:scale(0.94); }
+
+  /* Sheet */
+  .overlay{
+    position:absolute; inset:0; background:rgba(0,0,0,0.5); z-index:30;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); color:var(--ink);
+    border-radius:22px 22px 0 0;
+    padding:10px 18px calc(18px + env(safe-area-inset-bottom, 0px)); z-index:31;
+    transform:translateY(105%); transition:transform .25s cubic-bezier(.2,.9,.3,1);
+    box-shadow:0 -10px 30px rgba(0,0,0,0.4);
+    max-height:88vh; max-height:88dvh;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column;
+  }
+  .sheet.open{ transform:translateY(0); }
+  .sheet > *{ flex-shrink:0; }
+  .sheet-handle{ width:38px; height:4px; background:#34363F; border-radius:3px; margin:6px auto 14px; }
+  .sheet-title{ font-size:16px; font-weight:700; margin-bottom:12px; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; font-weight:600; color:var(--dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+  .field input, .field textarea, .field select{
+    width:100%; border:1px solid var(--rule); border-radius:11px; padding:11px 12px;
+    font-family:var(--sans); font-size:15px; background:var(--input); color:var(--ink); outline:none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--c3); }
+  .field input.mono{ font-family:var(--mono); }
+  .field textarea{ resize:none; min-height:60px; font-family:var(--sans); }
+  .field select{ -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239A9DA8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center; background-size:16px; padding-right:36px;
+  }
+  .sheet-actions{ display:flex; gap:6px; margin-top:4px; }
+  .btn{
+    flex:1; border:none; border-radius:12px; padding:12px; font-family:var(--sans);
+    font-size:15px; font-weight:600; cursor:pointer;
+  }
+  .btn-primary{ background:linear-gradient(120deg, var(--c1), var(--c2)); color:#fff; }
+  .btn-primary:active{ opacity:0.85; }
+  .btn-ghost{ background:#262A4A; color:var(--ink); }
+  .btn-ghost:active{ background:#31335A; }
+
+  .toast{
+    position:absolute; left:50%; bottom:100px; transform:translateX(-50%) translateY(10px);
+    background:var(--card); color:var(--ink); padding:10px 18px; border-radius:30px; font-size:13px;
+    opacity:0; pointer-events:none; transition:all .25s ease; z-index:50; white-space:nowrap;
+    border:1px solid var(--rule);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  ::-webkit-scrollbar{ display:none; }
+</style>
+
+<style id="dashboard-enhancement-css">
+  /* ===== Dashboard / Sidebar enhancement ===== */
+  .app-layout{display:flex;flex:1;min-height:0;overflow:hidden;}
+  .sidebar{
+    width:220px;flex:0 0 220px;background:rgba(16,12,34,.94);
+    border-right:1px solid var(--rule);padding:14px 10px;display:flex;
+    flex-direction:column;gap:7px;overflow-y:auto;
+  }
+  .sidebar-brand{
+    padding:8px 10px 14px;font-size:12px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+  }
+  .side-nav-btn{
+    width:100%;border:1px solid transparent;background:transparent;color:var(--dim);
+    border-radius:11px;padding:11px 12px;display:flex;align-items:center;gap:10px;
+    font-family:var(--sans);font-size:13px;font-weight:600;text-align:left;cursor:pointer;
+    transition:.15s ease;
+  }
+  .side-nav-btn:hover{background:#1B1438;color:var(--ink);}
+  .side-nav-btn.active{
+    background:linear-gradient(100deg,rgba(124,92,255,.28),rgba(255,93,162,.16));
+    border-color:rgba(124,92,255,.45);color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.18);
+  }
+  .side-nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex:0 0 18px;}
+  .sidebar-spacer{flex:1;}
+  .dashboard-main{min-width:0;flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .dashboard-scroll{flex:1;overflow-y:auto;padding:18px 22px 30px;-webkit-overflow-scrolling:touch;}
+  .dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;}
+  .dashboard-kicker{font-size:11px;color:var(--c3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+  .dashboard-title{font-size:25px;font-weight:700;letter-spacing:-.03em;margin-top:3px;}
+  .dashboard-subtitle{font-size:12px;color:var(--dim);margin-top:4px;}
+  .dashboard-total-card{
+    min-width:145px;background:linear-gradient(120deg,var(--c1),var(--c2));
+    border-radius:15px;padding:12px 15px;box-shadow:0 8px 22px rgba(124,92,255,.22);
+  }
+  .dashboard-total-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.75);}
+  .dashboard-total-num{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:2px;}
+  .attendance-today-card .dashboard-total-label{font-weight:800;letter-spacing:.08em;}
+  .attendance-today-card .dashboard-total-num{font-size:22px;display:flex;align-items:center;gap:10px;white-space:nowrap;}
+  .attendance-today-card .today-total{color:#fff;}
+  .attendance-today-card .today-present{color:#42e8a1;}
+  .attendance-today-card .today-absent{color:#ff9aaa;}
+  .attendance-today-card .today-unmarked{color:#ffe49a;}
+  .attendance-today-card .today-sep{color:rgba(255,255,255,.72);font-weight:500;}
+  .stage-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .stage-card{
+    border:1px solid var(--rule);background:linear-gradient(145deg,#211A42,#181230);
+    border-radius:13px;padding:11px 12px;cursor:pointer;min-width:0;
+    transition:transform .12s ease,border-color .12s ease,background .12s ease;
+  }
+  .stage-card:hover{transform:translateY(-1px);border-color:#5947A0;background:#251D4A;}
+  .stage-card:active{transform:scale(.99);}
+  .stage-card-name{font-size:10px;color:var(--dim);font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stage-card-qty{font-family:var(--mono);font-size:20px;font-weight:700;margin-top:6px;color:#fff;}
+  .stage-card-unit{font-size:10px;color:var(--dim);margin-left:2px;}
+  .chart-panel{
+    background:rgba(23,15,48,.9);border:1px solid var(--rule);border-radius:16px;padding:15px 16px 17px;
+  }
+  .chart-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .chart-help{font-size:11px;color:var(--dim);margin-bottom:15px;}
+  .stage-bars{display:flex;flex-direction:column;gap:9px;}
+  .stage-bar-row{display:grid;grid-template-columns:145px minmax(0,1fr) 65px;align-items:center;gap:10px;cursor:pointer;}
+  .stage-bar-label{font-size:11px;color:#EDEAFF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stage-bar-track{height:22px;background:#120D28;border:1px solid #2A2050;border-radius:7px;overflow:hidden;}
+  .stage-bar-fill{
+    height:100%;min-width:0;border-radius:6px;
+    background:linear-gradient(90deg,var(--c1),var(--c2));
+    transition:width .35s ease;
+  }
+  .stage-bar-value{font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;color:#fff;white-space:nowrap;}
+  .dashboard-empty{padding:55px 20px;text-align:center;color:var(--dim);}
+  .dashboard-empty strong{display:block;color:#fff;margin-bottom:5px;}
+  .dashboard-modal{
+    position:absolute;inset:0;background:rgba(5,3,15,.72);z-index:80;display:none;
+    align-items:center;justify-content:center;padding:18px;
+  }
+  .dashboard-modal.open{display:flex;}
+  .dashboard-modal-card{
+    width:min(720px,100%);max-height:min(82vh,720px);overflow:hidden;
+    background:#17102F;border:1px solid #3B2C70;border-radius:18px;
+    box-shadow:0 25px 70px rgba(0,0,0,.55);display:flex;flex-direction:column;
+  }
+  .dashboard-modal-head{padding:15px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:10px;}
+  .dashboard-modal-title{flex:1;font-size:16px;font-weight:700;}
+  .dashboard-modal-total{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--c3);}
+  .dashboard-modal-close{width:31px;height:31px;border:0;border-radius:9px;background:#241B48;color:#fff;cursor:pointer;font-size:18px;}
+  .dashboard-modal-body{overflow:auto;padding:12px 14px 16px;}
+  .drill-row{
+    display:flex;align-items:center;gap:10px;background:#211A42;border:1px solid #2D2354;
+    border-radius:11px;padding:10px 11px;margin-bottom:7px;cursor:pointer;
+  }
+  .drill-row:hover{border-color:#5947A0;background:#261E4D;}
+  .drill-product{font-family:var(--mono);font-size:12px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .drill-qty{font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;white-space:nowrap;}
+  .drill-arrow{color:#8E85C0;display:flex;}
+  .drill-total{display:flex;justify-content:space-between;padding:12px 11px;margin-top:4px;border-radius:11px;background:#2A2050;color:#fff;font-weight:700;}
+  @media (max-width:1100px){
+    .stage-cards{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media (max-width:899px){
+    #shell{max-width:none;}
+    .app-layout{display:block;overflow:hidden;}
+    .sidebar{
+      position:absolute;left:0;top:0;bottom:0;width:225px;z-index:60;
+      transform:translateX(-105%);transition:transform .22s ease;
+      box-shadow:16px 0 40px rgba(0,0,0,.45);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .dashboard-main{height:100%;}
+    .dashboard-scroll{padding:13px 12px 84px;}
+    .dashboard-head{align-items:flex-start;flex-direction:column;}
+    .dashboard-total-card{width:100%;min-width:0;}
+    .stage-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .stage-bar-row{grid-template-columns:105px minmax(0,1fr) 56px;gap:7px;}
+    .stage-bar-label{font-size:10px;}
+  }
+  @media (min-width:900px){
+    .app-layout > .dashboard-main > .appbar{border-bottom:1px solid var(--rule);}
+    .app-layout > .dashboard-main > .scroll{max-width:none;}
+  }
+  .side-toggle{
+    display:none;width:30px;height:30px;border:0;border-radius:9px;background:var(--card);
+    color:var(--ink);cursor:pointer;align-items:center;justify-content:center;flex:0 0 30px;
+  }
+  @media (max-width:899px){.side-toggle{display:flex;}}
+
+  .wip-tabs{display:flex;gap:7px;margin-bottom:14px;padding:4px;background:#17102F;border:1px solid var(--rule);border-radius:12px;}
+  .wip-tab{flex:1;border:0;background:transparent;color:var(--dim);border-radius:9px;padding:9px 11px;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;}
+  .wip-tab.active{background:linear-gradient(100deg,rgba(124,92,255,.3),rgba(255,93,162,.18));color:#fff;border:1px solid rgba(124,92,255,.45);}
+  .excel-panel{background:#17102F;border:1px solid var(--rule);border-radius:15px;padding:12px;overflow:hidden;}
+  .excel-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .excel-toolbar-title{font-size:14px;font-weight:700;flex:1;min-width:160px;}
+  .excel-toolbar-sub{font-size:10px;color:var(--dim);width:100%;}
+  .excel-export-btn{border:0;border-radius:10px;padding:9px 13px;background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;font-weight:700;cursor:pointer;}
+  .excel-wrap{overflow:auto;border:1px solid #34275F;border-radius:10px;max-height:62vh;background:#fff;}
+  .excel-table{border-collapse:collapse;width:max-content;min-width:100%;font-family:Arial,sans-serif;font-size:11px;color:#171233;background:#fff;}
+  .excel-table th,.excel-table td{border:1px solid #D5D9DD;padding:6px 8px;min-width:82px;height:28px;white-space:nowrap;}
+  .excel-table th{position:sticky;top:0;z-index:2;background:#BEDCEA;font-weight:700;text-align:center;}
+  .excel-table th:first-child,.excel-table td:first-child{position:sticky;left:0;z-index:3;background:#EAF4F8;min-width:180px;text-align:left;}
+  .excel-table td{background:#fff;text-align:center;}
+  .excel-table td[contenteditable="true"]{outline:none;cursor:text;}
+  .excel-table td[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px #5B8CFF;background:#F7FBFF;}
+  .excel-table td.remarks-cell{text-align:left;min-width:220px;white-space:pre-wrap;}
+  .excel-note{font-size:10px;color:var(--dim);margin-top:8px;}
+  .report-accordion{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .report-accordion-btn{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;text-align:left;border:1px solid var(--rule);border-radius:12px;
+    background:#17102F;color:#fff;padding:13px 14px;cursor:pointer;
+  }
+  .report-accordion-btn span:first-child{display:flex;flex-direction:column;gap:3px;}
+  .report-accordion-btn strong{font-size:13px;}
+  .report-accordion-btn small{font-size:10px;color:var(--dim);font-weight:500;}
+  .report-chevron{font-size:18px;line-height:1;transition:transform .15s ease;}
+  .report-accordion-btn.open .report-chevron{transform:rotate(180deg);}
+  .report-accordion-panel{display:none;}
+  .report-accordion-panel.open{display:block;}
+
+  .category-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  .category-card{border:1px solid var(--rule);background:linear-gradient(145deg,#211A42,#181230);border-radius:14px;padding:13px;cursor:pointer;}
+  .category-card:hover{border-color:#5947A0;transform:translateY(-1px);}
+  .category-card-name{font-size:10px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+  .category-card-pct{font-family:var(--mono);font-size:27px;font-weight:700;color:#fff;margin-top:4px;}
+  .category-card-qty{font-size:11px;color:var(--dim);margin-top:3px;}
+  .category-card.done{border-left:3px solid var(--c5);}
+  .category-card.process{border-left:3px solid var(--c6);}
+  .category-card.fail{border-left:3px solid var(--danger);}
+  .category-card.other{border-left:3px solid var(--amber);}
+  .category-bars{display:flex;flex-direction:column;gap:10px;}
+  .category-bar-row{display:grid;grid-template-columns:145px minmax(0,1fr) 62px;align-items:center;gap:10px;}
+  .category-bar-label{font-size:11px;font-weight:700;color:#EDEAFF;}
+  .category-bar-track{height:24px;background:#120D28;border:1px solid #2A2050;border-radius:7px;overflow:hidden;}
+  .category-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width .35s ease;}
+  .category-bar-value{font-family:var(--mono);font-size:11px;font-weight:700;text-align:right;color:#fff;}
+  .dashboard-section-gap{margin-top:16px;}
+  .stage-summary-panel{margin-top:16px;}
+  .stage-summary-panel .chart-help{margin-bottom:12px;}
+  .stage-summary-panel .stage-bars{gap:8px;}
+  .stage-summary-panel .stage-bar-row{
+    display:grid;
+    grid-template-columns:180px minmax(0,1fr) 120px;
+    align-items:center;
+    column-gap:16px;
+    width:100%;
+    box-sizing:border-box;
+    cursor:pointer;
+  }
+  .stage-summary-panel .stage-bar-track{
+    height:20px;
+    width:100%;
+    min-width:0;
+  }
+  .stage-summary-panel .stage-bar-label{
+    font-size:11px;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .stage-summary-panel .stage-bar-value{
+    font-size:11px;
+    width:120px;
+    min-width:120px;
+    display:grid;
+    grid-template-columns:62px 42px;
+    justify-content:end;
+    column-gap:14px;
+    align-items:center;
+    text-align:right;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .stage-summary-panel .stage-bar-percent{
+    display:block;
+    min-width:42px;
+    margin-left:0;
+    opacity:.8;
+    font-size:10px;
+    font-weight:600;
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .stage-summary-panel .stage-bar-percent{margin-left:5px;opacity:.75;font-size:10px;font-weight:600;}
+
+  @media (max-width:899px){
+    .stage-summary-panel .stage-bar-row{
+      grid-template-columns:105px minmax(0,1fr) 108px;
+      column-gap:8px;
+    }
+    .stage-summary-panel .stage-bar-value{
+      width:108px;
+      min-width:108px;
+      grid-template-columns:55px 38px;
+      column-gap:10px;
+    }
+  }
+
+  @media (max-width:899px){
+    .category-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .category-bar-row{grid-template-columns:100px minmax(0,1fr) 52px;gap:7px;}
+  }
+</style>
+
+
+<style id="attendance-css">
+.attendance-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.attendance-toolbar label{font-size:11px;color:var(--dim);font-weight:700;display:flex;align-items:center;gap:7px}.attendance-toolbar input,.attendance-toolbar select{background:#17102F;color:#fff;border:1px solid var(--rule);border-radius:10px;padding:9px 10px;min-width:150px}.attendance-month-filter{display:flex;align-items:center;gap:7px}.attendance-month-filter select{font-family:var(--sans);font-weight:600}.attendance-actions{display:flex;gap:6px;flex-wrap:wrap}.att-order{font-family:var(--mono);font-weight:700;color:#6B5AA8}.att-delete{width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--danger);cursor:pointer}.att-delete:active{background:#00000010}.att-order-input{width:70px!important;min-width:70px!important}.att-dash{color:#A79FD6}.attendance-legend{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}.attendance-legend span{padding:5px 8px;border-radius:8px;font-size:10px;font-weight:700}.attendance-wrap{overflow:auto;border:1px solid #34275F;border-radius:12px;background:#fff}.attendance-table{border-collapse:collapse;width:max-content;min-width:100%;font-family:Arial,sans-serif;font-size:10px;color:#171233}.attendance-table th,.attendance-table td{border:1px solid #D5D9DD;padding:5px 6px;text-align:center;min-width:28px;height:30px}.attendance-table th{position:sticky;top:0;background:#BEDCEA;z-index:3}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){position:sticky;left:0;z-index:4;background:#EAF4F8;min-width:90px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){position:sticky;left:90px;z-index:4;background:#F5FAFC;min-width:150px;text-align:left}.attendance-table th small{display:block;font-size:8px;opacity:.65}.attendance-table td{cursor:default}.attendance-table td[data-att]{cursor:pointer;font-weight:700}.att-p{background:#D8F6E6!important;color:#167A48}.att-a{background:#FFE0E5!important;color:#B21F3A}.att-s{background:#E6E2F8!important;color:#62539B}.att-h{background:#FFE8C2!important;color:#8A5A16}.att-empty{background:#fff;color:#A79FD6}.att-empty-row{padding:28px!important;text-align:center}.mono-cell{font-family:var(--mono)}.name-cell{font-weight:700}.attendance-overall{margin-top:14px}.attendance-overall-grid{display:flex;flex-direction:column;gap:7px}.attendance-person{display:grid;grid-template-columns:minmax(180px,1fr) 110px 110px 100px;gap:8px;align-items:center;background:#211A42;border:1px solid #2D2354;border-radius:10px;padding:9px;color:#fff}.attendance-person strong{display:block}.attendance-person small{display:block;color:var(--dim);font-family:var(--mono);margin-top:2px}.attendance-person span{font-size:11px;color:var(--dim)}.attendance-person b{color:#fff;font-family:var(--mono)}@media(max-width:899px){.attendance-person{grid-template-columns:1fr 1fr;gap:5px}.attendance-table{font-size:9px}.attendance-table th,.attendance-table td{min-width:27px;padding:4px}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){min-width:75px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){left:75px;min-width:130px}}
+</style>
+</head>
+<body>
+<style>
+  #authScreen{position:fixed;inset:0;background:radial-gradient(120% 60% at 20% 0%, #2A1E5C 0%, #100C22 45%), #100C22;display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999;}
+  #authCard{width:100%;max-width:420px;background:#1B1438;border-radius:20px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #2E2358;}
+  #authCard h1{margin:0 0 6px;font-size:22px;background:linear-gradient(90deg,#22D3C9,#FF5DA2);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  #authCard .auth-sub{margin:0 0 20px;color:#A79FD6;font-size:13px;}
+  #authCard input{width:100%;border:1px solid #2E2358;border-radius:11px;padding:12px 13px;font-size:15px;margin-top:6px;background:#14103096;background:#141030;color:#F5F4FF;outline:none;}
+  #authCard label{display:block;font-size:12px;font-weight:600;color:#A79FD6;text-transform:uppercase;letter-spacing:.05em;margin-top:14px;}
+  #authCard button{width:100%;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:18px;background:linear-gradient(120deg,#7C5CFF,#FF5DA2);color:#fff;}
+  #authMsg{min-height:18px;margin-top:12px;font-size:13px;color:#FF5D77;}
+  #ownerPanel{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-end;}
+  #ownerPanel.open{display:flex;}
+  #ownerSheet{width:100%;background:#1B1438;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto;color:#F5F4FF;}
+  #ownerSheet h2{margin:0 0 14px;font-size:17px;}
+  #ownerSheet input{width:100%;border:1px solid #2E2358;border-radius:11px;padding:11px 13px;font-size:15px;margin:6px 0 12px;box-sizing:border-box;background:#141030;color:#F5F4FF;}
+  #ownerSheet label{display:block;font-size:12px;font-weight:600;color:#A79FD6;text-transform:uppercase;}
+  .owner-actions{display:flex;gap:8px;}
+  .owner-actions button{flex:1;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;}
+  #createUserBtn{background:linear-gradient(120deg,#7C5CFF,#FF5DA2);color:#fff;} #closeOwnerBtn{background:#262A4A;color:#F5F4FF;}
+  #ownerMsg{font-size:13px;min-height:18px;margin-bottom:8px;}
+  .section-title{font-size:12px;font-weight:700;margin:16px 0 8px;padding-top:12px;border-top:1px solid #2E2358;color:#A79FD6;text-transform:uppercase;letter-spacing:.05em;}
+  .req-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#FF5D77;color:#14103a;font-size:10px;font-weight:700;margin-left:4px;position:relative;top:-1px;}
+  .reset-req-row{background:#141030;border-radius:12px;padding:10px 12px;margin-bottom:8px;border:1px solid #2E2358;}
+  .reset-req-row .rr-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;}
+  .reset-req-row .rr-type{font-weight:400;color:#A79FD6;font-size:11px;}
+  .reset-req-row .rr-sub{font-size:11px;color:#A79FD6;margin:2px 0 8px;}
+  .reset-req-row .rr-note{font-size:12px;color:#F5F4FF;margin:2px 0 8px;font-style:italic;}
+  .reset-req-row input{margin:0 0 8px;padding:9px 10px;font-size:13px;}
+  .reset-req-row .rr-actions{display:flex;gap:6px;}
+  .reset-req-row .rr-actions button{border:0;border-radius:9px;padding:9px 10px;font-size:12px;font-weight:700;cursor:pointer;}
+  .reset-req-row .rr-set{background:#22D3C9;color:#14103a;flex:1;}
+  .reset-req-row .rr-dismiss{background:#262A4A;color:#F5F4FF;}
+  #noRequests{font-size:13px;color:#A79FD6;}
+  .user-row{background:#141030;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #2E2358;}
+  .user-row .ur-id{font-family:var(--mono);font-weight:700;font-size:13px;color:#F5F4FF;}
+  .user-row .ur-pw{font-family:var(--mono);font-size:12px;color:#A79FD6;margin-top:2px;word-break:break-all;}
+  .user-row .ur-status{font-size:11px;padding:3px 8px;border-radius:20px;background:#1E3A2A;color:#5FD98A;font-weight:600;white-space:nowrap;flex:0 0 auto;}
+  .user-row .ur-status.inactive{background:#3A2220;color:#FF8A7A;}
+  .user-row .ur-access{font-size:11px;padding:3px 8px;border-radius:20px;background:#2A2C5D;color:#8FA8F2;font-weight:600;white-space:nowrap;flex:0 0 auto;border:0;cursor:pointer;}
+  .user-row .ur-access.read{background:#3A331E;color:#FFB23E;}
+  .user-row .ur-del{border:0;background:transparent;color:#FF5D77;width:30px;height:30px;flex:0 0 30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .user-row .ur-del:active{background:#ffffff10;}
+  #ownerSheet select{width:100%;border:1px solid #2E2358;border-radius:11px;padding:11px 13px;font-size:15px;margin:6px 0 12px;box-sizing:border-box;background:#141030;color:#F5F4FF;-webkit-appearance:none;appearance:none;}
+  #noUsers{font-size:13px;color:#A79FD6;}
+</style>
+
+<div id="authScreen">
+  <div id="authCard">
+    <h1>ECON WIP TrackeR</h1>
+    <p class="auth-sub">Owner / User Login</p>
+    <label>User ID / Owner ID</label>
+    <input id="loginId" autocomplete="username" placeholder="Enter user ID">
+    <label>Password</label>
+    <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password">
+    <button id="loginBtn">LOGIN</button>
+    <div id="authMsg"></div>
+  </div>
+</div>
+
+<div id="ownerPanel">
+  <div id="ownerSheet">
+    <h2>Create User</h2>
+    <label>User ID</label>
+    <input id="newUserId" placeholder="e.g. EA001" autocomplete="off">
+    <label>Password</label>
+    <input id="newUserPassword" type="password" placeholder="Minimum 6 characters" autocomplete="new-password">
+    <label>Access</label>
+    <select id="newUserAccess">
+      <option value="write" selected>Write access (can add/edit/delete)</option>
+      <option value="read">Read only (view &amp; export)</option>
+    </select>
+    <div id="ownerMsg"></div>
+    <div class="owner-actions">
+      <button id="closeOwnerBtn">Cancel</button>
+      <button id="createUserBtn">Create User</button>
+    </div>
+    <div class="section-title">All users</div>
+    <div id="allUsersList"><div id="noUsers">No users created yet</div></div>
+    <div class="section-title">Password requests</div>
+    <div id="resetRequestsList"><div id="noRequests">No pending requests</div></div>
+    <div class="section-title">Change owner password</div>
+    <label>Current password</label>
+    <input id="ownerCurPw" type="password" placeholder="Current owner password" autocomplete="off">
+    <label>New password</label>
+    <input id="ownerNewPw" type="password" placeholder="Minimum 6 characters" autocomplete="new-password">
+    <div id="ownerPwMsg" style="font-size:13px;min-height:18px;"></div>
+    <div class="owner-actions">
+      <button id="changeOwnerPwBtn" style="background:#1C1C1E;color:#fff;">Change Password</button>
+    </div>
+  </div>
+</div>
+
+<div id="shell" style="display:none;">
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">ECON WIP TRACKER</div>
+      <button class="side-nav-btn active" data-side-nav="dashboard">
+        <span class="side-nav-icon">⌂</span><span>Dashboard</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="products">
+        <span class="side-nav-icon">▦</span><span>WIP Tracker</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="reports">
+        <span class="side-nav-icon">▤</span><span>Reports</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="analytics">
+        <span class="side-nav-icon">◒</span><span>Analytics</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="attendance">
+        <span class="side-nav-icon">✓</span><span>Dept Attendance</span>
+      </button>
+      <div class="sidebar-spacer"></div>
+      <div style="padding:8px 10px;font-size:10px;color:#6C6699;">Live data • Firebase</div>
+    </aside>
+
+    <main class="dashboard-main">
+      <div class="appbar" id="appbar"></div>
+      <div class="search-wrap" id="searchWrap">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" placeholder="Search product" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="scroll" id="scroll"></div>
+
+      <button class="fab" id="fab" aria-label="Add">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <div class="overlay" id="overlay"></div>
+      <div class="sheet" id="sheet"></div>
+      <div class="toast" id="toast"></div>
+    </main>
+  </div>
+
+  <div class="dashboard-modal" id="dashboardModal">
+    <div class="dashboard-modal-card">
+      <div class="dashboard-modal-head">
+        <div class="dashboard-modal-title" id="dashboardModalTitle">Stage Details</div>
+        <div class="dashboard-modal-total" id="dashboardModalTotal"></div>
+        <button class="dashboard-modal-close" id="dashboardModalClose" aria-label="Close">×</button>
+      </div>
+      <div class="dashboard-modal-body" id="dashboardModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FIREBASE — shared database + multi-user real-time sync
+     ============================================================
+     1. Go to https://console.firebase.google.com -> your project
+        (ECON WIP TrackeR) -> gear icon -> Project settings -> General
+        -> "Your apps" -> if no web app yet, click "</>" to create one
+        -> copy the firebaseConfig object it gives you and paste it
+        below, replacing the placeholder values.
+     2. Go to Firestore Database -> Rules tab and set (for now, to get
+        it working — this is open to anyone, tighten later):
+
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /{document=**} {
+              allow read, write: if true; // Temporary only — replace with authenticated rules before deployment.
+            }
+          }
+        }
+
+     3. Publish the rules. That's it — every device that opens this
+        page will read/write the same shared document in real time.
+     ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+
+<script>
+  const firebaseConfig = {
+  apiKey: "AIzaSyChhMqO32RVQ8csEJuQDJlva86dehKU7cQ",
+  authDomain: "econ-wip-tracker.firebaseapp.com",
+  projectId: "econ-wip-tracker",
+  storageBucket: "econ-wip-tracker.firebasestorage.app",
+  messagingSenderId: "1065634177485",
+  appId: "1:1065634177485:web:f642f1dc90b1efe004a484",
+  measurementId: "G-SE5Q84YPJH"
+};
+  // Firebase is optional for the login screen. If the CDN is blocked/offline,
+  // the owner login must still respond instead of stopping the whole script.
+  let db = null;
+  let stateDocRef = null;
+  let attendanceDocRef = null;
+  try {
+    if (window.firebase && firebase.initializeApp) {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      stateDocRef = db.collection('productionTracker').doc('sharedState');
+      attendanceDocRef = db.collection('attendance').doc('sharedAttendance');
+    }
+  } catch (e) {
+    console.warn('Firebase unavailable; running with local login fallback.', e);
+  }
+</script>
+
+
+
+
+<script>
+(function(){
+  // ===== USER ID + PASSWORD AUTHENTICATION =====
+  const AUTH_DOC = db ? db.collection('appAuth').doc('users') : null;
+  const REQUESTS_DOC = db ? db.collection('appAuth').doc('resetRequests') : null;
+  const OWNER_ID = 'owner';
+  const DEFAULT_OWNER_PASSWORD = 'ChangeMe@2026';
+  let currentUser = null;
+  let authUsers = {};
+  let resetRequests = {};
+
+  function esc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function loadRequestsOnce(){
+    try{
+      if(!REQUESTS_DOC) { resetRequests={}; return; }
+      const snap = await REQUESTS_DOC.get();
+      resetRequests = snap.exists ? (snap.data().requests || {}) : {};
+    }catch(e){ console.error(e); resetRequests = {}; }
+  }
+
+  function pendingCount(){
+    return Object.values(resetRequests).filter(r=>r && r.status==='pending').length;
+  }
+
+  function renderResetRequestsList(){
+    const list = document.getElementById('resetRequestsList');
+    if(!list) return;
+    const pending = Object.entries(resetRequests).filter(([id,r])=>r && r.status==='pending');
+    if(pending.length===0){
+      list.innerHTML = '<div id="noRequests">No pending requests</div>';
+      return;
+    }
+    list.innerHTML = pending.map(([reqId,r])=>`
+      <div class="reset-req-row">
+        <div class="rr-top"><span>${esc(r.userId)}</span><span class="rr-type">${r.type==='forgot'?'Forgot password':'Change request'}</span></div>
+        <div class="rr-sub">Requested ${new Date(r.requestedAt).toLocaleString()}</div>
+        <div class="rr-note">Requested new password: <strong>${esc(r.newPassword)}</strong></div>
+        <div class="rr-actions">
+          <button type="button" class="rr-set" data-approve="${reqId}">Approve</button>
+          <button type="button" class="rr-dismiss" data-reject="${reqId}">Reject</button>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-approve]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const reqId = btn.dataset.approve;
+        const r = resetRequests[reqId];
+        if(!authUsers[r.userId]){ ownerMessage('User no longer exists'); return; }
+        try{
+          authUsers[r.userId].password = r.newPassword;
+          resetRequests[reqId].status='resolved';
+          resetRequests[reqId].resolvedAt=new Date().toISOString();
+          await AUTH_DOC.set({users:authUsers});
+          await REQUESTS_DOC.set({requests:resetRequests});
+          ownerMessage('Password updated for '+r.userId, true);
+          renderResetRequestsList();
+          renderUsersList();
+        }catch(e){
+          console.error(e);
+          ownerMessage('Could not update. Check connection.');
+        }
+      };
+    });
+    list.querySelectorAll('[data-reject]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const reqId = btn.dataset.reject;
+        try{
+          resetRequests[reqId].status='rejected';
+          await REQUESTS_DOC.set({requests:resetRequests});
+          renderResetRequestsList();
+        }catch(e){ console.error(e); }
+      };
+    });
+  }
+
+  function renderUsersList(){
+    const list = document.getElementById('allUsersList');
+    if(!list) return;
+    const entries = Object.entries(authUsers).filter(([id])=>id!==OWNER_ID);
+    if(entries.length===0){
+      list.innerHTML = '<div id="noUsers">No users created yet</div>';
+      return;
+    }
+    list.innerHTML = entries.map(([id,u])=>`
+      <div class="user-row">
+        <div>
+          <div class="ur-id">${esc(id)}</div>
+          <div class="ur-pw">Password: ${esc(u.password)}</div>
+        </div>
+        <span class="ur-status ${u.active?'':'inactive'}">${u.active?'Active':'Inactive'}</span>
+        <button type="button" class="ur-access ${u.access==='read'?'read':''}" data-toggleaccess="${esc(id)}" title="Tap to toggle access">${u.access==='read'?'Read':'Write'}</button>
+        <button type="button" class="ur-del" data-deluser="${esc(id)}" title="Delete user">${icon('trash')}</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-toggleaccess]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const id = btn.dataset.toggleaccess;
+        const u = authUsers[id];
+        if(!u) return;
+        u.access = (u.access==='read') ? 'write' : 'read';
+        try{
+          await AUTH_DOC.set({users:authUsers});
+          ownerMessage(`${id} is now ${u.access==='read'?'read-only':'write'} access`, true);
+          renderUsersList();
+        }catch(e){
+          console.error(e);
+          ownerMessage('Could not update access. Check connection.');
+        }
+      };
+    });
+    list.querySelectorAll('[data-deluser]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const id = btn.dataset.deluser;
+        if(!window.confirm('Delete user "'+id+'"? They will no longer be able to log in.')) return;
+        try{
+          delete authUsers[id];
+          await AUTH_DOC.set({users:authUsers});
+          ownerMessage('User "'+id+'" deleted', true);
+          renderUsersList();
+        }catch(e){
+          console.error(e);
+          ownerMessage('Could not delete user. Check connection.');
+        }
+      };
+    });
+  }
+
+  function icon(name){
+    if(name==='trash') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    return '';
+  }
+
+  function authEmail(id){
+    return String(id || '').trim().toLowerCase() + '@econwip.local';
+  }
+
+  function authMessage(msg, ok=false){
+    const el=document.getElementById('authMsg');
+    if(el){ el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A'; }
+  }
+
+  function ownerMessage(msg, ok=false){
+    const el=document.getElementById('ownerMsg');
+    if(el){ el.textContent=msg; el.style.color=ok?'#4CAF6D':'#D0564A'; }
+  }
+
+  async function loadUsers(){
+    // Always keep a local owner fallback so the login screen never waits for Firebase.
+    const localOwner={ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, access:'write', createdAt:new Date().toISOString() };
+    authUsers={ [OWNER_ID]: localOwner };
+    try{
+      if(!AUTH_DOC) return;
+      const snap=await AUTH_DOC.get();
+      if(snap.exists){
+        const rawUsers=snap.data().users || {};
+        // Normalize all stored user IDs so login is case-insensitive and old users continue to work.
+        authUsers={};
+        let needsSave=false;
+        Object.entries(rawUsers).forEach(([storedId,user])=>{
+          const normalizedId=String(storedId).trim().toLowerCase();
+          if(!normalizedId) return;
+          if(authUsers[normalizedId] && normalizedId!==storedId) needsSave=true;
+          authUsers[normalizedId]={...(user||{})};
+        });
+        if(!authUsers[OWNER_ID]){ authUsers[OWNER_ID]=localOwner; needsSave=true; }
+        else if(!authUsers[OWNER_ID].password){ authUsers[OWNER_ID].password=DEFAULT_OWNER_PASSWORD; needsSave=true; }
+        Object.keys(authUsers).forEach(id=>{
+          if(id===OWNER_ID) return;
+          if(!authUsers[id].password){ authUsers[id].password='ResetMe@123'; needsSave=true; }
+          if(authUsers[id].access!=='read' && authUsers[id].access!=='write'){ authUsers[id].access='write'; needsSave=true; }
+        });
+        if(needsSave){ try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Auth migration save skipped',e); } }
+      }else{
+        try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Initial auth save skipped',e); }
+      }
+    }catch(e){
+      console.warn('Firebase auth load failed; using local owner fallback',e);
+      authUsers={ [OWNER_ID]: localOwner };
+    }
+  }
+
+  function showLogin(){
+    document.getElementById('shell').style.display='none';
+    document.getElementById('authScreen').style.display='flex';
+  }
+
+  function showApp(user){
+    currentUser=user;
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('shell').style.display='flex';
+  }
+
+  async function login(){
+    const rawId=document.getElementById('loginId').value.trim();
+    const id=rawId.trim().toLowerCase();
+    const pw=document.getElementById('loginPassword').value;
+    if(!id || !pw){ authMessage('Enter User ID and password'); return; }
+
+    // Owner can always log in immediately, even while Firebase is loading/offline.
+    let u=authUsers[id];
+    if(!u && id===OWNER_ID && pw===DEFAULT_OWNER_PASSWORD){
+      u={password:DEFAULT_OWNER_PASSWORD,role:'owner',active:true,access:'write'};
+      authUsers[OWNER_ID]=u;
+    }
+    if(!u || u.active===false){ authMessage('Invalid User ID or password'); return; }
+    if(pw!==u.password){ authMessage('Invalid User ID or password'); return; }
+
+    currentUser={id, role:u.role || 'user', access:u.access || 'write'};
+    showApp(currentUser);
+    authMessage('');
+    try{
+      startWipApp(currentUser);
+    }catch(e){
+      console.error(e);
+      // Login itself succeeded; keep the user informed instead of silently returning to login.
+      showApp(currentUser);
+      authMessage('Login successful, but app startup failed. Check Firebase/internet connection.');
+    }
+  }
+
+  const loginBtn = document.getElementById('loginBtn');
+  if(loginBtn){
+    loginBtn.type='button';
+    loginBtn.onclick = (e)=>{ e.preventDefault(); login(); };
+  }
+  document.getElementById('loginPassword').addEventListener('keydown',e=>{
+    if(e.key==='Enter') login();
+  });
+
+  window.openOwnerPanel=()=>{
+    if(!currentUser || currentUser.role!=='owner') return;
+    document.getElementById('ownerPanel').classList.add('open');
+    ownerMessage('');
+    renderUsersList();
+    renderResetRequestsList();
+  };
+
+  document.getElementById('closeOwnerBtn').onclick=()=>{
+    document.getElementById('ownerPanel').classList.remove('open');
+  };
+
+  document.getElementById('changeOwnerPwBtn').onclick=async()=>{
+    if(!currentUser || currentUser.role!=='owner') return;
+    const msgEl=document.getElementById('ownerPwMsg');
+    const curPw=document.getElementById('ownerCurPw').value;
+    const newPw=document.getElementById('ownerNewPw').value;
+    msgEl.style.color='#D0564A';
+    if(!curPw || !newPw){ msgEl.textContent='Enter current and new password'; return; }
+    if(curPw!==authUsers[OWNER_ID].password){ msgEl.textContent='Current password is wrong'; return; }
+    if(newPw.length<6){ msgEl.textContent='New password must be at least 6 characters'; return; }
+    try{
+      authUsers[OWNER_ID].password=newPw;
+      await AUTH_DOC.set({users:authUsers});
+      msgEl.style.color='#4CAF6D';
+      msgEl.textContent='Owner password changed successfully';
+      document.getElementById('ownerCurPw').value='';
+      document.getElementById('ownerNewPw').value='';
+    }catch(e){
+      console.error(e);
+      msgEl.style.color='#D0564A';
+      msgEl.textContent='Could not update. Check connection.';
+    }
+  };
+
+
+  document.getElementById('createUserBtn').onclick=async()=>{
+    if(!currentUser || currentUser.role!=='owner') return;
+
+    const id=document.getElementById('newUserId').value.trim().toLowerCase();
+    const pw=document.getElementById('newUserPassword').value;
+    const accessSel=document.getElementById('newUserAccess');
+    const access=(accessSel && accessSel.value==='read') ? 'read' : 'write';
+
+    if(!/^[A-Za-z0-9._-]{3,30}$/.test(id)){
+      ownerMessage('User ID: 3-30 letters, numbers, dot, _ or -');
+      return;
+    }
+    if(id.toLowerCase()===OWNER_ID){
+      ownerMessage('OWNER ID is reserved');
+      return;
+    }
+    if(pw.length<6){
+      ownerMessage('Password must be at least 6 characters');
+      return;
+    }
+    if(authUsers[id]){
+      ownerMessage('User ID already exists');
+      return;
+    }
+
+    authUsers[id]={
+      password:pw,
+      role:'user',
+      access:access,
+      active:true,
+      createdAt:new Date().toISOString(),
+      createdBy:OWNER_ID
+    };
+
+    try{
+      await AUTH_DOC.set({users:authUsers});
+      document.getElementById('newUserId').value='';
+      document.getElementById('newUserPassword').value='';
+      if(accessSel) accessSel.value='write';
+      ownerMessage('User created successfully',true);
+      renderUsersList();
+    }catch(e){
+      console.error(e);
+      ownerMessage('Could not save user. Check Firestore rules.');
+    }
+  };
+
+  // Compatibility helpers used by the existing tracker UI.
+  window.auth={
+    signOut:()=>{
+      location.reload();
+    }
+  };
+
+  window.__auth={
+    isOwner:()=> !!currentUser && currentUser.role==='owner',
+    canWrite:()=> !!currentUser && (currentUser.role==='owner' || currentUser.access==='write'),
+    logout:()=> auth.signOut(),
+    showOwnerPanel:()=> window.openOwnerPanel(),
+    openChangePasswordRequest:()=>{
+      if(!currentUser) return;
+      const sheet = document.getElementById('sheet');
+      const overlay = document.getElementById('overlay');
+      sheet.innerHTML = `
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Request password change</div>
+        <div class="field">
+          <label>New password</label>
+          <input type="password" id="cpNewPw" placeholder="Minimum 6 characters">
+        </div>
+        <div class="field">
+          <label>Confirm new password</label>
+          <input type="password" id="cpNewPw2" placeholder="Re-enter new password">
+        </div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" id="cpCancel">Cancel</button>
+          <button class="btn btn-primary" id="cpSend">Send request</button>
+        </div>
+      `;
+      overlay.classList.add('open');
+      requestAnimationFrame(()=>sheet.classList.add('open'));
+      const closeIt=()=>{ sheet.classList.remove('open'); overlay.classList.remove('open'); };
+      document.getElementById('cpCancel').onclick = closeIt;
+      document.getElementById('cpSend').onclick = async ()=>{
+        const pw1 = document.getElementById('cpNewPw').value;
+        const pw2 = document.getElementById('cpNewPw2').value;
+        const toast = document.getElementById('toast');
+        if(pw1.length<6){ alert('New password must be at least 6 characters'); return; }
+        if(pw1!==pw2){ alert('Passwords do not match'); return; }
+        try{
+          const snap = await REQUESTS_DOC.get();
+          const requests = snap.exists ? (snap.data().requests||{}) : {};
+          const reqId = 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+          requests[reqId] = { userId: currentUser.id, requestedAt:new Date().toISOString(), status:'pending', type:'change', newPassword:pw1 };
+          await REQUESTS_DOC.set({requests});
+          closeIt();
+          if(toast){ toast.textContent='Request sent to owner for approval'; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1600); }
+        }catch(e){
+          console.error(e);
+          alert('Could not send request. Check connection and try again.');
+        }
+      };
+    }
+  };
+
+  function startWipApp(user){
+  let state = null;
+  let syncStatus = 'connecting'; // connecting | on | err
+  let nav = [{ view:'products' }]; // app always opens at WIP Tracker
+  let searchTerm = '';
+  let searchOpen = false;
+  let attendanceState = { employees:{}, months:{} };
+  let attendanceUnsub = null;
+  let attendanceMonth = todayISO().slice(0,7);
+  const canWrite = user.role==='owner' || user.access==='write';
+
+  // ---------- Back-button handling ----------
+  // Keep browser/mobile Back inside the WIP app. The first/root screen is
+  // always WIP Tracker, so Back from Dashboard/Reports returns to WIP Tracker
+  // instead of closing the page/app.
+  const WIP_HISTORY_KEY = 'econWipInternal';
+  try{ history.replaceState({ wipNavDepth: nav.length, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+
+  function pushInternalHistory(){
+    try{ history.pushState({ wipNavDepth: nav.length, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+  }
+
+  function goTo(navState){
+    nav.push(navState);
+    pushInternalHistory();
+    render();
+  }
+
+  function goBack(){
+    if(nav.length>1){
+      history.back();
+    }else{
+      // Root is WIP Tracker. Do not allow browser Back to leave the app.
+      nav=[{view:'products'}];
+      try{ history.pushState({ wipNavDepth: 1, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+      render();
+    }
+  }
+
+  window.addEventListener('popstate', (event)=>{
+    if(nav.length>1){
+      nav.pop();
+      render();
+      // Re-arm an internal history state so another Back remains inside app.
+      try{ history.replaceState({ wipNavDepth: nav.length, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+    }else{
+      // Back at root: stay on WIP Tracker.
+      nav=[{view:'products'}];
+      try{ history.pushState({ wipNavDepth: 1, [WIP_HISTORY_KEY]: true }, '', location.href); }catch(e){}
+      render();
+    }
+  });
+
+  // ---------- Desktop keyboard shortcuts ----------
+  // Esc  -> close an open Add/Edit sheet, otherwise go back one level (any page)
+  // Enter-> save the currently open sheet (ignored while typing in a textarea, so remarks can wrap lines)
+  // +    -> trigger the current page's Add ("+") button, when not typing in a field
+  document.addEventListener('keydown', (e)=>{
+    const overlayEl = document.getElementById('overlay');
+    const sheetOpen = !!overlayEl && overlayEl.classList.contains('open');
+    const active = document.activeElement;
+    const isTypingField = !!active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT');
+
+    if(e.key==='Escape'){
+      e.preventDefault();
+      if(sheetOpen){ closeSheet(); return; }
+      const dashboardModal = document.getElementById('dashboardModal');
+      if(dashboardModal && dashboardModal.classList.contains('open')){ closeDashboardModal(); return; }
+      const ownerPanel = document.getElementById('ownerPanel');
+      if(ownerPanel && ownerPanel.classList.contains('open')){ ownerPanel.classList.remove('open'); return; }
+      if(nav.length>1){ goBack(); }
+      return;
+    }
+
+    if(e.key==='Enter'){
+      if(sheetOpen && !(active && active.tagName==='TEXTAREA')){
+        const saveBtn = document.getElementById('saveBtn');
+        if(saveBtn){ e.preventDefault(); saveBtn.click(); }
+      }
+      return;
+    }
+
+    if(e.key==='+'){
+      if(isTypingField || sheetOpen) return;
+      const fab = document.getElementById('fab');
+      if(fab && fab.style.display!=='none'){ e.preventDefault(); fab.click(); }
+    }
+  });
+
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  // ---------- Fixed stage list (used for stage picker + Excel export columns) ----------
+  const STAGE_COLUMNS = [
+    'KIT QTY','INCOMMING','SHIPPED','PACKING','OQA','LOG','FQC','TESTING2','TESTING1',
+    'MERGING','SENSOR CLEANING','PROGRAM','FAIL','REWORK','DEBUG','RW IN DEBUG',
+    'SENSOR ISSUE','SCRAP'
+  ];
+  const OTHERS_KEY = 'OTHERS';
+  const OTHERS_LABEL = 'OTHERS(MANUAL ENTRY)';
+  const TOTAL_LABEL = 'TOTAL(SUM OF SHIPPED:OTHERS)';
+  // Columns included in the TOTAL sum: everything from SHIPPED through OTHERS (i.e. excludes KIT QTY & INCOMMING)
+  const TOTAL_COLUMNS = STAGE_COLUMNS.slice(2).concat([OTHERS_KEY]);
+
+  function resolveStageKey(stage){
+    if(stage.stageKey) return stage.stageKey;
+    const norm = String(stage.name||'').trim().toUpperCase();
+    return STAGE_COLUMNS.includes(norm) ? norm : OTHERS_KEY;
+  }
+
+  function seed(){
+    const now = new Date().toISOString();
+    return {
+      products:[
+        { id:uid(), code:'A897-064-3206-00', stages:[], subProducts:[], createdAt:now, updatedAt:now },
+        { id:uid(), code:'A897-064-3207-00', stages:[], subProducts:[], createdAt:now, updatedAt:now },
+        { id:uid(), code:'A897-064-3208-00', stages:[], subProducts:[], createdAt:now, updatedAt:now }
+      ]
+    };
+  }
+
+  // ---------- Firestore sync (shared, multi-user) ----------
+  function subscribeState(){
+    stateDocRef.onSnapshot(async (docSnap)=>{
+      if(docSnap.exists){
+        state = docSnap.data();
+        syncStatus = 'on';
+        render();
+      } else {
+        state = seed();
+        try{ await stateDocRef.set(state); syncStatus='on'; }
+        catch(e){ syncStatus='err'; console.error(e); }
+        render();
+      }
+    }, (err)=>{
+      console.error('Firestore sync error', err);
+      syncStatus = 'err';
+      showToast('Sync error — check Firebase config / rules');
+      render();
+    });
+  }
+
+  async function saveState(){
+    try{ await stateDocRef.set(state); }
+    catch(e){
+      console.error('Save failed', e);
+      showToast('Save failed — check connection');
+    }
+  }
+
+  function currentNav(){ return nav[nav.length-1]; }
+
+  function ensureSubProducts(product){
+    if(!product) return [];
+    if(!Array.isArray(product.subProducts)) product.subProducts=[];
+    product.subProducts.forEach(sp=>{
+      if(!Array.isArray(sp.stages)) sp.stages=[];
+      sp.stages.forEach(st=>{ if(!Array.isArray(st.entries)) st.entries=[]; });
+    });
+    return product.subProducts;
+  }
+  function findProduct(id){ return state.products.find(p=>p.id===id); }
+  function findSubProduct(productId, subProductId){
+    const p=findProduct(productId);
+    return p ? ensureSubProducts(p).find(sp=>sp.id===subProductId) : null;
+  }
+  function findStage(productId, stageId, subProductId){
+    const p = findProduct(productId);
+    if(!p) return null;
+    if(subProductId){
+      const sp=findSubProduct(productId, subProductId);
+      return sp ? sp.stages.find(s=>s.id===stageId) : null;
+    }
+    return p.stages.find(s=>s.id===stageId);
+  }
+  function stageQty(stage){ return (stage.entries||[]).reduce((sum,e)=>sum+Number(e.qty||0),0); }
+  function productQty(product){ return (product.stages||[]).reduce((sum,s)=>sum+stageQty(s),0); }
+  // TOTAL = sum of all stages EXCEPT "KIT QTY" and "INCOMMING" (matches TOTAL_COLUMNS used in export)
+  function productTotalQty(product){
+    return (product.stages||[]).reduce((sum,s)=> TOTAL_COLUMNS.includes(resolveStageKey(s)) ? sum+stageQty(s) : sum, 0);
+  }
+  // Sub-product TOTAL: sum all stages except INCOMMING (and KIT QTY if ever added).
+  function subProductTotalQty(subProduct){
+    return (subProduct?.stages||[]).reduce((sum,s)=> TOTAL_COLUMNS.includes(resolveStageKey(s)) ? sum+stageQty(s) : sum, 0);
+  }
+
+  // ---------- Dashboard ----------
+  const DASHBOARD_CATEGORIES = [
+    { key:'done', name:'Process Done', stages:['PACKING','OQA','LOG'], cls:'done' },
+    { key:'process', name:'Under Process', stages:['FQC','TESTING2','TESTING1','MERGING','SENSOR CLEANING','PROGRAM'], cls:'process' },
+    { key:'fail', name:'Failures', stages:['FAIL','REWORK','DEBUG','RW IN DEBUG','SENSOR ISSUE','SCRAP'], cls:'fail' },
+    { key:'other', name:'Others', stages:[OTHERS_KEY], cls:'other' }
+  ];
+
+  function getDashboardCategoryData(){
+    const stageData = {};
+    [...STAGE_COLUMNS, OTHERS_KEY].forEach(key=>stageData[key]=[]);
+    (state.products || []).forEach(product=>{
+      (product.stages || []).forEach(stage=>{
+        const key = resolveStageKey(stage);
+        const qty = stageQty(stage);
+        if(qty <= 0) return;
+        const existing = stageData[key].find(x=>x.productId===product.id && !x.subProductId);
+        if(existing) existing.qty += qty;
+        else stageData[key].push({productId:product.id, code:product.code, qty, subProductId:null});
+      });
+      ensureSubProducts(product).forEach(sp=>{
+        (sp.stages || []).forEach(stage=>{
+          const key = resolveStageKey(stage);
+          const qty = stageQty(stage);
+          if(qty <= 0) return;
+          const existing = stageData[key].find(x=>x.productId===product.id && x.subProductId===sp.id);
+          const label = `${product.code} / ${sp.code}`;
+          if(existing) existing.qty += qty;
+          else stageData[key].push({productId:product.id, code:label, qty, subProductId:sp.id});
+        });
+      });
+    });
+    const categories = DASHBOARD_CATEGORIES.map(cat=>{
+      const itemsByProduct = {};
+      cat.stages.forEach(stageKey=>{
+        (stageData[stageKey] || []).forEach(item=>{
+          if(!itemsByProduct[item.productId]) itemsByProduct[item.productId]={productId:item.productId,code:item.code,qty:0};
+          itemsByProduct[item.productId].qty += item.qty;
+        });
+      });
+      const items = Object.values(itemsByProduct).sort((a,b)=>b.qty-a.qty);
+      return {...cat, items, total:items.reduce((sum,x)=>sum+x.qty,0)};
+    });
+    const grandTotal = categories.reduce((sum,x)=>sum+x.total,0);
+    categories.forEach(cat=>cat.pct = grandTotal ? (cat.total/grandTotal)*100 : 0);
+    return {categories, grandTotal};
+  }
+
+  function closeDashboardModal(){
+    const modal = document.getElementById('dashboardModal');
+    if(modal) modal.classList.remove('open');
+  }
+
+  // Overall stage chart: exclude KIT QTY and SHIPPED.
+  // INCOMMING is intentionally retained because the latest dashboard requirement
+  // only excludes KIT QTY and SHIPPED from this section.
+  const OVERALL_STAGE_KEYS = STAGE_COLUMNS.filter(key=>key!=='KIT QTY' && key!=='INCOMMING' && key!=='SHIPPED').concat([OTHERS_KEY]);
+
+  function getOverallStageData(){
+    const data = {};
+    OVERALL_STAGE_KEYS.forEach(key=>data[key]=[]);
+    (state.products || []).forEach(product=>{
+      (product.stages || []).forEach(stage=>{
+        const key = resolveStageKey(stage);
+        if(!data[key]) return;
+        const qty = stageQty(stage);
+        if(qty <= 0) return;
+        const existing = data[key].find(x=>x.productId===product.id && !x.subProductId);
+        if(existing) existing.qty += qty;
+        else data[key].push({productId:product.id, code:product.code, qty, subProductId:null});
+      });
+      ensureSubProducts(product).forEach(sp=>{
+        (sp.stages || []).forEach(stage=>{
+          const key = resolveStageKey(stage);
+          if(!data[key]) return;
+          const qty = stageQty(stage);
+          if(qty <= 0) return;
+          const existing = data[key].find(x=>x.productId===product.id && x.subProductId===sp.id);
+          if(existing) existing.qty += qty;
+          else data[key].push({productId:product.id, code:`${product.code} / ${sp.code}`, qty, subProductId:sp.id});
+        });
+      });
+    });
+    OVERALL_STAGE_KEYS.forEach(key=>data[key].sort((a,b)=>b.qty-a.qty));
+    return data;
+  }
+
+  function openDashboardStage(stageKey){
+    const data = getOverallStageData();
+    const items = data[stageKey] || [];
+    const total = items.reduce((sum,x)=>sum+Number(x.qty||0),0);
+    const modal = document.getElementById('dashboardModal');
+    const title = document.getElementById('dashboardModalTitle');
+    const totalEl = document.getElementById('dashboardModalTotal');
+    const body = document.getElementById('dashboardModalBody');
+    if(!modal || !title || !totalEl || !body) return;
+
+    title.textContent = stageKey===OTHERS_KEY ? OTHERS_LABEL : stageKey;
+    totalEl.textContent = `${total} B`;
+
+    if(items.length===0){
+      body.innerHTML = `<div class="dashboard-empty"><strong>No quantity in this stage</strong>Products with quantity 0 are hidden.</div>`;
+    }else{
+      body.innerHTML = items.map(item=>`
+        <div class="drill-row" data-dashboard-product="${escapeAttr(item.productId)}">
+          <div class="drill-product">${escapeHtml(item.code)}</div>
+          <div class="drill-qty">${item.qty} B</div>
+          <div class="drill-arrow">${icon('chev')}</div>
+        </div>
+      `).join('') + `<div class="drill-total"><span>TOTAL</span><span>${total} B</span></div>`;
+
+      body.querySelectorAll('[data-dashboard-product]').forEach(row=>{
+        row.onclick=()=>{
+          const productId=row.dataset.dashboardProduct;
+          closeDashboardModal();
+          goTo({view:'stages',productId});
+        };
+      });
+    }
+    modal.classList.add('open');
+  }
+
+
+  function openDashboardCategory(categoryKey){
+    const info = getDashboardCategoryData();
+    const cat = info.categories.find(x=>x.key===categoryKey);
+    if(!cat) return;
+    const modal = document.getElementById('dashboardModal');
+    const title = document.getElementById('dashboardModalTitle');
+    const totalEl = document.getElementById('dashboardModalTotal');
+    const body = document.getElementById('dashboardModalBody');
+    if(!modal || !title || !totalEl || !body) return;
+    title.textContent = cat.name;
+    totalEl.textContent = `${cat.total} B • ${cat.pct.toFixed(0)}%`;
+    if(cat.items.length===0){
+      body.innerHTML = `<div class="dashboard-empty"><strong>No quantity in this category</strong>Products with quantity 0 are hidden.</div>`;
+    }else{
+      body.innerHTML = cat.items.map(item=>`
+        <div class="drill-row" data-dashboard-product="${escapeAttr(item.productId)}">
+          <div class="drill-product">${escapeHtml(item.code)}</div>
+          <div class="drill-qty">${item.qty} B</div>
+          <div class="drill-arrow">${icon('chev')}</div>
+        </div>
+      `).join('') + `<div class="drill-total"><span>TOTAL</span><span>${cat.total} B</span></div>`;
+      body.querySelectorAll('[data-dashboard-product]').forEach(row=>{
+        row.onclick=()=>{
+          const productId=row.dataset.dashboardProduct;
+          closeDashboardModal();
+          goTo({view:'stages',productId});
+        };
+      });
+    }
+    modal.classList.add('open');
+  }
+
+  function renderDashboard(scroll){
+    const info = getDashboardCategoryData();
+    const categories = info.categories;
+    const stageData = getOverallStageData();
+    const stageTotals = OVERALL_STAGE_KEYS.map(key=>({
+      key,
+      total:(stageData[key] || []).reduce((sum,x)=>sum+Number(x.qty||0),0)
+    }));
+    const overallStageQty = stageTotals.reduce((sum,x)=>sum+x.total,0);
+    const maxStageTotal = Math.max(1,...stageTotals.map(x=>x.total));
+    const maxPct = Math.max(1,...categories.map(x=>x.pct));
+
+    scroll.className='dashboard-scroll';
+    scroll.innerHTML=`
+      <div class="dashboard-head">
+        <div>
+          <div class="dashboard-kicker">Live WIP Overview</div>
+          <div class="dashboard-title">Dashboard</div>
+          <div class="dashboard-subtitle">Production status summary • category percentages exclude Kit Qty, Incomming and Shipped</div>
+        </div>
+        <div class="dashboard-total-card">
+          <div class="dashboard-total-label">Dashboard Qty</div>
+          <div class="dashboard-total-num">${info.grandTotal} B</div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-title">WIP Category Summary</div>
+        <div class="chart-help">Process Done, Under Process, Failures and Others. Click a category to see the products included in it.</div>
+        <div class="category-bars">
+          ${categories.map(cat=>`
+            <div class="category-bar-row" data-dashboard-category="${cat.key}">
+              <div class="category-bar-label">${escapeHtml(cat.name)}</div>
+              <div class="category-bar-track"><div class="category-bar-fill" style="width:${cat.pct>0?Math.max(2,(cat.pct/maxPct)*100):0}%"></div></div>
+              <div class="category-bar-value">${cat.pct.toFixed(0)}%</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="chart-panel stage-summary-panel">
+        <div class="chart-title">Overall Quantity by Stage</div>
+        <div class="chart-help">KIT QTY, INCOMMING and SHIPPED are excluded from this list. Percentage is based on the total quantity shown in this stage section. Click a stage to view its products.</div>
+        <div class="stage-bars">
+          ${stageTotals.map(item=>{
+            const width = item.total > 0 ? Math.max(2,(item.total/maxStageTotal)*100) : 0;
+            return `
+              <div class="stage-bar-row" data-dashboard-stage="${escapeAttr(item.key)}" title="Open ${escapeAttr(item.key===OTHERS_KEY?OTHERS_LABEL:item.key)} details">
+                <div class="stage-bar-label">${escapeHtml(item.key===OTHERS_KEY?OTHERS_LABEL:item.key)}</div>
+                <div class="stage-bar-track"><div class="stage-bar-fill" style="width:${width}%"></div></div>
+                <div class="stage-bar-value">${item.total} B <span class="stage-bar-percent">${overallStageQty ? ((item.total/overallStageQty)*100).toFixed(0) : 0}%</span></div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    scroll.querySelectorAll('[data-dashboard-category]').forEach(el=>{
+      el.onclick=()=>openDashboardCategory(el.dataset.dashboardCategory);
+    });
+    scroll.querySelectorAll('[data-dashboard-stage]').forEach(el=>{
+      el.onclick=()=>openDashboardStage(el.dataset.dashboardStage);
+    });
+  }
+
+  function setSideActive(view){
+    document.querySelectorAll('[data-side-nav]').forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.sideNav===view);
+    });
+  }
+
+  function navigateSidebar(view){
+    if(view==='dashboard' || view==='reports'){
+      nav = [{view:'products'}, {view}];
+      searchOpen = false; searchTerm = '';
+      closeDashboardModal();
+      pushInternalHistory();
+      render();
+    }else if(view==='products'){
+      nav = [{view:'products'}];
+      searchOpen = false; searchTerm = '';
+      closeDashboardModal();
+      pushInternalHistory();
+      render();
+    }else if(view==='attendance'){
+      nav = [{view:'products'}, {view:'attendance'}];
+      searchOpen = false; searchTerm = '';
+      closeDashboardModal();
+      pushInternalHistory();
+      render();
+    }else{
+      showToast('Analytics page coming next');
+    }
+    document.getElementById('sidebar')?.classList.remove('open');
+  }
+
+  function getCurrentArray(){
+    const n = currentNav();
+    if(n.view==='dashboard') return [];
+    if(n.view==='products') return state.products;
+    if(n.view==='stages'){ const p = findProduct(n.productId); return p ? p.stages : []; }
+    if(n.view==='entries'){ const s = findStage(n.productId, n.stageId, n.subProductId); return s ? s.entries : []; }
+    return [];
+  }
+
+  function formatDate(iso){
+    if(!iso) return '';
+    const d = new Date(iso+'T00:00:00');
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric' });
+  }
+
+  function todayISO(){
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime()-off*60000);
+    return local.toISOString().slice(0,10);
+  }
+
+  function icon(name){
+    if(name==='back') return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    if(name==='chev') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+    if(name==='crate') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M3 11h18"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/></svg>';
+    if(name==='layer') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+    if(name==='trash') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    if(name==='pencil') return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+    if(name==='drag') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+    if(name==='export') return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
+    if(name==='users') return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    if(name==='key') return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>';
+    if(name==='logout') return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+    if(name==='search') return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    if(name==='consol') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+    if(name==='share') return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>';
+    return '';
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>t.classList.remove('show'), 1600);
+  }
+
+  function confirmDelete(msg, onYes){
+    if(window.confirm(msg)) onYes();
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str==null? '' : String(str);
+    return d.innerHTML;
+  }
+  function escapeAttr(str){
+    return String(str==null?'':str)
+      .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+  }
+
+  // ---------- Sheets (Add / Edit share the same UI) ----------
+  function openSheet(html){
+    document.getElementById('sheet').innerHTML = html;
+    document.getElementById('overlay').classList.add('open');
+    requestAnimationFrame(()=>document.getElementById('sheet').classList.add('open'));
+    const firstInput = document.querySelector('#sheet input, #sheet textarea');
+    if(firstInput) setTimeout(()=>firstInput.focus(), 200);
+  }
+  function closeSheet(){
+    document.getElementById('sheet').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  }
+  document.getElementById('overlay').addEventListener('click', closeSheet);
+
+  function openProductSheet(existing){
+    if(!canWrite){ showToast('Read-only access'); return; }
+    const isEdit = !!existing;
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">${isEdit ? 'Edit product' : 'Add product'}</div>
+      <div class="field">
+        <label>Product code</label>
+        <input class="mono" id="inpCode" placeholder="e.g. A897-064-3209-00" value="${isEdit ? escapeAttr(existing.code) : ''}">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn">${isEdit ? 'Save changes' : 'Add product'}</button>
+      </div>
+    `);
+    document.getElementById('cancelBtn').onclick = closeSheet;
+    document.getElementById('saveBtn').onclick = ()=>{
+      const code = document.getElementById('inpCode').value.trim();
+      if(!code){ showToast('Enter a product code'); return; }
+      const now = new Date().toISOString();
+      if(isEdit){ existing.code = code; existing.updatedAt = now; showToast('Product updated'); }
+      else { state.products.push({ id:uid(), code, stages:[], subProducts:[], createdAt:now, updatedAt:now }); showToast('Product added'); }
+      saveState();
+      closeSheet();
+      render();
+    };
+  }
+
+  function openSubProductSheet(productId, existing){
+    if(!canWrite){ showToast('Read-only access'); return; }
+    const p=findProduct(productId); if(!p) return;
+    ensureSubProducts(p);
+    const isEdit=!!existing;
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">${isEdit ? 'Edit sub product' : 'Add sub product'}</div>
+      <div class="field">
+        <label>Sub product code</label>
+        <input class="mono" id="inpSubCode" placeholder="e.g. A897-064-3197-00" value="${isEdit ? escapeAttr(existing.code) : ''}">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn">${isEdit ? 'Save changes' : 'Add sub product'}</button>
+      </div>
+    `);
+    document.getElementById('cancelBtn').onclick=closeSheet;
+    document.getElementById('saveBtn').onclick=()=>{
+      const code=document.getElementById('inpSubCode').value.trim();
+      if(!code){ showToast('Enter a sub product code'); return; }
+      const now=new Date().toISOString();
+      if(isEdit){ existing.code=code; existing.updatedAt=now; showToast('Sub product updated'); }
+      else { p.subProducts.push({id:uid(),code,stages:[],createdAt:now,updatedAt:now}); showToast('Sub product added'); }
+      p.updatedAt=now; saveState(); closeSheet(); render();
+    };
+  }
+
+  function openStageSheet(productId, existing, subProductId=null){
+    if(!canWrite){ showToast('Read-only access'); return; }
+    const isEdit=!!existing;
+    const currentKey=isEdit ? resolveStageKey(existing) : '';
+    const isOthers=currentKey===OTHERS_KEY;
+    const optionsHtml=STAGE_COLUMNS.map(c=>
+      `<option value="${c}" ${(!isOthers && currentKey===c)?'selected':''}>${c}</option>`
+    ).join('') + `<option value="${OTHERS_KEY}" ${isOthers?'selected':''}>${OTHERS_LABEL}</option>`;
+    const ownerLabel=subProductId ? 'sub product' : 'main product';
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">${isEdit ? 'Edit stage' : 'Add stage'}</div>
+      <div class="field">
+        <label>Stage (${ownerLabel})</label>
+        <select id="inpStageSelect">
+          <option value="" disabled ${currentKey?'':'selected'}>Select a stage</option>
+          ${optionsHtml}
+        </select>
+      </div>
+      <div class="field" id="othersField" style="display:${isOthers?'block':'none'};">
+        <label>Custom stage name</label>
+        <input id="inpStageOther" placeholder="Enter stage name" value="${isOthers ? escapeAttr(existing.name) : ''}">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn">${isEdit ? 'Save changes' : 'Add stage'}</button>
+      </div>
+    `);
+    document.getElementById('cancelBtn').onclick=closeSheet;
+    const selectEl=document.getElementById('inpStageSelect');
+    const othersField=document.getElementById('othersField');
+    selectEl.addEventListener('change',()=>{ othersField.style.display=selectEl.value===OTHERS_KEY?'block':'none'; });
+    document.getElementById('saveBtn').onclick=()=>{
+      const key=selectEl.value;
+      if(!key){ showToast('Select a stage'); return; }
+      let name;
+      if(key===OTHERS_KEY){
+        name=document.getElementById('inpStageOther').value.trim();
+        if(!name){ showToast('Enter a custom stage name'); return; }
+      }else name=key;
+      const p=findProduct(productId); if(!p) return;
+      let stages;
+      if(subProductId){ const sp=findSubProduct(productId,subProductId); if(!sp) return; stages=sp.stages; sp.updatedAt=new Date().toISOString(); }
+      else stages=p.stages;
+      if(isEdit){ existing.name=name; existing.stageKey=key; showToast('Stage updated'); }
+      else stages.push({id:uid(),name,stageKey:key,entries:[]});
+      p.updatedAt=new Date().toISOString();
+      if(!isEdit) showToast('Stage added');
+      saveState(); closeSheet(); render();
+    };
+  }
+
+  // Main product + is the fast path: it opens Add Stage directly.
+  // Sub Product has its own separate button on the stage page.
+
+  // ---------- Excel export: consolidated sheet across all products ----------
+  function sortedProducts(){
+    return state.products.slice().sort((a,b)=>{
+      const av = a.updatedAt || a.createdAt || '';
+      const bv = b.updatedAt || b.createdAt || '';
+      return bv.localeCompare(av); // most recently modified first
+    });
+  }
+
+  async function exportConsolExcel(){
+    if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
+    if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
+    showToast('Preparing export…');
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Consol');
+
+    const CARDS_PER_ROW = 3;
+    const LABEL_COL_W = 24;
+    const VALUE_COL_W = 13;
+    const GAP_COL_W = 3;
+    const GROUP_GAP_ROWS = 1;
+
+    const HEADER_FILL = 'FF3DD68C';
+    const TOTAL_FILL  = 'FFEDEDED';
+    const BORDER = { style:'thin', color:{ argb:'FFC9C9C9' } };
+    const thinBorder = { top:BORDER, left:BORDER, bottom:BORDER, right:BORDER };
+
+    // Set up column widths: [label, value, gap] x CARDS_PER_ROW (no trailing gap needed)
+    const colWidths = [];
+    for(let c=0;c<CARDS_PER_ROW;c++){
+      colWidths.push(LABEL_COL_W, VALUE_COL_W);
+      if(c < CARDS_PER_ROW-1) colWidths.push(GAP_COL_W);
+    }
+    colWidths.forEach((w,i)=>{ ws.getColumn(i+1).width = w; });
+
+    const products = sortedProducts();
+    let rowCursor = 1;
+
+    for(let i=0; i<products.length; i+=CARDS_PER_ROW){
+      const group = products.slice(i, i+CARDS_PER_ROW);
+      let maxRowsInGroup = 0;
+
+      group.forEach((p, idx)=>{
+        const labelCol = idx*3 + 1;
+        const valueCol = labelCol + 1;
+        const headerRowNum = rowCursor;
+
+        // Header (product code) — merged, green fill
+        ws.mergeCells(headerRowNum, labelCol, headerRowNum, valueCol);
+        const headerCell = ws.getCell(headerRowNum, labelCol);
+        headerCell.value = p.code;
+        headerCell.font = { bold:true, size:12, color:{ argb:'FF14231C' } };
+        headerCell.alignment = { vertical:'middle', horizontal:'center' };
+        headerCell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:HEADER_FILL } };
+        ws.getRow(headerRowNum).height = 22;
+        [labelCol, valueCol].forEach(c=>{ ws.getCell(headerRowNum, c).border = thinBorder; });
+
+        // Stage rows, in the product's own stage order
+        p.stages.forEach((s, sIdx)=>{
+          const r = headerRowNum + 1 + sIdx;
+          const labelCell = ws.getCell(r, labelCol);
+          const valueCell = ws.getCell(r, valueCol);
+          labelCell.value = (s.name || '').toUpperCase();
+          valueCell.value = stageQty(s);
+          labelCell.font = { bold:true, size:10, color:{ argb:'FF1C1C1E' } };
+          valueCell.font = { size:10, color:{ argb:'FF1C1C1E' } };
+          labelCell.alignment = { vertical:'middle', horizontal:'left' };
+          valueCell.alignment = { vertical:'middle', horizontal:'center' };
+          labelCell.border = thinBorder;
+          valueCell.border = thinBorder;
+        });
+
+        // TOTAL row
+        const totalRowNum = headerRowNum + 1 + p.stages.length;
+        const totalLabelCell = ws.getCell(totalRowNum, labelCol);
+        const totalValueCell = ws.getCell(totalRowNum, valueCol);
+        totalLabelCell.value = 'TOTAL';
+        totalValueCell.value = productTotalQty(p);
+        [totalLabelCell, totalValueCell].forEach(cell=>{
+          cell.font = { bold:true, size:10, color:{ argb:'FF1C1C1E' } };
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:TOTAL_FILL } };
+          cell.border = thinBorder;
+        });
+        totalLabelCell.alignment = { vertical:'middle', horizontal:'left' };
+        totalValueCell.alignment = { vertical:'middle', horizontal:'center' };
+
+        const cardRows = 1 + p.stages.length + 1; // header + stages + total
+        if(cardRows > maxRowsInGroup) maxRowsInGroup = cardRows;
+      });
+
+      rowCursor += maxRowsInGroup + GROUP_GAP_ROWS;
+    }
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ECON_WIP_Consol_${todayISO()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Excel report exported');
+  }
+
+  // ---------- Excel export: flat table, one row per product, columns per stage ----------
+  async function exportExcel(){
+    if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
+    if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
+    showToast('Preparing export…');
+    const headerLabels = ['PRODUCT', ...STAGE_COLUMNS, 'OTHERS', 'TOTAL', 'REMARKS'];
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Export', { views:[{ state:'frozen', xSplit:1, ySplit:1 }] });
+
+    ws.addRow(headerLabels);
+    const headerRow = ws.getRow(1);
+    headerRow.height = 34;
+    headerRow.eachCell(cell=>{
+      cell.font = { bold:true, color:{ argb:'FF1C1C1E' } };
+      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFBEDCEA' } };
+      cell.border = {
+        top:{style:'thin', color:{argb:'FFAAB6BE'}}, left:{style:'thin', color:{argb:'FFAAB6BE'}},
+        bottom:{style:'thin', color:{argb:'FFAAB6BE'}}, right:{style:'thin', color:{argb:'FFAAB6BE'}}
+      };
+    });
+
+    sortedProducts().forEach(p=>{
+      const colSums = {};
+      STAGE_COLUMNS.forEach(c=>{ colSums[c] = 0; });
+      colSums[OTHERS_KEY] = 0;
+      const othersBreakdown = [];
+      p.stages.forEach(s=>{
+        const key = resolveStageKey(s);
+        const qty = stageQty(s);
+        if(key===OTHERS_KEY){
+          colSums[OTHERS_KEY] += qty;
+          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
+        } else if(Object.prototype.hasOwnProperty.call(colSums, key)){
+          colSums[key] += qty;
+        } else {
+          colSums[OTHERS_KEY] += qty;
+          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
+        }
+      });
+      const total = TOTAL_COLUMNS.reduce((sum,c)=> sum + (colSums[c]||0), 0);
+      const rowValues = [
+        p.code,
+        ...STAGE_COLUMNS.map(c => colSums[c] ? colSums[c] : null),
+        colSums[OTHERS_KEY] ? colSums[OTHERS_KEY] : null,
+        total ? total : null,
+        othersBreakdown.join('\n')
+      ];
+      const row = ws.addRow(rowValues);
+      const lineCount = othersBreakdown.length || 1;
+      row.height = Math.max(18, lineCount * 15);
+      row.eachCell((cell, colNumber)=>{
+        const isProductCol = colNumber===1;
+        const isRemarksCol = colNumber===headerLabels.length;
+        cell.alignment = {
+          vertical:'middle',
+          horizontal: (isProductCol || isRemarksCol) ? 'left' : 'center',
+          wrapText:true
+        };
+        cell.border = {
+          top:{style:'thin', color:{argb:'FFDDDDDD'}}, left:{style:'thin', color:{argb:'FFDDDDDD'}},
+          bottom:{style:'thin', color:{argb:'FFDDDDDD'}}, right:{style:'thin', color:{argb:'FFDDDDDD'}}
+        };
+        if(isProductCol) cell.font = { bold:true };
+      });
+    });
+
+    ws.columns.forEach((col,i)=>{
+      if(i===0) col.width = 20;
+      else if(i===headerLabels.length-1) col.width = 34;
+      else col.width = 13;
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ECON_WIP_Export_${todayISO()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Excel report exported');
+  }
+
+  // ---------- Image export: single product's stage table as a PNG (matches the product detail screen) ----------
+  function exportProductStageImage(product){
+    if(!product || !product.stages || product.stages.length===0){ showToast('No stages to export'); return; }
+    try{
+      const SCALE = 2; // render at 2x for a crisp image
+      const width = 380;
+      const headerHeight = 42;
+      const rowHeight = 38;
+      const rowCount = product.stages.length + 1; // + TOTAL row
+      const height = headerHeight + rowCount*rowHeight;
+      const colSplit = Math.round(width*0.64);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width*SCALE;
+      canvas.height = height*SCALE;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(SCALE, SCALE);
+
+      // background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,width,height);
+
+      // header row — product code, light blue
+      ctx.fillStyle = '#BEDCEA';
+      ctx.fillRect(0,0,width,headerHeight);
+      ctx.fillStyle = '#1C1C1E';
+      ctx.font = 'bold 15px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(product.code, width/2, headerHeight/2);
+
+      let y = headerHeight;
+      product.stages.forEach(s=>{
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0,y,width,rowHeight);
+        ctx.fillStyle = '#000000';
+        ctx.font = '13px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(s.name).toUpperCase(), colSplit/2, y+rowHeight/2);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 13px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(stageQty(s)), colSplit+(width-colSplit)/2, y+rowHeight/2);
+        y += rowHeight;
+      });
+
+      // TOTAL row — bold
+      ctx.fillStyle = '#F0F0F5';
+      ctx.fillRect(0,y,width,rowHeight);
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 13px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('TOTAL', colSplit/2, y+rowHeight/2);
+      ctx.textAlign = 'center';
+      ctx.fillText(String(productTotalQty(product)), colSplit+(width-colSplit)/2, y+rowHeight/2);
+      y += rowHeight;
+
+      // grid lines
+      ctx.strokeStyle = '#AAAAAA';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5,0.5,width-1,height-1);
+      ctx.beginPath();
+      for(let gy=headerHeight; gy<=height; gy+=rowHeight){
+        ctx.moveTo(0, Math.round(gy)+0.5);
+        ctx.lineTo(width, Math.round(gy)+0.5);
+      }
+      ctx.moveTo(colSplit+0.5, headerHeight);
+      ctx.lineTo(colSplit+0.5, height);
+      ctx.stroke();
+
+      shareOrDownloadCanvas(canvas, `${product.code}.png`);
+    }catch(e){
+      console.error('Product image export failed', e);
+      showToast('Image generation failed — try again');
+    }
+  }
+
+  // ---------- Share (Web Share API) with automatic download fallback ----------
+  function shareOrDownloadCanvas(canvas, filename){
+    canvas.toBlob(async (blob)=>{
+      if(!blob){ showToast('Failed — try again'); return; }
+      try{
+        const file = new File([blob], filename, { type:'image/png' });
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          try{
+            await navigator.share({ files:[file], title: filename });
+            return;
+          }catch(shareErr){
+            if(shareErr && shareErr.name==='AbortError') return; // user cancelled the share sheet
+            console.error('Share failed, falling back to download', shareErr);
+          }
+        }
+      }catch(e){ console.error('Share check failed', e); }
+      // Fallback: plain download (desktop browsers / no Web Share support)
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded (share not supported here)');
+    }, 'image/png');
+  }
+
+  // ---------- Consolidated image: all products, one sheet, matches CONSOL reference layout ----------
+  // For a stage literally named "OTHERS", break its total into rows keyed by each entry's
+  // remark text (e.g. "RW IN SMT -- 48") instead of a single generic "OTHERS" row.
+  function stageDisplayRows(stage){
+    const nameUpper = String(stage.name||'').trim().toUpperCase();
+    if(nameUpper === OTHERS_KEY){
+      const groups = {}; const order = [];
+      (stage.entries||[]).forEach(e=>{
+        const label = (e.remarks && e.remarks.trim()) ? e.remarks.trim().toUpperCase() : OTHERS_KEY;
+        if(!(label in groups)){ groups[label]=0; order.push(label); }
+        groups[label] += Number(e.qty||0);
+      });
+      if(order.length===0) return [{ label: OTHERS_KEY, qty: 0 }];
+      return order.map(l=>({ label:l, qty:groups[l] }));
+    }
+    return [{ label: nameUpper, qty: stageQty(stage) }];
+  }
+
+  function productDisplayRows(product){
+    let rows = [];
+    product.stages.forEach(s=>{ rows = rows.concat(stageDisplayRows(s)); });
+    rows.push({ label:'TOTAL', qty: productTotalQty(product), isTotal:true });
+    return rows;
+  }
+
+  function fitBoldFont(ctx, text, maxWidth, baseSize){
+    let size = baseSize;
+    ctx.font = `bold ${size}px Arial, sans-serif`;
+    while(ctx.measureText(text).width > maxWidth && size > 7){
+      size -= 0.5;
+      ctx.font = `bold ${size}px Arial, sans-serif`;
+    }
+    return size;
+  }
+
+  function exportConsolImage(){
+    if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
+    try{
+      const products = sortedProducts();
+      const COLS = 3;
+      const COL_W = 320;
+      const COL_GAP = 14;
+      const ROW_GAP = 16;
+      const MARGIN = 12;
+      const HEADER_H = 30;
+      const ROW_H = 24;
+      const SCALE = 2;
+      const colSplit = Math.round(COL_W*0.62);
+
+      // Pre-compute each product's rows + pixel height
+      const items = products.map(p=>{
+        const rows = productDisplayRows(p);
+        const h = HEADER_H + rows.length*ROW_H;
+        return { p, rows, h };
+      });
+
+      // Layout in row-major bands of COLS; band height = tallest item in that band
+      let totalHeight = MARGIN;
+      const bands = [];
+      for(let i=0;i<items.length;i+=COLS){
+        const band = items.slice(i, i+COLS);
+        const bandH = Math.max(...band.map(b=>b.h));
+        bands.push({ items:band, h:bandH, y:totalHeight });
+        totalHeight += bandH + ROW_GAP;
+      }
+      totalHeight += MARGIN - ROW_GAP;
+      const width = MARGIN*2 + COLS*COL_W + (COLS-1)*COL_GAP;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width*SCALE;
+      canvas.height = totalHeight*SCALE;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(SCALE, SCALE);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,width,totalHeight);
+
+      bands.forEach(band=>{
+        band.items.forEach((item, colIdx)=>{
+          const x = MARGIN + colIdx*(COL_W+COL_GAP);
+          const y = band.y;
+          const { p, rows, h } = item;
+
+          // header
+          ctx.fillStyle = '#33FF99';
+          ctx.fillRect(x, y, COL_W, HEADER_H);
+          ctx.fillStyle = '#0A2E1E';
+          const hf = fitBoldFont(ctx, p.code, COL_W-16, 14);
+          ctx.font = `bold ${hf}px Arial, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.code, x+COL_W/2, y+HEADER_H/2);
+
+          // rows
+          let ry = y+HEADER_H;
+          rows.forEach(row=>{
+            ctx.fillStyle = row.isTotal ? '#F0F0F5' : '#FFFFFF';
+            ctx.fillRect(x, ry, COL_W, ROW_H);
+
+            ctx.fillStyle = '#000000';
+            const lf = fitBoldFont(ctx, row.label, colSplit-14, 11);
+            ctx.font = `${row.isTotal?'bold':'600'} ${lf}px Arial, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(row.label, x+8, ry+ROW_H/2);
+
+            ctx.font = `bold 12px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(String(row.qty), x+colSplit+(COL_W-colSplit)/2, ry+ROW_H/2);
+
+            ry += ROW_H;
+          });
+
+          // borders
+          ctx.strokeStyle = '#AAAAAA';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x+0.5, y+0.5, COL_W-1, h-1);
+          ctx.beginPath();
+          for(let gy=y+HEADER_H; gy<=y+h; gy+=ROW_H){
+            ctx.moveTo(x, Math.round(gy)+0.5);
+            ctx.lineTo(x+COL_W, Math.round(gy)+0.5);
+          }
+          ctx.moveTo(x+colSplit+0.5, y+HEADER_H);
+          ctx.lineTo(x+colSplit+0.5, y+h);
+          ctx.stroke();
+        });
+      });
+
+      showToast('Preparing CONSOL image…');
+      shareOrDownloadCanvas(canvas, `ECON_WIP_Consol_${todayISO()}.png`);
+    }catch(e){
+      console.error('Consol image export failed', e);
+      showToast('Image generation failed — try again');
+    }
+  }
+
+  function openEntrySheet(productId, stageId, existing, subProductId=null){
+    if(!canWrite){ showToast('Read-only access'); return; }
+    const isEdit = !!existing;
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">${isEdit ? 'Edit entry' : 'Add quantity'}</div>
+      <div class="field">
+        <label>Quantity</label>
+        <input class="mono" type="number" inputmode="numeric" id="inpQty" placeholder="0" value="${isEdit ? escapeAttr(existing.qty) : ''}">
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="inpDate" value="${isEdit ? escapeAttr(existing.date||todayISO()) : todayISO()}">
+      </div>
+      <div class="field">
+        <label>Remarks</label>
+        <textarea id="inpRemarks" placeholder="Optional notes">${isEdit ? escapeHtml(existing.remarks||'') : ''}</textarea>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn">${isEdit ? 'Save changes' : 'Save entry'}</button>
+      </div>
+    `);
+    document.getElementById('cancelBtn').onclick = closeSheet;
+    setTimeout(()=>{ const qtyInput=document.getElementById('inpQty'); if(qtyInput){ qtyInput.focus(); qtyInput.select(); } }, 220);
+    document.getElementById('saveBtn').onclick = ()=>{
+      const date = document.getElementById('inpDate').value || todayISO();
+      const remarks = document.getElementById('inpRemarks').value.trim();
+      const qty = Number(document.getElementById('inpQty').value || 0);
+      if(isEdit){
+        existing.date = date; existing.remarks = remarks; existing.qty = qty;
+        showToast('Entry updated');
+      } else {
+        const stage = findStage(productId, stageId, subProductId);
+        if(!stage) return;
+        stage.entries.unshift({ id:uid(), date, remarks, qty });
+        showToast('Entry saved');
+      }
+      const pp = findProduct(productId);
+      if(pp) pp.updatedAt = new Date().toISOString();
+      saveState();
+      closeSheet();
+      render();
+    };
+  }
+
+  // ---------- Touch-friendly drag to reorder ----------
+  function setupSortable(container){
+    let dragEl=null, placeholder=null, pointerId=null, offsetY=0;
+
+    function onPointerMove(e){
+      if(!dragEl) return;
+      const y = e.clientY - offsetY;
+      dragEl.style.top = y + 'px';
+      const rows = Array.from(container.querySelectorAll(':scope > [data-id]')).filter(el=>el!==dragEl);
+      let target = null;
+      for(const sib of rows){
+        const r = sib.getBoundingClientRect();
+        if(e.clientY < r.top + r.height/2){ target = sib; break; }
+      }
+      if(target) container.insertBefore(placeholder, target);
+      else container.appendChild(placeholder);
+    }
+
+    function onPointerUp(){
+      if(!dragEl) return;
+      try{ dragEl.releasePointerCapture(pointerId); }catch(e){}
+      dragEl.removeEventListener('pointermove', onPointerMove);
+      dragEl.removeEventListener('pointerup', onPointerUp);
+      dragEl.removeEventListener('pointercancel', onPointerUp);
+      dragEl.style.position=''; dragEl.style.top=''; dragEl.style.left='';
+      dragEl.style.width=''; dragEl.style.zIndex=''; dragEl.classList.remove('dragging');
+      container.insertBefore(dragEl, placeholder);
+      placeholder.remove();
+
+      const ids = Array.from(container.querySelectorAll(':scope > [data-id]')).map(el=>el.dataset.id);
+      const arr = getCurrentArray();
+      arr.sort((a,b)=> ids.indexOf(a.id) - ids.indexOf(b.id));
+      dragEl = null; placeholder = null;
+      const n = currentNav();
+      if(n.view!=='products' && n.productId){
+        const p = findProduct(n.productId);
+        if(p) p.updatedAt = new Date().toISOString();
+      }
+      saveState();
+    }
+
+    container.addEventListener('pointerdown', (e)=>{
+      const handle = e.target.closest('.drag-handle');
+      if(!handle) return;
+      const row = handle.closest('[data-id]');
+      if(!row) return;
+      e.preventDefault();
+      const rect = row.getBoundingClientRect();
+      offsetY = e.clientY - rect.top;
+      dragEl = row;
+      pointerId = e.pointerId;
+      placeholder = document.createElement('div');
+      placeholder.className = 'drag-placeholder';
+      placeholder.style.height = rect.height + 'px';
+      row.parentNode.insertBefore(placeholder, row.nextSibling);
+      row.style.position = 'fixed';
+      row.style.top = rect.top + 'px';
+      row.style.left = rect.left + 'px';
+      row.style.width = rect.width + 'px';
+      row.style.zIndex = 1000;
+      row.classList.add('dragging');
+      row.setPointerCapture(pointerId);
+      row.addEventListener('pointermove', onPointerMove);
+      row.addEventListener('pointerup', onPointerUp);
+      row.addEventListener('pointercancel', onPointerUp);
+    });
+  }
+
+
+  function buildExcelRowsFromState(){
+    return sortedProducts().map(p=>{
+      const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
+      const remarks=[];
+      (p.stages||[]).forEach(s=>{
+        const key=resolveStageKey(s), qty=stageQty(s);
+        if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
+        else sums[OTHERS_KEY]+=qty;
+        if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
+      });
+      const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
+      return {product:p.code,sums,total,remarks:remarks.join('\\n')};
+    });
+  }
+
+  function buildConsolidatedReportHTML(){
+    const products = sortedProducts();
+    if(!products.length) return `<div class="consolidated-empty">No products available.</div>`;
+    return products.map(product=>{
+      const stageRows = (product.stages||[]).map(stage=>({
+        key: resolveStageKey(stage),
+        name: resolveStageKey(stage)===OTHERS_KEY ? OTHERS_LABEL : resolveStageKey(stage),
+        qty: stageQty(stage)
+      }));
+      const total = productTotalQty(product);
+      const subHtml=ensureSubProducts(product).map(sp=>{
+        const subStages=(sp.stages||[]).map(stage=>({name:resolveStageKey(stage)===OTHERS_KEY?OTHERS_LABEL:resolveStageKey(stage),qty:stageQty(stage)}));
+        const subTotal=subProductTotalQty(sp);
+        return `<div class="consolidated-subproduct"><div class="consolidated-subproduct-title">${escapeHtml(sp.code)}</div>${subStages.map(r=>`<div class="consolidated-row consolidated-subrow"><span>${escapeHtml(r.name)}</span><span>${r.qty}</span></div>`).join('')}<div class="consolidated-row consolidated-total"><span>TOTAL</span><span>${subTotal}</span></div></div>`;
+      }).join('');
+      return `
+        <div class="consolidated-card">
+          <div class="consolidated-product">${escapeHtml(product.code)}</div>
+          <div class="consolidated-rows">
+            ${stageRows.map(row=>`<div class="consolidated-row"><span>${escapeHtml(row.name)}</span><span>${row.qty}</span></div>`).join('')}
+            <div class="consolidated-row consolidated-total"><span>TOTAL</span><span>${total}</span></div>
+            ${subHtml}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderExcelReport(scroll){
+    const rows=buildExcelRowsFromState();
+    const headers=['PRODUCT',...STAGE_COLUMNS,'OTHERS','TOTAL','REMARKS'];
+    scroll.className='dashboard-scroll';
+    scroll.innerHTML=`
+      <div class="dashboard-head">
+        <div>
+          <div class="dashboard-kicker">REPORTS</div>
+          <div class="dashboard-title">Excel Report</div>
+          <div class="dashboard-subtitle">Read-only consolidated report. Use EXPORT XLSX to download the detailed report.</div>
+        </div>
+        <div class="dashboard-total-card">
+          <div class="dashboard-total-label">Rows</div>
+          <div class="dashboard-total-num">${rows.length}</div>
+        </div>
+      </div>
+
+      <div class="report-accordion">
+        <button class="report-accordion-btn" id="excelReportToggle" type="button">
+          <span><strong>Excel Report</strong><small>View-only detailed report • click to open</small></span>
+          <span class="report-chevron">⌄</span>
+        </button>
+        <div class="report-accordion-panel" id="excelReportPanel">
+          <div class="excel-panel detailed-report-panel">
+            <div class="excel-toolbar">
+              <div>
+                <div class="excel-toolbar-title">Excel Report</div>
+                <div class="excel-toolbar-sub">Read-only detailed table.</div>
+              </div>
+              <button class="excel-export-btn" id="reportExportBtn">EXPORT XLSX</button>
+            </div>
+            <div class="excel-wrap">
+              <table class="excel-table" id="excelReportTable">
+                <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+                <tbody>
+                  ${rows.map((r,ri)=>`
+                    <tr data-report-row="${ri}">
+                      <td>${escapeHtml(r.product)}</td>
+                      ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
+                      <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
+                      <td class="report-total" data-col="TOTAL">${r.total||''}</td>
+                      <td class="remarks-cell" data-col="REMARKS">${escapeHtml(r.remarks)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="excel-note">Read-only report. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report and are not editable in the web view.</div>
+          </div>
+        </div>
+
+        <button class="report-accordion-btn" id="consolidatedReportToggle" type="button">
+          <span><strong>Consolidated Report</strong><small>Product-wise stage quantity summary • click to open</small></span>
+          <span class="report-chevron">⌄</span>
+        </button>
+        <div class="report-accordion-panel" id="consolidatedReportPanel">
+          <div class="excel-panel consolidated-panel">
+            <div class="excel-toolbar">
+              <div>
+                <div class="excel-toolbar-title">Consolidated Report</div>
+                <div class="excel-toolbar-sub">View only • Product-wise stage quantity summary</div>
+              </div>
+            </div>
+            <div class="consolidated-grid">
+              ${buildConsolidatedReportHTML()}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+
+    const excelToggle=document.getElementById('excelReportToggle');
+    const excelPanel=document.getElementById('excelReportPanel');
+    const consolidatedToggle=document.getElementById('consolidatedReportToggle');
+    const consolidatedPanel=document.getElementById('consolidatedReportPanel');
+
+    const closeReportPanels=()=>{
+      [excelToggle,consolidatedToggle].forEach(b=>b?.classList.remove('open'));
+      [excelPanel,consolidatedPanel].forEach(p=>p?.classList.remove('open'));
+    };
+    const bindReportAccordion=(button,panel,otherButton,otherPanel)=>{
+      button?.addEventListener('click',()=>{
+        const willOpen=!panel.classList.contains('open');
+        closeReportPanels();
+        if(willOpen){
+          button.classList.add('open');
+          panel.classList.add('open');
+        }
+      });
+    };
+    bindReportAccordion(excelToggle,excelPanel,consolidatedToggle,consolidatedPanel);
+    bindReportAccordion(consolidatedToggle,consolidatedPanel,excelToggle,excelPanel);
+    // Both reports stay closed until the user clicks one.
+    const table=document.getElementById('excelReportTable');
+    document.getElementById('reportExportBtn').onclick=()=>exportEditableExcel(table);
+  }
+
+  async function exportEditableExcel(table){
+    if(typeof ExcelJS==='undefined'){showToast('Export library failed to load — check connection');return;}
+    const wb=new ExcelJS.Workbook();
+    const ws=wb.addWorksheet('Export',{views:[{state:'frozen',xSplit:1,ySplit:1}]});
+    const headers=Array.from(table.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+    ws.addRow(headers);
+    ws.getRow(1).eachCell(cell=>{
+      cell.font={bold:true,color:{argb:'FF1C1C1E'}};
+      cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFBEDCEA'}};
+      cell.border={top:{style:'thin',color:{argb:'FFAAB6BE'}},left:{style:'thin',color:{argb:'FFAAB6BE'}},bottom:{style:'thin',color:{argb:'FFAAB6BE'}},right:{style:'thin',color:{argb:'FFAAB6BE'}}};
+    });
+    table.querySelectorAll('tbody tr').forEach(tr=>{
+      const vals=Array.from(tr.children).map((td,i)=>{
+        const raw=td.textContent.trim();
+        if(i>0 && i<headers.length-1 && raw!==''){
+          const n=Number(raw.replace(/,/g,''));
+          return Number.isFinite(n)?n:raw;
+        }
+        return raw;
+      });
+      ws.addRow(vals);
+    });
+    ws.columns.forEach((col,i)=>col.width=i===0?20:(i===headers.length-1?34:13));
+    const buffer=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Excel_Report_${todayISO()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Editable Excel report exported');
+  }
+
+  // ---------- Department Attendance ----------
+  function attendanceMonthLabel(ym){
+    const [y,m]=String(ym).split('-').map(Number);
+    if(!y || !m) return ym;
+    return new Date(y,m-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  }
+  function attendanceDaysInMonth(ym){
+    const [y,m]=String(ym).split('-').map(Number);
+    return new Date(y,m,0).getDate();
+  }
+  function attendanceDate(ym,day){ return `${ym}-${String(day).padStart(2,'0')}`; }
+  function isSundayDate(iso){ return new Date(iso+'T00:00:00').getDay()===0; }
+  function ensureAttendanceState(){
+    if(!attendanceState || typeof attendanceState!=='object') attendanceState={employees:{},months:{}};
+    if(!attendanceState.employees) attendanceState.employees={};
+    if(!attendanceState.months) attendanceState.months={};
+    Object.values(attendanceState.employees).forEach((e,i)=>{
+      if(e.order==null) e.order=i+1;
+      if(e.active==null) e.active=true;
+    });
+  }
+  function getAttendanceMonth(ym){
+    ensureAttendanceState();
+    if(!attendanceState.months[ym]) attendanceState.months[ym]={days:{},holidays:{}};
+    if(!attendanceState.months[ym].days) attendanceState.months[ym].days={};
+    if(!attendanceState.months[ym].holidays) attendanceState.months[ym].holidays={};
+    return attendanceState.months[ym];
+  }
+  function attendanceStatus(ym,empId,day){
+    const iso=attendanceDate(ym,day);
+    if(isSundayDate(iso)) return 'S';
+    const month=getAttendanceMonth(ym);
+    if(month.holidays[iso]) return 'H';
+    return month.days[`${empId}_${iso}`] || '-';
+  }
+  function setAttendanceStatus(ym,empId,day,status){
+    const iso=attendanceDate(ym,day), month=getAttendanceMonth(ym), key=`${empId}_${iso}`;
+    delete month.holidays[iso];
+    if(status==='H'){ delete month.days[key]; month.holidays[iso]=true; }
+    else if(status==='P' || status==='A') month.days[key]=status;
+    else delete month.days[key];
+  }
+  function attendanceWorkingDays(ym){
+    const days=attendanceDaysInMonth(ym), month=getAttendanceMonth(ym); let n=0;
+    for(let d=1;d<=days;d++){
+      const iso=attendanceDate(ym,d);
+      if(!isSundayDate(iso) && !month.holidays[iso]) n++;
+    }
+    return n;
+  }
+  function attendanceEmpSummary(empId, uptoMonth=null){
+    ensureAttendanceState();
+    let working=0,present=0,absent=0,holidays=0;
+    const months=uptoMonth ? [uptoMonth] : Object.keys(attendanceState.months).sort();
+    months.forEach(ym=>{
+      const month=getAttendanceMonth(ym), days=attendanceDaysInMonth(ym);
+      for(let d=1;d<=days;d++){
+        const iso=attendanceDate(ym,d), st=attendanceStatus(ym,empId,d);
+        if(st==='S' || st==='H'){ holidays++; continue; }
+        working++;
+        if(st==='P') present++;
+        else if(st==='A') absent++;
+      }
+    });
+    return {working,present,absent,holidays};
+  }
+  function attendanceEmployeeList(){
+    ensureAttendanceState();
+    return Object.values(attendanceState.employees)
+      .filter(e=>e.active!==false)
+      .sort((a,b)=>Number(a.order||999999)-Number(b.order||999999) || String(a.name).localeCompare(String(b.name)));
+  }
+  function attendanceMonthOptions(){
+    const set=new Set(Object.keys(attendanceState.months||{}));
+    const now=new Date();
+    for(let i=0;i<24;i++){
+      const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      set.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+    set.add(attendanceMonth);
+    return Array.from(set).sort().reverse();
+  }
+  async function saveAttendance(){
+    ensureAttendanceState();
+    try{ await attendanceDocRef.set(attendanceState); }
+    catch(e){ console.error(e); showToast('Attendance save failed — check connection'); }
+  }
+  function addEmployee(){
+    if(!window.__auth.isOwner()){showToast('Only owner can edit attendance');return;}
+    const maxOrder=attendanceEmployeeList().reduce((m,e)=>Math.max(m,Number(e.order)||0),0);
+    openSheet(`
+      <div class="sheet-handle"></div><div class="sheet-title">Add Employee</div>
+      <div class="field"><label>Employee No</label><input class="mono" id="attEmpNo" placeholder="e.g. EMP001"></div>
+      <div class="field"><label>Employee Name</label><input id="attEmpName" placeholder="Employee name"></div>
+      <div class="field"><label>Display Order</label><input class="mono att-order-input" type="number" min="1" id="attEmpOrder" value="${maxOrder+1}"></div>
+      <div class="sheet-actions"><button class="btn btn-ghost" id="cancelBtn">Cancel</button><button class="btn btn-primary" id="saveBtn">Add employee</button></div>`);
+    document.getElementById('cancelBtn').onclick=closeSheet;
+    document.getElementById('saveBtn').onclick=async()=>{
+      const no=document.getElementById('attEmpNo').value.trim(), name=document.getElementById('attEmpName').value.trim(), order=Math.max(1,Number(document.getElementById('attEmpOrder').value)||maxOrder+1);
+      if(!no||!name){showToast('Enter employee no and name');return;}
+      ensureAttendanceState();
+      if(Object.values(attendanceState.employees).some(e=>e.active!==false && String(e.empNo).toLowerCase()===no.toLowerCase())){showToast('Employee no already exists');return;}
+      const id=uid(); attendanceState.employees[id]={id,empNo:no,name,order,active:true,createdAt:new Date().toISOString()};
+      await saveAttendance(); closeSheet(); render();
+    };
+  }
+  function editEmployee(emp){
+    if(!window.__auth.isOwner()){showToast('Only owner can edit attendance');return;}
+    openSheet(`
+      <div class="sheet-handle"></div><div class="sheet-title">Edit Employee</div>
+      <div class="field"><label>Employee No</label><input class="mono" id="attEmpNo" value="${escapeAttr(emp.empNo)}"></div>
+      <div class="field"><label>Employee Name</label><input id="attEmpName" value="${escapeAttr(emp.name)}"></div>
+      <div class="field"><label>Display Order</label><input class="mono att-order-input" type="number" min="1" id="attEmpOrder" value="${Number(emp.order)||1}"></div>
+      <div class="sheet-actions"><button class="btn btn-ghost" id="cancelBtn">Cancel</button><button class="btn btn-primary" id="saveBtn">Save</button></div>`);
+    document.getElementById('cancelBtn').onclick=closeSheet;
+    document.getElementById('saveBtn').onclick=async()=>{
+      const no=document.getElementById('attEmpNo').value.trim(), name=document.getElementById('attEmpName').value.trim(), order=Math.max(1,Number(document.getElementById('attEmpOrder').value)||1);
+      if(!no||!name){showToast('Enter employee no and name');return;}
+      if(Object.values(attendanceState.employees).some(e=>e.id!==emp.id && e.active!==false && String(e.empNo).toLowerCase()===no.toLowerCase())){showToast('Employee no already exists');return;}
+      emp.empNo=no; emp.name=name; emp.order=order;
+      await saveAttendance(); closeSheet(); render();
+    };
+  }
+  async function deleteEmployee(emp){
+    if(!window.__auth.isOwner()){showToast('Only owner can delete attendance');return;}
+    if(!window.confirm(`Delete ${emp.empNo} - ${emp.name}? Attendance history will be kept as backup.`)) return;
+    // Soft-delete only. Keep the employee record + ALL month-wise attendance history
+    // in Firestore so previous-month backup is never lost.
+    emp.active=false;
+    emp.deletedAt=new Date().toISOString();
+    await saveAttendance(); render();
+  }
+  function renderAttendance(scroll){
+    ensureAttendanceState();
+    const ym=attendanceMonth, days=attendanceDaysInMonth(ym), emps=attendanceEmployeeList(), owner=window.__auth.isOwner();
+    const monthWorking=emps.reduce((sum,e)=>sum+attendanceEmpSummary(e.id,ym).working,0);
+    const monthPresent=emps.reduce((sum,e)=>sum+attendanceEmpSummary(e.id,ym).present,0);
+    const monthAbsent=emps.reduce((sum,e)=>sum+attendanceEmpSummary(e.id,ym).absent,0);
+
+    // Top-right card: show TODAY's attendance, independent of the selected backup month.
+    const todayISODate=todayISO();
+    const todayYm=todayISODate.slice(0,7);
+    const todayDay=Number(todayISODate.slice(8,10));
+    const todayTotal=emps.length;
+    let todayPresent=0, todayAbsent=0, todayNotMarked=0;
+    if(todayYm===ym && todayDay>=1 && todayDay<=days){
+      emps.forEach(e=>{
+        const st=attendanceStatus(todayYm,e.id,todayDay);
+        if(st==='P') todayPresent++;
+        else if(st==='A') todayAbsent++;
+        else if(st==='-') todayNotMarked++;
+      });
+    } else if(todayDay>=1 && todayDay<=attendanceDaysInMonth(todayYm)){
+      emps.forEach(e=>{
+        const st=attendanceStatus(todayYm,e.id,todayDay);
+        if(st==='P') todayPresent++;
+        else if(st==='A') todayAbsent++;
+        else if(st==='-') todayNotMarked++;
+      });
+    }
+    const monthOptions=attendanceMonthOptions().map(m=>`<option value="${m}" ${m===ym?'selected':''}>${attendanceMonthLabel(m)}</option>`).join('');
+    let html=`
+      <div class="dashboard-head">
+        <div><div class="dashboard-kicker">DEPARTMENT / ATTENDANCE</div><div class="dashboard-title">Dept Attendance</div><div class="dashboard-subtitle">Month-wise backup • Sunday = S • Holiday = H • Unmarked = -</div></div>
+        <div class="dashboard-total-card attendance-today-card"><div class="dashboard-total-label">TODAY</div><div class="dashboard-total-num"><span class="today-total">T-${todayTotal}</span><span class="today-sep">|</span><span class="today-present">P:${todayPresent}</span><span class="today-sep">|</span><span class="today-absent">A:${todayAbsent}</span><span class="today-sep">|</span><span class="today-unmarked">N:${todayNotMarked}</span></div></div>
+      </div>
+      <div class="attendance-toolbar">
+        <label class="attendance-month-filter">Month <select id="attendanceMonth">${monthOptions}</select></label>
+        ${owner?'<button class="excel-export-btn" id="addEmployeeBtn">+ Employee</button>':''}
+      </div>
+      <div class="attendance-legend"><span class="att-p">P Present</span><span class="att-a">A Absent</span><span class="att-h">H Holiday</span><span class="att-s">S Sunday</span><span class="att-empty">- Not Marked</span></div>
+      <div class="attendance-wrap"><table class="attendance-table"><thead><tr><th>Emp No</th><th>Employee Name</th>${Array.from({length:days},(_,i)=>`<th>${i+1}<small>${new Date(Number(ym.slice(0,4)),Number(ym.slice(5))-1,i+1).toLocaleDateString('en-US',{weekday:'short'}).slice(0,1)}</small></th>`).join('')}<th>Working</th><th>Present</th><th>Absent</th>${owner?'<th>Edit / Delete</th>':''}</tr></thead><tbody>
+      ${emps.length?emps.map(emp=>{const sum=attendanceEmpSummary(emp.id,ym); return `<tr><td class="mono-cell"><span class="att-order">${Number(emp.order)||0}</span> ${escapeHtml(emp.empNo)}</td><td class="name-cell">${escapeHtml(emp.name)}</td>${Array.from({length:days},(_,i)=>{const d=i+1,iso=attendanceDate(ym,d),st=attendanceStatus(ym,emp.id,d); const cls=st==='P'?'att-p':st==='A'?'att-a':st==='S'?'att-s':st==='H'?'att-h':'att-empty'; return `<td class="${cls}" data-att="${emp.id}|${d}">${st}</td>`}).join('')}<td>${sum.working}</td><td>${sum.present}</td><td>${sum.absent}</td>${owner?`<td><button class="edit-btn" data-att-edit="${emp.id}" title="Edit">${icon('pencil')}</button><button class="att-delete" data-att-del="${emp.id}" title="Delete">${icon('trash')}</button></td>`:''}</tr>`}).join(''):`<tr><td colspan="${days+(owner?6:5)}" class="att-empty-row">No employees. Owner can add employees.</td></tr>`}
+      </tbody></table></div>
+    `;
+    scroll.className='dashboard-scroll'; scroll.innerHTML=html;
+    document.getElementById('attendanceMonth')?.addEventListener('change',e=>{attendanceMonth=e.target.value||todayISO().slice(0,7);render();});
+    document.getElementById('addEmployeeBtn')?.addEventListener('click',addEmployee);
+    scroll.querySelectorAll('[data-att-edit]').forEach(btn=>btn.addEventListener('click',()=>editEmployee(attendanceState.employees[btn.dataset.attEdit])));
+    scroll.querySelectorAll('[data-att-del]').forEach(btn=>btn.addEventListener('click',()=>deleteEmployee(attendanceState.employees[btn.dataset.attDel])));
+    if(owner){
+      scroll.querySelectorAll('[data-att]').forEach(td=>td.addEventListener('click',async()=>{
+        const [empId,day]=td.dataset.att.split('|').map((v,i)=>i?Number(v):v), iso=attendanceDate(ym,day);
+        if(isSundayDate(iso)){showToast('Sunday is S');return;}
+        const current=attendanceStatus(ym,empId,day);
+        const cycle=current==='-'?'P':current==='P'?'A':current==='A'?'H':'-';
+        setAttendanceStatus(ym,empId,day,cycle); await saveAttendance(); render();
+      }));
+    }
+  }
+
+  // ---------- Rendering ----------
+  function render(){
+    if(!state) return;
+    const n = currentNav();
+    const appbar = document.getElementById('appbar');
+    const searchWrap = document.getElementById('searchWrap');
+    const scroll = document.getElementById('scroll');
+    const fab = document.getElementById('fab');
+    const dotClass = syncStatus==='on' ? 'on' : (syncStatus==='err' ? 'err' : '');
+    const sidebar = document.getElementById('sidebar');
+
+    if(n.view==='attendance'){
+      setSideActive('attendance');
+      appbar.innerHTML = `<div class="appbar-row"><button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button><button class="back-btn" id="attendanceBackBtn" title="Back">${icon('back')}</button><div class="appbar-title root">Attendance</div><button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button></div>`;
+      searchWrap.classList.remove('open'); renderAttendance(scroll); fab.style.display='none';
+      document.getElementById('logoutBtn').onclick=window.__auth.logout; document.getElementById('attendanceBackBtn').onclick=goBack;
+      document.getElementById('sideToggleBtn')?.addEventListener('click',()=>sidebar?.classList.toggle('open'));
+    }
+    else if(n.view==='reports'){
+      setSideActive('reports');
+      appbar.innerHTML = `<div class="appbar-row">
+        <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+        <button class="back-btn" id="reportsBackBtn" title="Back">${icon('back')}</button>
+        <div class="appbar-title root">Excel Report</div>
+        <button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button>
+      </div>`;
+      searchWrap.classList.remove('open');
+      renderExcelReport(scroll);
+      fab.style.display='none';
+      document.getElementById('logoutBtn').onclick=window.__auth.logout;
+      document.getElementById('reportsBackBtn').onclick=()=>goBack();
+      const sideToggle=document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick=()=>sidebar?.classList.toggle('open');
+    }
+    else if(n.view==='dashboard'){
+      setSideActive('dashboard');
+      appbar.innerHTML = `<div class="appbar-row">
+        <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
+        <button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button>
+      </div>`;
+      searchWrap.classList.remove('open');
+      renderDashboard(scroll);
+      fab.style.display = 'none';
+      document.getElementById('logoutBtn').onclick = window.__auth.logout;
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
+    }
+    else if(n.view==='products'){
+      setSideActive('products');
+      const isOwnerUser = window.__auth && window.__auth.isOwner();
+      appbar.innerHTML = `<div class="appbar-row">
+        <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
+        <button class="icon-btn search-btn" id="searchToggleBtn" title="Search">${icon('search')}</button>
+        <button class="icon-btn" id="consolBtn" title="CONSOL">${icon('consol')}</button>
+        ${isOwnerUser ? `<button class="icon-btn" id="exportBtn" title="Export">${icon('export')}</button>` : ''}
+        ${isOwnerUser ? `<button class="icon-btn" id="usersBtn" title="Users">${icon('users')}${pendingCount()>0 ? `<span class="req-badge">${pendingCount()}</span>` : ''}</button>` : ''}
+        ${!isOwnerUser ? `<button class="icon-btn" id="changePwBtn" title="Change password">${icon('key')}</button>` : ''}
+        <button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button>
+      </div>`;
+      searchWrap.classList.toggle('open', searchOpen);
+      scroll.className = 'scroll';
+      renderProducts(scroll);
+      fab.style.display = canWrite ? 'flex' : 'none';
+      fab.onclick = ()=>openProductSheet(null);
+      const exportBtnEl = document.getElementById('exportBtn');
+      if(exportBtnEl) exportBtnEl.onclick = exportExcel;
+      document.getElementById('consolBtn').onclick = exportConsolExcel;
+      document.getElementById('logoutBtn').onclick = window.__auth.logout;
+      document.getElementById('searchToggleBtn').onclick = ()=>{
+        searchOpen = !searchOpen;
+        if(!searchOpen){ searchTerm=''; document.getElementById('searchInput').value=''; }
+        render();
+        if(searchOpen){ setTimeout(()=>{ const inp=document.getElementById('searchInput'); if(inp) inp.focus(); }, 210); }
+      };
+      const usersBtn = document.getElementById('usersBtn');
+      if(usersBtn) usersBtn.onclick = window.__auth.showOwnerPanel;
+      const cpBtn = document.getElementById('changePwBtn');
+      if(cpBtn) cpBtn.onclick = window.__auth.openChangePasswordRequest;
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
+    }
+    else if(n.view==='stages'){
+      setSideActive('products');
+      const product = findProduct(n.productId);
+      if(!product){ nav = [{view:'products'}]; render(); return; }
+      appbar.innerHTML = `
+        <div class="appbar-row">
+          <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+          <button class="back-btn" id="backBtn">${icon('back')}</button>
+          <div class="appbar-title mono">${escapeHtml(product.code)}</div>
+          ${canWrite ? `<button class="icon-btn subproduct-top-btn" id="addSubProductTopBtn" title="Add Sub Product">SUB</button>` : ''}
+          <button class="icon-btn" id="stageExportBtn" title="Share">${icon('share')}</button>
+        </div>
+      `;
+      searchWrap.classList.remove('open');
+      scroll.className = 'scroll';
+      renderStages(scroll, product);
+      fab.style.display = canWrite ? 'flex' : 'none';
+      // Fast path: + always opens Add Stage for the main product.
+      fab.onclick = ()=>openStageSheet(product.id,null,null);
+      document.getElementById('backBtn').onclick = goBack;
+      document.getElementById('stageExportBtn').onclick = ()=>exportProductStageImage(product);
+      const addSubProductTopBtn=document.getElementById('addSubProductTopBtn');
+      if(addSubProductTopBtn) addSubProductTopBtn.onclick=()=>openSubProductSheet(product.id,null);
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
+    }
+    else if(n.view==='entries'){
+      setSideActive('products');
+      const product = findProduct(n.productId);
+      const subProduct = n.subProductId ? findSubProduct(n.productId,n.subProductId) : null;
+      const stage = product ? findStage(n.productId, n.stageId, n.subProductId) : null;
+      if(!product || !stage || (n.subProductId && !subProduct)){ nav = [{view:'products'}]; render(); return; }
+      appbar.innerHTML = `
+        <div class="appbar-row">
+          <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
+          <button class="back-btn" id="backBtn">${icon('back')}</button>
+          <div class="appbar-title">${escapeHtml(stage.name)}</div>
+        </div>
+        <div class="appbar-sub">${escapeHtml(product.code)}${subProduct ? ' • '+escapeHtml(subProduct.code) : ''}</div>
+      `;
+      searchWrap.classList.remove('open');
+      scroll.className = 'scroll';
+      renderEntries(scroll, product, stage, n.subProductId||null);
+      fab.style.display = canWrite ? 'flex' : 'none';
+      fab.onclick = ()=>openEntrySheet(product.id, stage.id, null, n.subProductId||null);
+      document.getElementById('backBtn').onclick = goBack;
+      const sideToggle = document.getElementById('sideToggleBtn');
+      if(sideToggle) sideToggle.onclick = ()=>sidebar?.classList.toggle('open');
+    }
+  }
+
+  function renderProducts(scroll){
+    const term = searchTerm.trim().toLowerCase();
+    const tabs = '';
+    const list = sortedProducts().filter(p=>p.code.toLowerCase().includes(term));
+    if(state.products.length===0){
+      scroll.innerHTML = tabs + emptyState('crate','No products yet','Tap + to add your first product');
+      return;
+    }
+    if(list.length===0){
+      scroll.innerHTML = tabs + emptyState('crate','No matches','Try a different search term');
+      return;
+    }
+    scroll.innerHTML = tabs + list.map((p,i)=>`
+      <div class="row c${(i%6)+1}" data-id="${p.id}">
+        <div class="row-icon">${icon('crate')}</div>
+        <div class="row-body">
+          <div class="row-title">${escapeHtml(p.code)}</div>
+        </div>
+        ${canWrite ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
+        ${canWrite ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
+        <div class="chev">${icon('chev')}</div>
+      </div>
+    `).join('');
+    scroll.querySelectorAll('.row').forEach(row=>{
+      row.addEventListener('click', (e)=>{
+        if(e.target.closest('[data-del]') || e.target.closest('[data-edit]')) return;
+        goTo({ view:'stages', productId: row.dataset.id });
+      });
+    });
+    scroll.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openProductSheet(findProduct(btn.dataset.edit));
+      });
+    });
+    scroll.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(!canWrite){ showToast('Read-only access'); return; }
+        const id = btn.dataset.del;
+        const p = findProduct(id);
+        confirmDelete(`Delete product ${p.code}? This removes all its stages and entries.`, ()=>{
+          state.products = state.products.filter(x=>x.id!==id);
+          saveState(); render();
+        });
+      });
+    });
+  }
+
+  function renderStageRowHTML(product, stage, i, subProductId=null){
+    const prefix=subProductId ? 'sub' : 'main';
+    return `
+      <div class="row c${(i%6)+1} ${subProductId?'sub-stage-row':''}" data-id="${stage.id}" data-owner="${prefix}" data-subproduct-id="${subProductId||''}">
+        ${canWrite ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
+        <div class="row-icon">${icon('layer')}</div>
+        <div class="row-body">
+          <div class="row-title" style="font-family:var(--sans);">${escapeHtml(stage.name)}</div>
+        </div>
+        <div class="pill">${stageQty(stage)} B</div>
+        ${canWrite ? `<button class="edit-btn" data-edit="${stage.id}" data-subproduct-id="${subProductId||''}">${icon('pencil')}</button>` : ''}
+        ${canWrite ? `<button class="del-btn" data-del="${stage.id}" data-subproduct-id="${subProductId||''}">${icon('trash')}</button>` : ''}
+        <div class="chev">${icon('chev')}</div>
+      </div>`;
+  }
+
+  function renderStages(scroll, product){
+    ensureSubProducts(product);
+    const mainStages=product.stages||[];
+    let html='';
+    if(mainStages.length){
+      html += mainStages.map((s,i)=>renderStageRowHTML(product,s,i,null)).join('');
+      html += `<div class="row row-total"><div class="row-icon">${icon('layer')}</div><div class="row-body"><div class="row-title" style="font-family:var(--sans);">TOTAL</div><div class="row-sub">Excl. Kit Qty &amp; Incomming</div></div><div class="pill">${productTotalQty(product)} B</div></div>`;
+    }
+
+    product.subProducts.forEach((sp,spi)=>{
+      const subStages=sp.stages||[];
+      const subTotal=subProductTotalQty(sp);
+      html += `
+        <div class="subproduct-section" data-subproduct-section="${sp.id}">
+          <div class="subproduct-header">
+            <div class="row-icon">${icon('crate')}</div>
+            <div class="row-body"><div class="row-title">${escapeHtml(sp.code)}</div><div class="row-sub">SUB PRODUCT • TOTAL ${subTotal} B</div></div>
+            ${canWrite ? `<button class="edit-btn" data-edit-subproduct="${sp.id}">${icon('pencil')}</button>` : ''}
+            ${canWrite ? `<button class="del-btn" data-del-subproduct="${sp.id}">${icon('trash')}</button>` : ''}
+            ${canWrite ? `<button class="icon-btn sub-add-stage" data-add-substage="${sp.id}" title="Add stage">+</button>` : ''}
+          </div>
+          <div class="subproduct-stages">
+            ${subStages.length ? subStages.map((s,i)=>renderStageRowHTML(product,s,i,sp.id)).join('') : `<div class="subproduct-empty">No stages yet. Use + to add a stage.</div>`}
+            ${subStages.length ? `<div class="row row-total sub-total-row"><div class="row-icon">${icon('layer')}</div><div class="row-body"><div class="row-title" style="font-family:var(--sans);">TOTAL</div><div class="row-sub">Excl. Incomming</div></div><div class="pill">${subTotal} B</div></div>` : ''}
+          </div>
+        </div>`;
+    });
+
+    if(!html) html=emptyState('layer','No stages or sub products yet','Tap + to add a main stage or sub product');
+    scroll.innerHTML=html;
+
+    scroll.querySelectorAll('.row[data-id]').forEach(row=>{
+      row.addEventListener('click',e=>{
+        if(e.target.closest('[data-del]')||e.target.closest('[data-edit]')||e.target.closest('.drag-handle')) return;
+        const subProductId=row.dataset.subproductId || null;
+        goTo({view:'entries',productId:product.id,stageId:row.dataset.id,subProductId});
+      });
+    });
+    scroll.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const subProductId=btn.dataset.subproductId||null;
+      openStageSheet(product.id,findStage(product.id,btn.dataset.edit,subProductId),subProductId);
+    }));
+    scroll.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(!canWrite){ showToast('Read-only access'); return; }
+      const subProductId=btn.dataset.subproductId||null;
+      const s=findStage(product.id,btn.dataset.del,subProductId); if(!s) return;
+      confirmDelete(`Delete stage "${s.name}"? This removes all its logged entries.`,()=>{
+        if(subProductId){ const sp=findSubProduct(product.id,subProductId); sp.stages=sp.stages.filter(x=>x.id!==s.id); sp.updatedAt=new Date().toISOString(); }
+        else product.stages=product.stages.filter(x=>x.id!==s.id);
+        product.updatedAt=new Date().toISOString(); saveState(); render();
+      });
+    }));
+    scroll.querySelectorAll('[data-edit-subproduct]').forEach(btn=>btn.addEventListener('click',e=>{ e.stopPropagation(); openSubProductSheet(product.id,findSubProduct(product.id,btn.dataset.editSubproduct)); }));
+    scroll.querySelectorAll('[data-del-subproduct]').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const sp=findSubProduct(product.id,btn.dataset.delSubproduct); if(!sp) return;
+      confirmDelete(`Delete sub product "${sp.code}"? This removes all its stages and entries.`,()=>{
+        product.subProducts=product.subProducts.filter(x=>x.id!==sp.id); product.updatedAt=new Date().toISOString(); saveState(); render();
+      });
+    }));
+    scroll.querySelectorAll('[data-add-substage]').forEach(btn=>btn.addEventListener('click',e=>{ e.stopPropagation(); openStageSheet(product.id,null,btn.dataset.addSubstage); }));
+  }
+
+  function renderEntries(scroll, product, stage, subProductId=null){
+    let html = `
+      <div class="summary-card">
+        <div>
+          <div class="summary-label">Total logged</div>
+          <div class="summary-num">${stageQty(stage)}</div>
+        </div>
+        <div class="summary-label">B</div>
+      </div>
+    `;
+    if(stage.entries.length===0){
+      html += emptyState('layer','No entries yet','Tap + to add quantity');
+    } else {
+      html += stage.entries.map(e=>`
+        <div class="entry-card" data-id="${e.id}">
+          ${canWrite ? `<div class="drag-handle">${icon('drag')}</div>` : ''}
+          <div style="flex:1; min-width:0;">
+            ${e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : '<div class="entry-remark entry-no-remark">Quantity entry</div>'}
+          </div>
+          <div class="pill">${e.qty} B</div>
+          ${canWrite ? `<button class="edit-btn" data-edit="${e.id}">${icon('pencil')}</button>` : ''}
+          ${canWrite ? `<button class="del-btn" data-del="${e.id}">${icon('trash')}</button>` : ''}
+        </div>
+      `).join('');
+    }
+    scroll.innerHTML = html;
+    scroll.querySelectorAll('[data-edit]').forEach(btn=>{
+      btn.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        const entry = stage.entries.find(x=>x.id===btn.dataset.edit);
+        openEntrySheet(product.id, stage.id, entry, subProductId);
+      });
+    });
+    scroll.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        if(!canWrite){ showToast('Read-only access'); return; }
+        const id = btn.dataset.del;
+        confirmDelete('Delete this entry?', ()=>{
+          stage.entries = stage.entries.filter(x=>x.id!==id);
+          product.updatedAt = new Date().toISOString();
+          saveState(); render();
+        });
+      });
+    });
+  }
+
+  function emptyState(iconName, title, sub){
+    return `<div class="empty">
+      <div class="empty-icon">${icon(iconName)}</div>
+      <div class="empty-title">${title}</div>
+      <div class="empty-sub">${sub}</div>
+    </div>`;
+  }
+
+  document.getElementById('searchInput').addEventListener('input', (e)=>{
+    searchTerm = e.target.value;
+    render();
+  });
+
+  document.querySelectorAll('[data-side-nav]').forEach(btn=>{
+    btn.addEventListener('click', ()=>navigateSidebar(btn.dataset.sideNav));
+  });
+  document.getElementById('dashboardModalClose')?.addEventListener('click', closeDashboardModal);
+  document.getElementById('dashboardModal')?.addEventListener('click', (e)=>{
+    if(e.target.id==='dashboardModal') closeDashboardModal();
+  });
+
+  // ---------- Start data sync ----------
+  subscribeState();
+  attendanceUnsub = attendanceDocRef.onSnapshot((snap)=>{
+    attendanceState = snap.exists ? (snap.data() || {employees:{},months:{}}) : {employees:{},months:{}};
+    ensureAttendanceState();
+    if(currentNav().view==='attendance') render();
+  }, (err)=>{ console.error('Attendance sync error',err); });
+  setupSortable(document.getElementById('scroll'));
+
+  // Owner gets a live notification badge when a new password request comes in,
+  // and the users list stays in sync with Firestore in real time.
+  if(user.role==='owner' && AUTH_DOC){
+    AUTH_DOC.onSnapshot((snap)=>{
+      authUsers = snap.exists ? (snap.data().users || {}) : authUsers;
+      renderUsersList();
+    }, (err)=>{ console.error('Users sync error', err); });
+    REQUESTS_DOC.onSnapshot((snap)=>{
+      resetRequests = snap.exists ? (snap.data().requests || {}) : {};
+      render();
+      renderResetRequestsList();
+    }, (err)=>{ console.error('Requests sync error', err); });
+  }
+  }
+
+  // ---------- Init ----------
+  // Show login immediately. Firebase loading must never block the login button.
+  showLogin();
+  loadUsers().catch(e=>console.warn('loadUsers failed',e));
+  loadRequestsOnce().catch(e=>console.warn('loadRequests failed',e));
+})();
+</script>
+</body>
+</html>
+<style>
+
+  .consolidated-panel{margin-bottom:16px;}
+  .consolidated-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px 26px;background:#fff;padding:0;border-radius:12px;overflow:auto;}
+  .consolidated-card{min-width:250px;background:#fff;border:1px solid #c8c8c8;color:#111;}
+  .consolidated-product{background:#3fd38a;color:#10251d;font-size:18px;font-weight:800;text-align:center;padding:6px 8px;border-bottom:1px solid #bdbdbd;}
+  .consolidated-rows{background:#fff;}
+  .consolidated-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;min-height:24px;border-bottom:1px solid #d2d2d2;font-size:14px;font-weight:700;line-height:1.2;}
+  .consolidated-row span{padding:4px 8px;border-right:1px solid #d2d2d2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .consolidated-row span:last-child{text-align:center;border-right:0;font-weight:500;}
+  .consolidated-total{background:#e9e9e9;font-weight:800;}
+  .consolidated-total span:last-child{font-weight:800;}
+  .detailed-report-panel{margin-top:16px;}
+  @media(max-width:1100px){.consolidated-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:700px){.consolidated-grid{grid-template-columns:1fr;}}
+
+  /* Excel Report is read-only in the web UI. */
+  #excelReportView [contenteditable="true"],
+  #excelReportView .edit-cell,
+  #excelReportView .cell-edit,
+  #excelReportView .save-report,
+  #excelReportView .save-changes,
+  #excelReportView .edit-report { pointer-events:none; }
+  #excelReportView table td { cursor:default !important; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const root = document.getElementById('excelReportView');
+  if(!root) return;
+  root.querySelectorAll('[contenteditable]').forEach(el=>{
+    el.removeAttribute('contenteditable');
+    el.classList.remove('edit-cell','cell-edit');
+  });
+  root.querySelectorAll('td,th').forEach(el=>{
+    el.oninput = null;
+    el.onkeydown = null;
+  });
+});
+</script>
+
+<style>
+  .subproduct-section{margin:10px 0 12px;border:1px solid #3B2C70;border-radius:14px;background:#17102F;overflow:hidden;}
+  .subproduct-header{display:flex;align-items:center;gap:7px;padding:9px 10px;background:linear-gradient(100deg,rgba(61,214,140,.14),rgba(91,140,255,.12));border-bottom:1px solid #3B2C70;}
+  .subproduct-header .row-icon{width:30px;height:30px;flex:0 0 30px;background:linear-gradient(135deg,#3DD68C,#5B8CFF);}
+  .subproduct-header .row-body{flex:1;min-width:0;}
+  .subproduct-header .row-title{font-family:var(--mono);font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .subproduct-header .row-sub{font-size:10px;color:var(--dim);margin-top:2px;}
+  .subproduct-header .icon-btn{width:28px;height:28px;flex:0 0 28px;background:#241B48;color:#3DD68C;font-size:18px;}
+  .subproduct-top-btn{width:38px;min-width:38px;padding:0;font-size:9px;font-family:var(--mono);font-weight:800;color:#3DD68C;}
+  .sub-total-row{margin:4px 0 5px;background:linear-gradient(120deg,#1B1438,#2A1E5C);}
+  .entry-no-remark{color:#8A85A8;font-size:11px;margin-top:0;}
+  .subproduct-stages{padding:7px 8px 2px;}
+  .sub-stage-row{margin-bottom:6px;background:#fff;border-left-width:3px;}
+  .subproduct-empty{padding:12px 10px 13px;color:var(--dim);font-size:11px;text-align:center;}
+</style>
+
+<style>
+.consolidated-subproduct{margin-top:8px;border-top:2px solid #3fd38a;}
+.consolidated-subproduct-title{background:#eaf8f1;color:#174a32;font-size:13px;font-weight:800;text-align:center;padding:5px 7px;border-bottom:1px solid #bdbdbd;}
+.consolidated-subrow{font-size:12px;}
+</style>
