@@ -434,10 +434,6 @@
   .excel-table td[contenteditable="true"]{outline:none;cursor:text;}
   .excel-table td[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px #5B8CFF;background:#F7FBFF;}
   .excel-table td.remarks-cell{text-align:left;min-width:220px;white-space:pre-wrap;}
-  .excel-table tr.excel-mainproduct-row td:first-child{font-weight:700;}
-  .excel-table tr.excel-subproduct-row td{background:#F8FBFD;}
-  .excel-table tr.excel-subproduct-row td:first-child{background:#F0F7FA;font-weight:600;color:#4A5570;padding-left:16px;}
-
   .excel-note{font-size:10px;color:var(--dim);margin-top:8px;}
   .report-accordion{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .report-accordion-btn{
@@ -2544,43 +2540,29 @@
   }
 
 
+  function buildExcelEntityRow(entity, productLabel){
+    const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
+    const remarks=[];
+    (entity.stages||[]).forEach(st=>{
+      const key=resolveStageKey(st), qty=stageQty(st);
+      if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
+      else sums[OTHERS_KEY]+=qty;
+      if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${st.name}`);
+    });
+    const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
+    return {product:productLabel,sums,total,remarks:remarks.join('\\n')};
+  }
+
   function buildExcelRowsFromState(){
-    // Main product row first, then its sub-products.
-    // Sub-product quantities come only from that sub-product's own stages.
-    // Sub-product quantities are NEVER added to the main product TOTAL.
     const rows=[];
-
     sortedProducts().forEach(p=>{
-      const makeRow=(item, displayCode, isSubProduct=false)=>{
-        const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
-        const remarks=[];
-
-        (item?.stages||[]).forEach(s=>{
-          const key=resolveStageKey(s), qty=stageQty(s);
-          if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
-          else sums[OTHERS_KEY]+=qty;
-          if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
-        });
-
-        const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
-        return {
-          product: displayCode,
-          sums,
-          total,
-          remarks: remarks.join('\n'),
-          isSubProduct
-        };
-      };
-
-      // Main product TOTAL uses main-product stages only.
-      rows.push(makeRow(p, p.code, false));
-
-      // Each sub-product is shown immediately below its main product.
+      // Main product row
+      rows.push(buildExcelEntityRow(p,p.code));
+      // Sub-product rows
       ensureSubProducts(p).forEach(sp=>{
-        rows.push(makeRow(sp, `|_> ${sp.code}`, true));
+        rows.push(buildExcelEntityRow(sp,`${p.code}  >  ${sp.code}`));
       });
     });
-
     return rows;
   }
 
@@ -2649,8 +2631,8 @@
                 <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
                 <tbody>
                   ${rows.map((r,ri)=>`
-                    <tr data-report-row="${ri}" class="${r.isSubProduct ? 'excel-subproduct-row' : 'excel-mainproduct-row'}">
-                      <td class="${r.isSubProduct ? 'excel-subproduct-cell' : ''}">${escapeHtml(r.product)}</td>
+                    <tr data-report-row="${ri}">
+                      <td>${escapeHtml(r.product)}</td>
                       ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
                       <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
                       <td class="report-total" data-col="TOTAL">${r.total||''}</td>
