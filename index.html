@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECON WIP TrackeR</title>
+<style>
+  html,body{margin:0;width:100%;height:100%;background:#100C22;color:#fff;font-family:Arial,sans-serif}
+  #loader{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+  .spinner{width:28px;height:28px;border:3px solid #3a315e;border-top-color:#7c5cff;border-radius:50%;animation:spin .8s linear infinite}
+  #msg{font-size:13px;color:#aaa;text-align:center;padding:0 20px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="loader">
+  <div class="spinner"></div>
+  <div id="msg">Loading ECON WIP TrackeR…</div>
+</div>
+<script>
+(async function(){
+  const APP_FILE = './ECON_WIP_Tracker_DataSafe_Login_Subproduct.html';
+
+  // GitHub Pages-safe CDN libraries.
+  const FIREBASE_APP =
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
+  const FIREBASE_FIRESTORE =
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+  const EXCELJS =
+    'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+
+  try {
+    const response = await fetch(APP_FILE + '?v=' + Date.now(), {
+      cache: 'no-store'
+    });
+    if (!response.ok) throw new Error('Application file could not be loaded (' + response.status + ')');
+
+    let html = await response.text();
+
+    // Replace the Windows/Downloads-only local library references
+    // with HTTPS CDN references that work on GitHub Pages.
+    html = html
+      .replace(
+        './ECON WIP TrackeR_files/firebase-app-compat.js.download',
+        FIREBASE_APP
+      )
+      .replace(
+        './ECON WIP TrackeR_files/firebase-firestore-compat.js.download',
+        FIREBASE_FIRESTORE
+      )
+      .replace(
+        './ECON WIP TrackeR_files/exceljs.min.js.download',
+        EXCELJS
+      )
+      // The saved HTML contains a local copy of the Google Fonts CSS.
+      // Remove that broken local reference; the app uses system fallbacks.
+      .replace(
+        './ECON WIP TrackeR_files/css2',
+        'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
+      );
+
+    // Prevent the old saved-from URL from confusing relative navigation.
+    html = html.replace(
+      /<!-- saved from url=\([^\n]*\) -->/i,
+      ''
+    );
+
+    // Make sure this loader cannot recursively load itself.
+    html = html.replace(
+      /<base[^>]*>/gi,
+      ''
+    );
+
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('msg').innerHTML =
+      'Unable to load the WIP Tracker.<br><small>' +
+      String(err.message || err) +
+      '</small><br><br>Check that both HTML files are uploaded to the same GitHub repository.';
+  }
+})();
+</script>
+</body>
+</html>
