@@ -1210,13 +1210,13 @@
 
   // ---------- Fixed stage list (used for stage picker + Excel export columns) ----------
   const STAGE_COLUMNS = [
-    'KIT QTY','INCOMMING','SHIPPED','PACKING','OQA','LOG','FQC','TESTING2','TESTING1',
+    'KIT QTY','INCOMMING','SHIPPED','PACKING','OQA','LOG','FQC','TESTING2','GLUE','TESTING1',
     'MERGING','SENSOR CLEANING','PROGRAM','FAIL','REWORK','DEBUG','RW IN DEBUG',
     'SENSOR ISSUE','SCRAP'
   ];
   const OTHERS_KEY = 'OTHERS';
-  const OTHERS_LABEL = 'OTHERS(MANUAL ENTRY)';
-  const TOTAL_LABEL = 'TOTAL(SUM OF SHIPPED:OTHERS)';
+  const OTHERS_LABEL = 'CUSTOM STAGE';
+  const TOTAL_LABEL = 'TOTAL(SUM OF SHIPPED:STAGES)';
   // Columns included in the TOTAL sum: everything from SHIPPED through OTHERS (i.e. excludes KIT QTY & INCOMMING)
   const TOTAL_COLUMNS = STAGE_COLUMNS.slice(2).concat([OTHERS_KEY]);
 
@@ -1225,6 +1225,34 @@
     const norm = String(stage.name||'').trim().toUpperCase();
     return STAGE_COLUMNS.includes(norm) ? norm : OTHERS_KEY;
   }
+  // Return the actual stage label for report/image display. Custom stages are
+  // shown by their real name instead of the old "OTHERS(MANUAL ENTRY)" label.
+  function displayStageName(stage){
+    const key=resolveStageKey(stage);
+    return key===OTHERS_KEY ? String(stage.name||'').trim().toUpperCase() || OTHERS_LABEL : key;
+  }
+  function getReportStageColumns(){
+    const cols=[...STAGE_COLUMNS];
+    const seen=new Set(cols);
+    (state.products||[]).forEach(p=>{
+      (p.stages||[]).forEach(s=>{
+        const key=resolveStageKey(s);
+        if(key===OTHERS_KEY){
+          const label=displayStageName(s);
+          if(label && label!==OTHERS_LABEL && !seen.has(label)){ seen.add(label); cols.push(label); }
+        }
+      });
+      ensureSubProducts(p).forEach(sp=>(sp.stages||[]).forEach(s=>{
+        const key=resolveStageKey(s);
+        if(key===OTHERS_KEY){
+          const label=displayStageName(s);
+          if(label && label!==OTHERS_LABEL && !seen.has(label)){ seen.add(label); cols.push(label); }
+        }
+      }));
+    });
+    return cols;
+  }
+
 
   function seed(){
     const now = new Date().toISOString();
@@ -1305,7 +1333,7 @@
   // ---------- Dashboard ----------
   const DASHBOARD_CATEGORIES = [
     { key:'done', name:'Process Done', stages:['PACKING','OQA','LOG'], cls:'done' },
-    { key:'process', name:'Under Process', stages:['FQC','TESTING2','TESTING1','MERGING','SENSOR CLEANING','PROGRAM'], cls:'process' },
+    { key:'process', name:'Under Process', stages:['FQC','TESTING2','GLUE','TESTING1','MERGING','SENSOR CLEANING','PROGRAM'], cls:'process' },
     { key:'fail', name:'Failures', stages:['FAIL','REWORK','DEBUG','RW IN DEBUG','SENSOR ISSUE','SCRAP'], cls:'fail' },
     { key:'other', name:'Others', stages:[OTHERS_KEY], cls:'other' }
   ];
@@ -1758,96 +1786,84 @@
     showToast('Preparing export…');
 
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Consol');
+    const ws = wb.addWorksheet('Dashboard');
+    const detail = wb.addWorksheet('Product Detail');
 
-    const CARDS_PER_ROW = 3;
-    const LABEL_COL_W = 24;
-    const VALUE_COL_W = 13;
-    const GAP_COL_W = 3;
-    const GROUP_GAP_ROWS = 1;
+    const HEADER_FILL='FF3DD68C', SUB_FILL='FFEAF8F1', TOTAL_FILL='FFEDEDED';
+    const BORDER={style:'thin',color:{argb:'FFC9C9C9'}};
+    const thinBorder={top:BORDER,left:BORDER,bottom:BORDER,right:BORDER};
+    const products=sortedProducts();
+    const reportCols=getReportStageColumns();
 
-    const HEADER_FILL = 'FF3DD68C';
-    const TOTAL_FILL  = 'FFEDEDED';
-    const BORDER = { style:'thin', color:{ argb:'FFC9C9C9' } };
-    const thinBorder = { top:BORDER, left:BORDER, bottom:BORDER, right:BORDER };
+    // Dashboard page: product + sub-product stage matrix
+    ws.addRow(['PRODUCT',...reportCols,'TOTAL']);
+    ws.getRow(1).height=34;
+    ws.getRow(1).eachCell(c=>{
+      c.font={bold:true,color:{argb:'FF14231C'}};
+      c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HEADER_FILL}};
+      c.border=thinBorder;
+    });
 
-    // Set up column widths: [label, value, gap] x CARDS_PER_ROW (no trailing gap needed)
-    const colWidths = [];
-    for(let c=0;c<CARDS_PER_ROW;c++){
-      colWidths.push(LABEL_COL_W, VALUE_COL_W);
-      if(c < CARDS_PER_ROW-1) colWidths.push(GAP_COL_W);
-    }
-    colWidths.forEach((w,i)=>{ ws.getColumn(i+1).width = w; });
-
-    const products = sortedProducts();
-    let rowCursor = 1;
-
-    for(let i=0; i<products.length; i+=CARDS_PER_ROW){
-      const group = products.slice(i, i+CARDS_PER_ROW);
-      let maxRowsInGroup = 0;
-
-      group.forEach((p, idx)=>{
-        const labelCol = idx*3 + 1;
-        const valueCol = labelCol + 1;
-        const headerRowNum = rowCursor;
-
-        // Header (product code) — merged, green fill
-        ws.mergeCells(headerRowNum, labelCol, headerRowNum, valueCol);
-        const headerCell = ws.getCell(headerRowNum, labelCol);
-        headerCell.value = p.code;
-        headerCell.font = { bold:true, size:12, color:{ argb:'FF14231C' } };
-        headerCell.alignment = { vertical:'middle', horizontal:'center' };
-        headerCell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:HEADER_FILL } };
-        ws.getRow(headerRowNum).height = 22;
-        [labelCol, valueCol].forEach(c=>{ ws.getCell(headerRowNum, c).border = thinBorder; });
-
-        // Stage rows, in the product's own stage order
-        p.stages.forEach((s, sIdx)=>{
-          const r = headerRowNum + 1 + sIdx;
-          const labelCell = ws.getCell(r, labelCol);
-          const valueCell = ws.getCell(r, valueCol);
-          labelCell.value = (s.name || '').toUpperCase();
-          valueCell.value = stageQty(s);
-          labelCell.font = { bold:true, size:10, color:{ argb:'FF1C1C1E' } };
-          valueCell.font = { size:10, color:{ argb:'FF1C1C1E' } };
-          labelCell.alignment = { vertical:'middle', horizontal:'left' };
-          valueCell.alignment = { vertical:'middle', horizontal:'center' };
-          labelCell.border = thinBorder;
-          valueCell.border = thinBorder;
-        });
-
-        // TOTAL row
-        const totalRowNum = headerRowNum + 1 + p.stages.length;
-        const totalLabelCell = ws.getCell(totalRowNum, labelCol);
-        const totalValueCell = ws.getCell(totalRowNum, valueCol);
-        totalLabelCell.value = 'TOTAL';
-        totalValueCell.value = productTotalQty(p);
-        [totalLabelCell, totalValueCell].forEach(cell=>{
-          cell.font = { bold:true, size:10, color:{ argb:'FF1C1C1E' } };
-          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:TOTAL_FILL } };
-          cell.border = thinBorder;
-        });
-        totalLabelCell.alignment = { vertical:'middle', horizontal:'left' };
-        totalValueCell.alignment = { vertical:'middle', horizontal:'center' };
-
-        const cardRows = 1 + p.stages.length + 1; // header + stages + total
-        if(cardRows > maxRowsInGroup) maxRowsInGroup = cardRows;
+    function stageMap(owner){
+      const sums={}; reportCols.forEach(c=>sums[c]=0);
+      (owner?.stages||[]).forEach(st=>{
+        const key=resolveStageKey(st), label=key===OTHERS_KEY?displayStageName(st):key;
+        if(Object.prototype.hasOwnProperty.call(sums,label)) sums[label]+=stageQty(st);
       });
-
-      rowCursor += maxRowsInGroup + GROUP_GAP_ROWS;
+      const total=reportCols.reduce((a,c)=>a+(sums[c]||0),0);
+      return {sums,total};
     }
+    products.forEach(p=>{
+      const main=stageMap(p);
+      const r=ws.addRow([p.code,...reportCols.map(c=>main.sums[c]||null),main.total||null]);
+      r.eachCell((cell,i)=>{
+        cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
+        if(i===1) cell.font={bold:true};
+      });
+      ensureSubProducts(p).forEach(sp=>{
+        const sub=stageMap(sp);
+        const sr=ws.addRow(['> '+sp.code,...reportCols.map(c=>sub.sums[c]||null),sub.total||null]);
+        sr.eachCell((cell,i)=>{
+          cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
+          if(i===1){ cell.font={bold:true}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:SUB_FILL}}; }
+        });
+      });
+    });
+    ws.columns.forEach((col,i)=>col.width=i===0?28:13);
 
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ECON_WIP_Consol_${todayISO()}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('Excel report exported');
+    // Product Detail page: stage/qty rows for every main and sub product.
+    detail.addRow(['PRODUCT','STAGE','QTY','TOTAL']);
+    detail.getRow(1).eachCell(c=>{
+      c.font={bold:true}; c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HEADER_FILL}}; c.border=thinBorder;
+    });
+    products.forEach(p=>{
+      const mainStages=p.stages||[];
+      mainStages.forEach(st=>{
+        const r=detail.addRow([p.code,displayStageName(st),stageQty(st),null]);
+        r.eachCell(c=>c.border=thinBorder);
+      });
+      const total=productTotalQty(p);
+      const tr=detail.addRow([p.code,'TOTAL',total,null]);
+      tr.eachCell(c=>{c.border=thinBorder;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTAL_FILL}};c.font={bold:true};});
+      ensureSubProducts(p).forEach(sp=>{
+        (sp.stages||[]).forEach(st=>{
+          const r=detail.addRow(['> '+sp.code,displayStageName(st),stageQty(st),null]);
+          r.eachCell(c=>{c.border=thinBorder;if(c.column===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:SUB_FILL}};});
+        });
+        const str=detail.addRow(['> '+sp.code,'TOTAL',subProductTotalQty(sp),null]);
+        str.eachCell(c=>{c.border=thinBorder;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTAL_FILL}};c.font={bold:true};});
+      });
+    });
+    detail.columns.forEach((col,i)=>col.width=[28,24,13,13][i]||13);
+
+    const buffer=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Consol_${todayISO()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Excel dashboard + sub-product report exported');
   }
 
   // ---------- Excel export: flat table, one row per product, columns per stage ----------
@@ -1855,162 +1871,99 @@
     if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
     if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
     showToast('Preparing export…');
-    const headerLabels = ['PRODUCT', ...STAGE_COLUMNS, 'OTHERS', 'TOTAL', 'REMARKS'];
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Export', { views:[{ state:'frozen', xSplit:1, ySplit:1 }] });
 
+    const reportCols=getReportStageColumns();
+    const headerLabels=['PRODUCT',...reportCols,'TOTAL'];
+    const wb=new ExcelJS.Workbook();
+    const ws=wb.addWorksheet('Export',{views:[{state:'frozen',xSplit:1,ySplit:1}]});
     ws.addRow(headerLabels);
-    const headerRow = ws.getRow(1);
-    headerRow.height = 34;
-    headerRow.eachCell(cell=>{
-      cell.font = { bold:true, color:{ argb:'FF1C1C1E' } };
-      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
-      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFBEDCEA' } };
-      cell.border = {
-        top:{style:'thin', color:{argb:'FFAAB6BE'}}, left:{style:'thin', color:{argb:'FFAAB6BE'}},
-        bottom:{style:'thin', color:{argb:'FFAAB6BE'}}, right:{style:'thin', color:{argb:'FFAAB6BE'}}
-      };
+    ws.getRow(1).height=34;
+    ws.getRow(1).eachCell(cell=>{
+      cell.font={bold:true,color:{argb:'FF1C1C1E'}};
+      cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFBEDCEA'}};
+      cell.border={top:{style:'thin',color:{argb:'FFAAB6BE'}},left:{style:'thin',color:{argb:'FFAAB6BE'}},bottom:{style:'thin',color:{argb:'FFAAB6BE'}},right:{style:'thin',color:{argb:'FFAAB6BE'}}};
     });
+
+    const addOwnerRow=(label,owner,isSub=false)=>{
+      const sums={}; reportCols.forEach(c=>sums[c]=0);
+      (owner?.stages||[]).forEach(st=>{
+        const key=resolveStageKey(st), col=key===OTHERS_KEY?displayStageName(st):key;
+        if(Object.prototype.hasOwnProperty.call(sums,col)) sums[col]+=stageQty(st);
+      });
+      const total=reportCols.reduce((a,c)=>a+(sums[c]||0),0);
+      const row=ws.addRow([label,...reportCols.map(c=>sums[c]||null),total||null]);
+      row.height=20;
+      row.eachCell((cell,i)=>{
+        cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
+        cell.border={top:{style:'thin',color:{argb:'FFDDDDDD'}},left:{style:'thin',color:{argb:'FFDDDDDD'}},bottom:{style:'thin',color:{argb:'FFDDDDDD'}},right:{style:'thin',color:{argb:'FFDDDDDD'}}};
+        if(i===1) cell.font={bold:true};
+        if(isSub && i===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEAF8F1'}};
+      });
+    };
 
     sortedProducts().forEach(p=>{
-      const colSums = {};
-      STAGE_COLUMNS.forEach(c=>{ colSums[c] = 0; });
-      colSums[OTHERS_KEY] = 0;
-      const othersBreakdown = [];
-      p.stages.forEach(s=>{
-        const key = resolveStageKey(s);
-        const qty = stageQty(s);
-        if(key===OTHERS_KEY){
-          colSums[OTHERS_KEY] += qty;
-          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
-        } else if(Object.prototype.hasOwnProperty.call(colSums, key)){
-          colSums[key] += qty;
-        } else {
-          colSums[OTHERS_KEY] += qty;
-          if(qty) othersBreakdown.push(`${qty}-${s.name}`);
-        }
-      });
-      const total = TOTAL_COLUMNS.reduce((sum,c)=> sum + (colSums[c]||0), 0);
-      const rowValues = [
-        p.code,
-        ...STAGE_COLUMNS.map(c => colSums[c] ? colSums[c] : null),
-        colSums[OTHERS_KEY] ? colSums[OTHERS_KEY] : null,
-        total ? total : null,
-        othersBreakdown.join('\n')
-      ];
-      const row = ws.addRow(rowValues);
-      const lineCount = othersBreakdown.length || 1;
-      row.height = Math.max(18, lineCount * 15);
-      row.eachCell((cell, colNumber)=>{
-        const isProductCol = colNumber===1;
-        const isRemarksCol = colNumber===headerLabels.length;
-        cell.alignment = {
-          vertical:'middle',
-          horizontal: (isProductCol || isRemarksCol) ? 'left' : 'center',
-          wrapText:true
-        };
-        cell.border = {
-          top:{style:'thin', color:{argb:'FFDDDDDD'}}, left:{style:'thin', color:{argb:'FFDDDDDD'}},
-          bottom:{style:'thin', color:{argb:'FFDDDDDD'}}, right:{style:'thin', color:{argb:'FFDDDDDD'}}
-        };
-        if(isProductCol) cell.font = { bold:true };
-      });
+      addOwnerRow(p.code,p,false);
+      ensureSubProducts(p).forEach(sp=>addOwnerRow('> '+sp.code,sp,true));
     });
+    ws.columns.forEach((col,i)=>col.width=i===0?28:13);
 
-    ws.columns.forEach((col,i)=>{
-      if(i===0) col.width = 20;
-      else if(i===headerLabels.length-1) col.width = 34;
-      else col.width = 13;
-    });
-
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ECON_WIP_Export_${todayISO()}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('Excel report exported');
+    const buffer=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Export_${todayISO()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Excel report with sub-products exported');
   }
 
   // ---------- Image export: single product's stage table as a PNG (matches the product detail screen) ----------
   function exportProductStageImage(product){
-    if(!product || !product.stages || product.stages.length===0){ showToast('No stages to export'); return; }
+    if(!product){ showToast('No product to export'); return; }
+    const subProducts=ensureSubProducts(product);
+    if((product.stages||[]).length===0 && subProducts.length===0){ showToast('No stages to export'); return; }
     try{
-      const SCALE = 2; // render at 2x for a crisp image
-      const width = 380;
-      const headerHeight = 42;
-      const rowHeight = 38;
-      const rowCount = product.stages.length + 1; // + TOTAL row
-      const height = headerHeight + rowCount*rowHeight;
-      const colSplit = Math.round(width*0.64);
+      const SCALE=2, width=502, headerHeight=44, rowHeight=34, subHeaderHeight=32;
+      const rows=[];
+      (product.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st)}));
+      rows.push({type:'total',name:'TOTAL',qty:productTotalQty(product)});
+      subProducts.forEach(sp=>{
+        rows.push({type:'subheader',name:sp.code,qty:null});
+        (sp.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st),sub:true}));
+        rows.push({type:'total',name:'TOTAL',qty:subProductTotalQty(sp),sub:true});
+      });
+      const height=headerHeight+rows.reduce((h,r)=>h+(r.type==='subheader'?subHeaderHeight:rowHeight),0);
+      const colSplit=Math.round(width*0.77);
+      const canvas=document.createElement('canvas'); canvas.width=width*SCALE; canvas.height=height*SCALE;
+      const ctx=canvas.getContext('2d'); ctx.scale(SCALE,SCALE);
+      ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,width,height);
 
-      const canvas = document.createElement('canvas');
-      canvas.width = width*SCALE;
-      canvas.height = height*SCALE;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(SCALE, SCALE);
+      ctx.fillStyle='#3DD68C'; ctx.fillRect(0,0,width,headerHeight);
+      ctx.fillStyle='#14231C'; ctx.font='bold 18px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(product.code,width/2,headerHeight/2);
 
-      // background
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0,0,width,height);
-
-      // header row — product code, light blue
-      ctx.fillStyle = '#BEDCEA';
-      ctx.fillRect(0,0,width,headerHeight);
-      ctx.fillStyle = '#1C1C1E';
-      ctx.font = 'bold 15px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(product.code, width/2, headerHeight/2);
-
-      let y = headerHeight;
-      product.stages.forEach(s=>{
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0,y,width,rowHeight);
-        ctx.fillStyle = '#000000';
-        ctx.font = '13px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(String(s.name).toUpperCase(), colSplit/2, y+rowHeight/2);
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 13px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(String(stageQty(s)), colSplit+(width-colSplit)/2, y+rowHeight/2);
-        y += rowHeight;
+      let y=headerHeight;
+      rows.forEach(r=>{
+        const h=r.type==='subheader'?subHeaderHeight:rowHeight;
+        if(r.type==='subheader'){
+          ctx.fillStyle='#EAF8F1'; ctx.fillRect(0,y,width,h);
+          ctx.fillStyle='#174A32'; ctx.font='bold 14px Arial,sans-serif'; ctx.textAlign='center';
+          ctx.fillText(r.name,width/2,y+h/2);
+        }else{
+          ctx.fillStyle=r.type==='total'?'#E9E9E9':'#FFFFFF'; ctx.fillRect(0,y,width,h);
+          ctx.fillStyle='#111'; ctx.font=r.type==='total'?'bold 13px Arial,sans-serif':'bold 13px Arial,sans-serif'; ctx.textAlign='left';
+          ctx.fillText(r.name,10,y+h/2);
+          ctx.textAlign='center'; ctx.font='bold 13px Arial,sans-serif'; ctx.fillText(String(r.qty??0),colSplit+(width-colSplit)/2,y+h/2);
+        }
+        y+=h;
       });
 
-      // TOTAL row — bold
-      ctx.fillStyle = '#F0F0F5';
-      ctx.fillRect(0,y,width,rowHeight);
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 13px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('TOTAL', colSplit/2, y+rowHeight/2);
-      ctx.textAlign = 'center';
-      ctx.fillText(String(productTotalQty(product)), colSplit+(width-colSplit)/2, y+rowHeight/2);
-      y += rowHeight;
-
-      // grid lines
-      ctx.strokeStyle = '#AAAAAA';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5,0.5,width-1,height-1);
-      ctx.beginPath();
-      for(let gy=headerHeight; gy<=height; gy+=rowHeight){
-        ctx.moveTo(0, Math.round(gy)+0.5);
-        ctx.lineTo(width, Math.round(gy)+0.5);
-      }
-      ctx.moveTo(colSplit+0.5, headerHeight);
-      ctx.lineTo(colSplit+0.5, height);
+      ctx.strokeStyle='#BDBDBD'; ctx.lineWidth=1; ctx.strokeRect(.5,.5,width-1,height-1);
+      ctx.beginPath(); y=headerHeight;
+      ctx.moveTo(colSplit+.5,headerHeight); ctx.lineTo(colSplit+.5,height);
+      rows.forEach(r=>{ y+=(r.type==='subheader'?subHeaderHeight:rowHeight); ctx.moveTo(0,Math.round(y)+.5); ctx.lineTo(width,Math.round(y)+.5); });
       ctx.stroke();
-
-      shareOrDownloadCanvas(canvas, `${product.code}.png`);
-    }catch(e){
-      console.error('Product image export failed', e);
-      showToast('Image generation failed — try again');
-    }
+      shareOrDownloadCanvas(canvas,`${product.code}.png`);
+    }catch(e){ console.error('Product image export failed',e); showToast('Image generation failed — try again'); }
   }
 
   // ---------- Share (Web Share API) with automatic download fallback ----------
@@ -2046,24 +1999,17 @@
   // For a stage literally named "OTHERS", break its total into rows keyed by each entry's
   // remark text (e.g. "RW IN SMT -- 48") instead of a single generic "OTHERS" row.
   function stageDisplayRows(stage){
-    const nameUpper = String(stage.name||'').trim().toUpperCase();
-    if(nameUpper === OTHERS_KEY){
-      const groups = {}; const order = [];
-      (stage.entries||[]).forEach(e=>{
-        const label = (e.remarks && e.remarks.trim()) ? e.remarks.trim().toUpperCase() : OTHERS_KEY;
-        if(!(label in groups)){ groups[label]=0; order.push(label); }
-        groups[label] += Number(e.qty||0);
-      });
-      if(order.length===0) return [{ label: OTHERS_KEY, qty: 0 }];
-      return order.map(l=>({ label:l, qty:groups[l] }));
-    }
-    return [{ label: nameUpper, qty: stageQty(stage) }];
+    return [{label:displayStageName(stage),qty:stageQty(stage)}];
   }
-
   function productDisplayRows(product){
-    let rows = [];
-    product.stages.forEach(s=>{ rows = rows.concat(stageDisplayRows(s)); });
-    rows.push({ label:'TOTAL', qty: productTotalQty(product), isTotal:true });
+    const rows=[];
+    (product.stages||[]).forEach(s=>rows.push(...stageDisplayRows(s)));
+    rows.push({label:'TOTAL',qty:productTotalQty(product),isTotal:true});
+    ensureSubProducts(product).forEach(sp=>{
+      rows.push({label:sp.code,qty:null,isSubHeader:true});
+      (sp.stages||[]).forEach(s=>rows.push({label:displayStageName(s),qty:stageQty(s),isSub:true}));
+      rows.push({label:'TOTAL',qty:subProductTotalQty(sp),isTotal:true,isSub:true});
+    });
     return rows;
   }
 
@@ -2137,21 +2083,28 @@
           // rows
           let ry = y+HEADER_H;
           rows.forEach(row=>{
-            ctx.fillStyle = row.isTotal ? '#F0F0F5' : '#FFFFFF';
-            ctx.fillRect(x, ry, COL_W, ROW_H);
-
-            ctx.fillStyle = '#000000';
-            const lf = fitBoldFont(ctx, row.label, colSplit-14, 11);
-            ctx.font = `${row.isTotal?'bold':'600'} ${lf}px Arial, sans-serif`;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(row.label, x+8, ry+ROW_H/2);
-
-            ctx.font = `bold 12px Arial, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.fillText(String(row.qty), x+colSplit+(COL_W-colSplit)/2, ry+ROW_H/2);
-
-            ry += ROW_H;
+            if(row.isSubHeader){
+              ctx.fillStyle='#EAF8F1';
+              ctx.fillRect(x,ry,COL_W,ROW_H);
+              ctx.fillStyle='#174A32';
+              ctx.font='bold 11px Arial, sans-serif';
+              ctx.textAlign='center';
+              ctx.textBaseline='middle';
+              ctx.fillText(row.label,x+COL_W/2,ry+ROW_H/2);
+            }else{
+              ctx.fillStyle = row.isTotal ? '#E9E9E9' : '#FFFFFF';
+              ctx.fillRect(x, ry, COL_W, ROW_H);
+              ctx.fillStyle='#000000';
+              const lf=fitBoldFont(ctx,row.label,colSplit-20,11);
+              ctx.font=`${row.isTotal?'bold':'600'} ${lf}px Arial, sans-serif`;
+              ctx.textAlign='left';
+              ctx.textBaseline='middle';
+              ctx.fillText(row.label,x+(row.isSub?14:8),ry+ROW_H/2);
+              ctx.font='bold 12px Arial, sans-serif';
+              ctx.textAlign='center';
+              ctx.fillText(String(row.qty),x+colSplit+(COL_W-colSplit)/2,ry+ROW_H/2);
+            }
+            ry+=ROW_H;
           });
 
           // borders
@@ -2293,18 +2246,22 @@
 
 
   function buildExcelRowsFromState(){
-    return sortedProducts().map(p=>{
-      const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
-      const remarks=[];
-      (p.stages||[]).forEach(s=>{
-        const key=resolveStageKey(s), qty=stageQty(s);
-        if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
-        else sums[OTHERS_KEY]+=qty;
-        if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
+    const cols=getReportStageColumns();
+    const makeRow=(label,owner)=>{
+      const sums={}; cols.forEach(c=>sums[c]=0);
+      (owner?.stages||[]).forEach(s=>{
+        const key=resolveStageKey(s), col=key===OTHERS_KEY?displayStageName(s):key;
+        if(Object.prototype.hasOwnProperty.call(sums,col)) sums[col]+=stageQty(s);
       });
-      const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
-      return {product:p.code,sums,total,remarks:remarks.join('\\n')};
+      const total=cols.reduce((sum,c)=>sum+(sums[c]||0),0);
+      return {product:label,sums,total,remarks:''};
+    };
+    const rows=[];
+    sortedProducts().forEach(p=>{
+      rows.push(makeRow(p.code,p));
+      ensureSubProducts(p).forEach(sp=>rows.push(makeRow('> '+sp.code,sp)));
     });
+    return rows;
   }
 
   function buildConsolidatedReportHTML(){
@@ -2313,12 +2270,12 @@
     return products.map(product=>{
       const stageRows = (product.stages||[]).map(stage=>({
         key: resolveStageKey(stage),
-        name: resolveStageKey(stage)===OTHERS_KEY ? OTHERS_LABEL : resolveStageKey(stage),
+        name: displayStageName(stage),
         qty: stageQty(stage)
       }));
       const total = productTotalQty(product);
       const subHtml=ensureSubProducts(product).map(sp=>{
-        const subStages=(sp.stages||[]).map(stage=>({name:resolveStageKey(stage)===OTHERS_KEY?OTHERS_LABEL:resolveStageKey(stage),qty:stageQty(stage)}));
+        const subStages=(sp.stages||[]).map(stage=>({name:displayStageName(stage),qty:stageQty(stage)}));
         const subTotal=subProductTotalQty(sp);
         return `<div class="consolidated-subproduct"><div class="consolidated-subproduct-title">${escapeHtml(sp.code)}</div>${subStages.map(r=>`<div class="consolidated-row consolidated-subrow"><span>${escapeHtml(r.name)}</span><span>${r.qty}</span></div>`).join('')}<div class="consolidated-row consolidated-total"><span>TOTAL</span><span>${subTotal}</span></div></div>`;
       }).join('');
@@ -2336,7 +2293,7 @@
 
   function renderExcelReport(scroll){
     const rows=buildExcelRowsFromState();
-    const headers=['PRODUCT',...STAGE_COLUMNS,'OTHERS','TOTAL','REMARKS'];
+    const headers=['PRODUCT',...getReportStageColumns(),'TOTAL'];
     scroll.className='dashboard-scroll';
     scroll.innerHTML=`
       <div class="dashboard-head">
@@ -2381,7 +2338,7 @@
                 </tbody>
               </table>
             </div>
-            <div class="excel-note">Read-only report. KIT QTY, INCOMMING and SHIPPED remain available in the Excel report and are not editable in the web view.</div>
+            <div class="excel-note">Read-only report. Sub-products are shown as separate rows with their own stage quantities. Custom stages are shown by their actual stage name.</div>
           </div>
         </div>
 
