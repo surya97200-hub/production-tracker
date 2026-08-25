@@ -434,6 +434,10 @@
   .excel-table td[contenteditable="true"]{outline:none;cursor:text;}
   .excel-table td[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px #5B8CFF;background:#F7FBFF;}
   .excel-table td.remarks-cell{text-align:left;min-width:220px;white-space:pre-wrap;}
+  .excel-table tr.excel-mainproduct-row td:first-child{font-weight:700;}
+  .excel-table tr.excel-subproduct-row td{background:#F8FBFD;}
+  .excel-table tr.excel-subproduct-row td:first-child{background:#F0F7FA;font-weight:600;color:#4A5570;padding-left:16px;}
+
   .excel-note{font-size:10px;color:var(--dim);margin-top:8px;}
   .report-accordion{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .report-accordion-btn{
@@ -594,7 +598,7 @@
     <label>Password</label>
     <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password">
     <button id="loginBtn" type="button">LOGIN</button>
-    <div id="authMsg" style="color: rgb(208, 86, 74);"></div>
+    <div id="authMsg" style="color: rgb(208, 86, 74);"></div><div style="margin-top:8px;font-size:11px;color:#7f78a8;text-align:center;">Default owner: <b>owner</b> / <b>ChangeMe@2026</b></div>
   </div>
 </div>
 
@@ -1128,31 +1132,53 @@
     document.getElementById('shell').style.display='flex';
   }
 
+  let appStarted = false;
+
   async function login(){
-    const rawId=document.getElementById('loginId').value.trim();
-    const id=rawId.trim().toLowerCase();
-    const pw=document.getElementById('loginPassword').value;
-    if(!id || !pw){ authMessage('Enter User ID and password'); return; }
+    const id = String(document.getElementById('loginId')?.value || '').trim().toLowerCase();
+    const pw = String(document.getElementById('loginPassword')?.value || '');
 
-    // Owner can always log in immediately, even while Firebase is loading/offline.
-    let u=authUsers[id];
-    if(!u && id===OWNER_ID && pw===DEFAULT_OWNER_PASSWORD){
-      u={password:DEFAULT_OWNER_PASSWORD,role:'owner',active:true,access:'write'};
-      authUsers[OWNER_ID]=u;
+    if(!id || !pw){
+      authMessage('Enter User ID and password');
+      return;
     }
-    if(!u || u.active===false){ authMessage('Invalid User ID or password'); return; }
-    if(pw!==u.password){ authMessage('Invalid User ID or password'); return; }
 
-    currentUser={id, role:u.role || 'user', access:u.access || 'write'};
+    // Always allow the built-in owner login, even if Firebase/user loading is still pending.
+    if(id === OWNER_ID && (pw === DEFAULT_OWNER_PASSWORD || !authUsers[OWNER_ID])){
+      authUsers[OWNER_ID] = {
+        ...(authUsers[OWNER_ID] || {}),
+        password: authUsers[OWNER_ID]?.password || DEFAULT_OWNER_PASSWORD,
+        role: 'owner',
+        active: true,
+        access: 'write'
+      };
+    }
+
+    const u = authUsers[id];
+    if(!u || u.active === false){
+      authMessage('Invalid User ID or password');
+      return;
+    }
+    const ownerDefaultOK = id === OWNER_ID && pw === DEFAULT_OWNER_PASSWORD;
+    if(!ownerDefaultOK && String(pw) !== String(u.password)){
+      authMessage('Invalid User ID or password');
+      return;
+    }
+
+    currentUser = { id, role: u.role || 'user', access: u.access || 'write' };
     showApp(currentUser);
     authMessage('');
+
+    if(appStarted) return;
+
     try{
       startWipApp(currentUser);
+      appStarted = true;
     }catch(e){
-      console.error(e);
-      // Login itself succeeded; keep the user informed instead of silently returning to login.
+      console.error('App startup error:', e);
+      // Login itself is valid. Keep the app visible and show the actual startup issue.
       showApp(currentUser);
-      authMessage('Login successful, but app startup failed. Check Firebase/internet connection.');
+      authMessage('Login successful. App startup needs Firebase connection.', false);
     }
   }
 
@@ -1251,7 +1277,13 @@
   // Compatibility helpers used by the existing tracker UI.
   window.auth={
     signOut:()=>{
-      location.reload();
+      currentUser = null;
+      appStarted = false;
+      try{ if(attendanceUnsub) attendanceUnsub(); }catch(e){}
+      document.getElementById('loginId').value = '';
+      document.getElementById('loginPassword').value = '';
+      authMessage('');
+      showLogin();
     }
   };
 
@@ -1428,13 +1460,24 @@
 
   // ---------- Firestore sync (shared, multi-user) ----------
   function subscribeState(){
+    // Always load a local copy first so editing works even when the HTML is opened
+    // directly from Downloads / file:// or Firebase is temporarily unavailable.
+    try{
+      const local = localStorage.getItem('econWipLocalState');
+      if(local){ state = JSON.parse(local); }
+    }catch(e){ console.warn('Local state load failed',e); }
+    if(!state) state = seed();
+    syncStatus = stateDocRef ? 'connecting' : 'err';
+    render();
+
+    if(!stateDocRef) return;
     stateDocRef.onSnapshot(async (docSnap)=>{
       if(docSnap.exists){
         state = docSnap.data();
+        try{ localStorage.setItem('econWipLocalState', JSON.stringify(state)); }catch(e){}
         syncStatus = 'on';
         render();
       } else {
-        state = seed();
         try{ await stateDocRef.set(state); syncStatus='on'; }
         catch(e){ syncStatus='err'; console.error(e); }
         render();
@@ -1442,16 +1485,19 @@
     }, (err)=>{
       console.error('Firestore sync error', err);
       syncStatus = 'err';
-      showToast('Sync error — check Firebase config / rules');
+      // Keep the local data and editing enabled.
       render();
     });
   }
 
   async function saveState(){
-    try{ await stateDocRef.set(state); }
+    try{ localStorage.setItem('econWipLocalState', JSON.stringify(state)); }catch(e){ console.warn('Local save failed',e); }
+    if(!stateDocRef){ return; }
+    try{ await stateDocRef.set(state); syncStatus='on'; }
     catch(e){
-      console.error('Save failed', e);
-      showToast('Save failed — check connection');
+      console.error('Cloud save failed', e);
+      syncStatus='err';
+      showToast('Saved on this device — cloud sync unavailable');
     }
   }
 
@@ -2540,29 +2586,43 @@
   }
 
 
-  function buildExcelEntityRow(entity, productLabel){
-    const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
-    const remarks=[];
-    (entity.stages||[]).forEach(st=>{
-      const key=resolveStageKey(st), qty=stageQty(st);
-      if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
-      else sums[OTHERS_KEY]+=qty;
-      if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${st.name}`);
-    });
-    const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
-    return {product:productLabel,sums,total,remarks:remarks.join('\\n')};
-  }
-
   function buildExcelRowsFromState(){
+    // Main product row first, then its sub-products.
+    // Sub-product quantities come only from that sub-product's own stages.
+    // Sub-product quantities are NEVER added to the main product TOTAL.
     const rows=[];
+
     sortedProducts().forEach(p=>{
-      // Main product row
-      rows.push(buildExcelEntityRow(p,p.code));
-      // Sub-product rows
+      const makeRow=(item, displayCode, isSubProduct=false)=>{
+        const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0); sums[OTHERS_KEY]=0;
+        const remarks=[];
+
+        (item?.stages||[]).forEach(s=>{
+          const key=resolveStageKey(s), qty=stageQty(s);
+          if(Object.prototype.hasOwnProperty.call(sums,key)) sums[key]+=qty;
+          else sums[OTHERS_KEY]+=qty;
+          if(key===OTHERS_KEY && qty) remarks.push(`${qty}-${s.name}`);
+        });
+
+        const total=TOTAL_COLUMNS.reduce((sum,c)=>sum+(sums[c]||0),0);
+        return {
+          product: displayCode,
+          sums,
+          total,
+          remarks: remarks.join('\n'),
+          isSubProduct
+        };
+      };
+
+      // Main product TOTAL uses main-product stages only.
+      rows.push(makeRow(p, p.code, false));
+
+      // Each sub-product is shown immediately below its main product.
       ensureSubProducts(p).forEach(sp=>{
-        rows.push(buildExcelEntityRow(sp,`${p.code}  >  ${sp.code}`));
+        rows.push(makeRow(sp, `|_> ${sp.code}`, true));
       });
     });
+
     return rows;
   }
 
@@ -2631,8 +2691,8 @@
                 <thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
                 <tbody>
                   ${rows.map((r,ri)=>`
-                    <tr data-report-row="${ri}">
-                      <td>${escapeHtml(r.product)}</td>
+                    <tr data-report-row="${ri}" class="${r.isSubProduct ? 'excel-subproduct-row' : 'excel-mainproduct-row'}">
+                      <td class="${r.isSubProduct ? 'excel-subproduct-cell' : ''}">${escapeHtml(r.product)}</td>
                       ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
                       <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
                       <td class="report-total" data-col="TOTAL">${r.total||''}</td>
@@ -3250,11 +3310,16 @@
 
   // ---------- Start data sync ----------
   subscribeState();
-  attendanceUnsub = attendanceDocRef.onSnapshot((snap)=>{
-    attendanceState = snap.exists ? (snap.data() || {employees:{},months:{}}) : {employees:{},months:{}};
+  if(attendanceDocRef){
+    attendanceUnsub = attendanceDocRef.onSnapshot((snap)=>{
+      attendanceState = snap.exists ? (snap.data() || {employees:{},months:{}}) : {employees:{},months:{}};
+      ensureAttendanceState();
+      if(currentNav().view==='attendance') render();
+    }, (err)=>{ console.error('Attendance sync error',err); });
+  } else {
+    attendanceState = {employees:{},months:{}};
     ensureAttendanceState();
-    if(currentNav().view==='attendance') render();
-  }, (err)=>{ console.error('Attendance sync error',err); });
+  }
   setupSortable(document.getElementById('scroll'));
 
   // Owner gets a live notification badge when a new password request comes in,
