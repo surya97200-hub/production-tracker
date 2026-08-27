@@ -434,6 +434,8 @@
   .excel-table td[contenteditable="true"]{outline:none;cursor:text;}
   .excel-table td[contenteditable="true"]:focus{box-shadow:inset 0 0 0 2px #5B8CFF;background:#F7FBFF;}
   .excel-table td.remarks-cell{text-align:left;min-width:220px;white-space:pre-wrap;}
+  .excel-table th[data-col="TOTAL"],.excel-table td.report-total{min-width:82px;font-weight:700;}
+  .excel-table th:last-child,.excel-table td.remarks-cell{min-width:220px;}
   .excel-note{font-size:10px;color:var(--dim);margin-top:8px;}
   .report-accordion{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .report-accordion-btn{
@@ -1211,14 +1213,22 @@
   // ---------- Fixed stage list (used for stage picker + Excel export columns) ----------
   const STAGE_COLUMNS = [
     'KIT QTY','INCOMMING','SHIPPED','PACKING','OQA','LOG','FQC','TESTING2','GLUE','TESTING1',
-    'MERGING','SENSOR CLEANING','PROGRAM','FAIL','REWORK','DEBUG','RW IN DEBUG',
-    'SENSOR ISSUE','SCRAP'
+    'RETEST','MODULE ASSY','MERGING','SENSOR CLEANING','PROGRAM','FAIL','REWORK','DEBUG',
+    'RW IN DEBUG','SENSOR ISSUE','SCRAP'
   ];
   const OTHERS_KEY = 'OTHERS';
   const OTHERS_LABEL = 'CUSTOM STAGE';
   const TOTAL_LABEL = 'TOTAL(SUM OF SHIPPED:STAGES)';
-  // Columns included in the TOTAL sum: everything from SHIPPED through OTHERS (i.e. excludes KIT QTY & INCOMMING)
+  // Columns included in TOTAL: SHIPPED and every following fixed/custom stage.
+  // KIT QTY and INCOMMING are intentionally excluded.
   const TOTAL_COLUMNS = STAGE_COLUMNS.slice(2).concat([OTHERS_KEY]);
+
+  function totalFromStageSums(sums){
+    return Object.keys(sums||{}).reduce((sum,key)=>{
+      if(key==='KIT QTY' || key==='INCOMMING') return sum;
+      return sum + Number(sums[key]||0);
+    },0);
+  }
 
   function resolveStageKey(stage){
     if(stage.stageKey) return stage.stageKey;
@@ -1781,139 +1791,511 @@
   }
 
   async function exportConsolExcel(){
-    if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
-    if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
-    showToast('Preparing export…');
+    if(!state || !state.products || state.products.length===0){
+      showToast('No products to export');
+      return;
+    }
+    if(typeof ExcelJS === 'undefined'){
+      showToast('Export library failed to load — check connection');
+      return;
+    }
+
+    showToast('Preparing consolidated Excel…');
 
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Dashboard');
-    const detail = wb.addWorksheet('Product Detail');
+    const ws = wb.addWorksheet('Consol', { views:[{showGridLines:false}] });
 
-    const HEADER_FILL='FF3DD68C', SUB_FILL='FFEAF8F1', TOTAL_FILL='FFEDEDED';
-    const BORDER={style:'thin',color:{argb:'FFC9C9C9'}};
-    const thinBorder={top:BORDER,left:BORDER,bottom:BORDER,right:BORDER};
-    const products=sortedProducts();
-    const reportCols=getReportStageColumns();
+    // ============================================================
+    // CONSOLIDATED EXCEL — EXACT CARD FORMAT
+    // Based on the uploaded Consol.xlsx reference:
+    //
+    // A:B = Product card
+    // C   = spacer
+    // D:E = Product card
+    // F   = spacer
+    // G:H = Product card
+    //
+    // Product title is merged across the two columns.
+    // Every existing stage entry is kept as its own row, including
+    // duplicate stage names and zero quantities.
+    // TOTAL excludes KIT QTY and INCOMMING.
+    // ============================================================
 
-    // Dashboard page: product + sub-product stage matrix
-    ws.addRow(['PRODUCT',...reportCols,'TOTAL']);
-    ws.getRow(1).height=34;
-    ws.getRow(1).eachCell(c=>{
-      c.font={bold:true,color:{argb:'FF14231C'}};
-      c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
-      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HEADER_FILL}};
-      c.border=thinBorder;
-    });
+    const GREEN = 'FF3DD68C';
+    const SUB_GREEN = 'FFEAF8F1';
+    const TOTAL_FILL = 'FFEDEDED';
+    const GRID = 'FFD0D0D0';
+    const BLACK = 'FF1C1C1E';
+    const TITLE_BLACK = 'FF14231C';
+    const SUB_TEXT = 'FF174A32';
+    const WHITE = 'FFFFFFFF';
 
-    function stageMap(owner){
-      const sums={}; reportCols.forEach(c=>sums[c]=0);
-      (owner?.stages||[]).forEach(st=>{
-        const key=resolveStageKey(st), label=key===OTHERS_KEY?displayStageName(st):key;
-        if(Object.prototype.hasOwnProperty.call(sums,label)) sums[label]+=stageQty(st);
+    const thin = {style:'thin', color:{argb:GRID}};
+
+    // Match the reference workbook widths.
+    ws.getColumn(1).width = 24;
+    ws.getColumn(2).width = 13;
+    ws.getColumn(3).width = 3;
+    ws.getColumn(4).width = 24;
+    ws.getColumn(5).width = 13;
+    ws.getColumn(6).width = 3;
+    ws.getColumn(7).width = 24;
+    ws.getColumn(8).width = 13;
+
+    // Use the actual stage entries from the product instead of
+    // aggregating by stage name. This preserves rows such as:
+    // PACKING 403
+    // PACKING 11
+    // exactly like the reference XLSX.
+    function rawSections(product){
+      const sections = [{
+        code: product.code,
+        owner: product,
+        main: true
+      }];
+
+      ensureSubProducts(product).forEach(sp=>{
+        sections.push({
+          code: sp.code,
+          owner: sp,
+          main: false
+        });
       });
-      const total=reportCols.reduce((a,c)=>a+(sums[c]||0),0);
-      return {sums,total};
+
+      return sections;
     }
-    products.forEach(p=>{
-      const main=stageMap(p);
-      const r=ws.addRow([p.code,...reportCols.map(c=>main.sums[c]||null),main.total||null]);
-      r.eachCell((cell,i)=>{
-        cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
-        if(i===1) cell.font={bold:true};
-      });
-      ensureSubProducts(p).forEach(sp=>{
-        const sub=stageMap(sp);
-        const sr=ws.addRow(['> '+sp.code,...reportCols.map(c=>sub.sums[c]||null),sub.total||null]);
-        sr.eachCell((cell,i)=>{
-          cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
-          if(i===1){ cell.font={bold:true}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:SUB_FILL}}; }
+
+    function sectionRows(section){
+      return (section.owner?.stages || []).map(st=>({
+        label: displayStageName(st),
+        qty: Number(stageQty(st) || 0)
+      }));
+    }
+
+    function sectionTotal(section){
+      return (section.owner?.stages || []).reduce((sum,st)=>{
+        const key = resolveStageKey(st);
+        if(key === 'KIT QTY' || key === 'INCOMMING') return sum;
+        return sum + Number(stageQty(st) || 0);
+      },0);
+    }
+
+    function sectionHeight(section){
+      // title + every stage entry + TOTAL
+      return 2 + sectionRows(section).length;
+    }
+
+    function cardHeight(product){
+      return rawSections(product).reduce((h,section)=>{
+        return h + sectionHeight(section);
+      },0) + Math.max(0, rawSections(product).length-1);
+    }
+
+    function setBorder(cell, side='all'){
+      if(side==='all'){
+        cell.border={top:thin,left:thin,right:thin,bottom:thin};
+      }
+    }
+
+    function writeCard(product, startRow, startCol){
+      const sections = rawSections(product);
+      let r = startRow;
+
+      sections.forEach((section, sectionIndex)=>{
+        const titleEnd = startCol + 1;
+
+        // Product / sub-product title — merged A:B, D:E or G:H.
+        ws.mergeCells(r, startCol, r, titleEnd);
+        const title = ws.getCell(r,startCol);
+        title.value = section.code;
+        title.fill = {
+          type:'pattern',
+          pattern:'solid',
+          fgColor:{argb:section.main ? GREEN : SUB_GREEN}
+        };
+        title.font = {
+          name:'Arial',
+          size:section.main ? 12 : 10,
+          bold:true,
+          color:{argb:section.main ? TITLE_BLACK : SUB_TEXT}
+        };
+        title.alignment = {horizontal:'center', vertical:'center'};
+        setBorder(title);
+        ws.getCell(r,titleEnd).border = {top:thin,right:thin,bottom:thin};
+        ws.getCell(r,startCol).border = {top:thin,left:thin,bottom:thin};
+        ws.getRow(r).height = 22;
+        r++;
+
+        // Stage rows — one row per source stage entry.
+        sectionRows(section).forEach(item=>{
+          const label = ws.getCell(r,startCol);
+          label.value = item.label;
+          label.font = {
+            name:'Arial',
+            size:10,
+            bold:true,
+            color:{argb:BLACK}
+          };
+          label.alignment = {horizontal:'left', vertical:'center'};
+          label.border = {top:thin,left:thin,bottom:thin};
+
+          const qty = ws.getCell(r,startCol+1);
+          qty.value = item.qty;
+          qty.font = {
+            name:'Arial',
+            size:10,
+            bold:false,
+            color:{argb:BLACK}
+          };
+          qty.alignment = {horizontal:'center', vertical:'center'};
+          qty.border = {top:thin,right:thin,bottom:thin};
+
+          ws.getRow(r).height = 20;
+          r++;
         });
-      });
-    });
-    ws.columns.forEach((col,i)=>col.width=i===0?28:13);
 
-    // Product Detail page: stage/qty rows for every main and sub product.
-    detail.addRow(['PRODUCT','STAGE','QTY','TOTAL']);
-    detail.getRow(1).eachCell(c=>{
-      c.font={bold:true}; c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
-      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HEADER_FILL}}; c.border=thinBorder;
-    });
-    products.forEach(p=>{
-      const mainStages=p.stages||[];
-      mainStages.forEach(st=>{
-        const r=detail.addRow([p.code,displayStageName(st),stageQty(st),null]);
-        r.eachCell(c=>c.border=thinBorder);
-      });
-      const total=productTotalQty(p);
-      const tr=detail.addRow([p.code,'TOTAL',total,null]);
-      tr.eachCell(c=>{c.border=thinBorder;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTAL_FILL}};c.font={bold:true};});
-      ensureSubProducts(p).forEach(sp=>{
-        (sp.stages||[]).forEach(st=>{
-          const r=detail.addRow(['> '+sp.code,displayStageName(st),stageQty(st),null]);
-          r.eachCell(c=>{c.border=thinBorder;if(c.column===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:SUB_FILL}};});
-        });
-        const str=detail.addRow(['> '+sp.code,'TOTAL',subProductTotalQty(sp),null]);
-        str.eachCell(c=>{c.border=thinBorder;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTAL_FILL}};c.font={bold:true};});
-      });
-    });
-    detail.columns.forEach((col,i)=>col.width=[28,24,13,13][i]||13);
+        // TOTAL row — KIT QTY and INCOMMING are NOT included.
+        const totalLabel = ws.getCell(r,startCol);
+        totalLabel.value = 'TOTAL';
+        totalLabel.fill = {
+          type:'pattern',
+          pattern:'solid',
+          fgColor:{argb:TOTAL_FILL}
+        };
+        totalLabel.font = {
+          name:'Arial',
+          size:10,
+          bold:true,
+          color:{argb:BLACK}
+        };
+        totalLabel.alignment = {horizontal:'left', vertical:'center'};
+        totalLabel.border = {top:thin,left:thin,bottom:thin};
 
-    const buffer=await wb.xlsx.writeBuffer();
-    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Consol_${todayISO()}.xlsx`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Excel dashboard + sub-product report exported');
-  }
+        const totalQty = ws.getCell(r,startCol+1);
+        totalQty.value = sectionTotal(section);
+        totalQty.fill = {
+          type:'pattern',
+          pattern:'solid',
+          fgColor:{argb:TOTAL_FILL}
+        };
+        totalQty.font = {
+          name:'Arial',
+          size:10,
+          bold:true,
+          color:{argb:BLACK}
+        };
+        totalQty.alignment = {horizontal:'center', vertical:'center'};
+        totalQty.border = {top:thin,right:thin,bottom:thin};
 
-  // ---------- Excel export: flat table, one row per product, columns per stage ----------
-  async function exportExcel(){
-    if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
-    if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
-    showToast('Preparing export…');
+        ws.getRow(r).height = 20;
+        r++;
 
-    const reportCols=getReportStageColumns();
-    const headerLabels=['PRODUCT',...reportCols,'TOTAL'];
-    const wb=new ExcelJS.Workbook();
-    const ws=wb.addWorksheet('Export',{views:[{state:'frozen',xSplit:1,ySplit:1}]});
-    ws.addRow(headerLabels);
-    ws.getRow(1).height=34;
-    ws.getRow(1).eachCell(cell=>{
-      cell.font={bold:true,color:{argb:'FF1C1C1E'}};
-      cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
-      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFBEDCEA'}};
-      cell.border={top:{style:'thin',color:{argb:'FFAAB6BE'}},left:{style:'thin',color:{argb:'FFAAB6BE'}},bottom:{style:'thin',color:{argb:'FFAAB6BE'}},right:{style:'thin',color:{argb:'FFAAB6BE'}}};
-    });
-
-    const addOwnerRow=(label,owner,isSub=false)=>{
-      const sums={}; reportCols.forEach(c=>sums[c]=0);
-      (owner?.stages||[]).forEach(st=>{
-        const key=resolveStageKey(st), col=key===OTHERS_KEY?displayStageName(st):key;
-        if(Object.prototype.hasOwnProperty.call(sums,col)) sums[col]+=stageQty(st);
+        // White separation between main product and sub-product.
+        if(sectionIndex < sections.length-1){
+          ws.getCell(r,startCol).fill = {
+            type:'pattern', pattern:'solid', fgColor:{argb:WHITE}
+          };
+          ws.getCell(r,startCol+1).fill = {
+            type:'pattern', pattern:'solid', fgColor:{argb:WHITE}
+          };
+          ws.getRow(r).height = 8;
+          r++;
+        }
       });
-      const total=reportCols.reduce((a,c)=>a+(sums[c]||0),0);
-      const row=ws.addRow([label,...reportCols.map(c=>sums[c]||null),total||null]);
-      row.height=20;
-      row.eachCell((cell,i)=>{
-        cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
-        cell.border={top:{style:'thin',color:{argb:'FFDDDDDD'}},left:{style:'thin',color:{argb:'FFDDDDDD'}},bottom:{style:'thin',color:{argb:'FFDDDDDD'}},right:{style:'thin',color:{argb:'FFDDDDDD'}}};
-        if(i===1) cell.font={bold:true};
-        if(isSub && i===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEAF8F1'}};
+
+      return r - startRow;
+    }
+
+    const products = sortedProducts();
+
+    // Exactly 3 cards per visual row, same as the reference XLSX.
+    let currentRow = 1;
+
+    for(let i=0;i<products.length;i+=3){
+      const group = products.slice(i,i+3);
+      const heights = group.map(cardHeight);
+      const maxHeight = Math.max(...heights);
+
+      group.forEach((product,j)=>{
+        const col = j===0 ? 1 : j===1 ? 4 : 7;
+        writeCard(product,currentRow,col);
       });
+
+      // Extend shorter cards with blank white cells so all 3 cards
+      // finish on the same horizontal line.
+      group.forEach((product,j)=>{
+        const col = j===0 ? 1 : j===1 ? 4 : 7;
+        for(let r=currentRow+heights[j]; r<currentRow+maxHeight; r++){
+          for(let c=col;c<=col+1;c++){
+            const cell=ws.getCell(r,c);
+            cell.value = null;
+            cell.fill = {
+              type:'pattern',
+              pattern:'solid',
+              fgColor:{argb:WHITE}
+            };
+            cell.border = {left:thin,right:thin,bottom:thin};
+          }
+          ws.getRow(r).height = 20;
+        }
+      });
+
+      // Match the blank row spacing in the reference.
+      currentRow += maxHeight + 2;
+    }
+
+    // Match the reference workbook page setup.
+    ws.pageSetup.orientation = 'portrait';
+    ws.pageSetup.fitToPage = true;
+    ws.pageSetup.fitToWidth = 1;
+    ws.pageSetup.fitToHeight = 0;
+    ws.pageMargins = {
+      left:0.7,
+      right:0.7,
+      top:0.5,
+      bottom:0.5,
+      header:0.2,
+      footer:0.2
     };
 
-    sortedProducts().forEach(p=>{
-      addOwnerRow(p.code,p,false);
-      ensureSubProducts(p).forEach(sp=>addOwnerRow('> '+sp.code,sp,true));
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-    ws.columns.forEach((col,i)=>col.width=i===0?28:13);
 
-    const buffer=await wb.xlsx.writeBuffer();
-    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Export_${todayISO()}.xlsx`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Excel report with sub-products exported');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Consol_${todayISO()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    showToast('Consolidated Excel report exported');
+  }
+
+  // ---------- Excel export: fixed columns + CUSTOM STAGE + REMARKS ----------
+  async function exportExcel(){
+    if(!state || !state.products || state.products.length===0){
+      showToast('No products to export');
+      return;
+    }
+    if(typeof ExcelJS === 'undefined'){
+      showToast('Export library failed to load — check connection');
+      return;
+    }
+
+    showToast('Preparing export…');
+
+    // IMPORTANT:
+    // The normal Excel report must NOT expand custom-stage names into columns.
+    // It always keeps one fixed "CUSTOM STAGE" column.
+    // The actual custom stage name + quantity are written in REMARKS.
+    const reportCols = [...STAGE_COLUMNS, OTHERS_LABEL];
+    const headerLabels = ['PRODUCT', ...reportCols, 'TOTAL', 'REMARKS'];
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Export', {
+      views:[{state:'frozen',xSplit:1,ySplit:1}]
+    });
+
+    ws.addRow(headerLabels);
+    ws.getRow(1).height = 38;
+
+    const headerFill = 'FFBEDCEA';
+    const headerBorder = 'FFAAB6BE';
+    ws.getRow(1).eachCell(cell=>{
+      cell.font = {
+        name:'Arial',
+        bold:true,
+        size:10,
+        color:{argb:'FF1C1C1E'}
+      };
+      cell.alignment = {
+        vertical:'middle',
+        horizontal:'center',
+        wrapText:true
+      };
+      cell.fill = {
+        type:'pattern',
+        pattern:'solid',
+        fgColor:{argb:headerFill}
+      };
+      cell.border = {
+        top:{style:'thin',color:{argb:headerBorder}},
+        left:{style:'thin',color:{argb:headerBorder}},
+        bottom:{style:'thin',color:{argb:headerBorder}},
+        right:{style:'thin',color:{argb:headerBorder}}
+      };
+    });
+
+    const bodyBorder = 'FFDDDDDD';
+
+    function buildReportRow(label, owner, isSub=false){
+      const sums = {};
+      STAGE_COLUMNS.forEach(c=>sums[c]=0);
+
+      let customQty = 0;
+      const customRemarks = [];
+
+      (owner?.stages || []).forEach(st=>{
+        const key = resolveStageKey(st);
+        const qty = Number(stageQty(st) || 0);
+
+        if(key === OTHERS_KEY){
+          // Do not create a separate column for the actual custom stage name.
+          // Keep only the fixed CUSTOM STAGE column and put name + qty in remarks.
+          customQty += qty;
+
+          const customName = String(st.name || '').trim().toUpperCase() || OTHERS_LABEL;
+          customRemarks.push(`${qty}-${customName}`);
+        }else if(Object.prototype.hasOwnProperty.call(sums,key)){
+          sums[key] += qty;
+        }
+      });
+
+      // TOTAL = SHIPPED + all fixed stages after SHIPPED + CUSTOM STAGE.
+      // KIT QTY and INCOMMING are intentionally excluded.
+      let total = customQty;
+      STAGE_COLUMNS.forEach((c,idx)=>{
+        if(idx >= 2) total += Number(sums[c] || 0);
+      });
+
+      const remarks = customRemarks.join(', ');
+
+      const values = [
+        label,
+        ...STAGE_COLUMNS.map(c=>sums[c] || null),
+        customQty || null,
+        total || null,
+        remarks || ''
+      ];
+
+      const row = ws.addRow(values);
+      row.height = 21;
+
+      row.eachCell((cell,i)=>{
+        cell.font = {
+          name:'Arial',
+          size:10,
+          bold:i===1
+        };
+        cell.alignment = {
+          vertical:'middle',
+          horizontal:i===1 || i===headerLabels.length ? 'left' : 'center',
+          wrapText:true
+        };
+        cell.border = {
+          top:{style:'thin',color:{argb:bodyBorder}},
+          left:{style:'thin',color:{argb:bodyBorder}},
+          bottom:{style:'thin',color:{argb:bodyBorder}},
+          right:{style:'thin',color:{argb:bodyBorder}}
+        };
+
+        if(isSub && i===1){
+          cell.fill = {
+            type:'pattern',
+            pattern:'solid',
+            fgColor:{argb:'FFEAF8F1'}
+          };
+        }
+      });
+
+      // Make TOTAL and REMARKS easy to identify.
+      const totalCell = row.getCell(headerLabels.indexOf('TOTAL')+1);
+      totalCell.font = {
+        name:'Arial',
+        size:10,
+        bold:true
+      };
+
+      const customCell = row.getCell(headerLabels.indexOf(OTHERS_LABEL)+1);
+      if(customQty){
+        customCell.font = {
+          name:'Arial',
+          size:10,
+          bold:true
+        };
+      }
+
+      return row;
+    }
+
+    sortedProducts().forEach(p=>{
+      buildReportRow(p.code,p,false);
+      ensureSubProducts(p).forEach(sp=>{
+        buildReportRow('> '+sp.code,sp,true);
+      });
+    });
+
+    // Fixed widths — no dynamically generated custom-stage columns.
+    const widths = [
+      28, // PRODUCT
+      11, // KIT QTY
+      11, // INCOMMING
+      11, // SHIPPED
+      11, // PACKING
+      10, // OQA
+      10, // LOG
+      10, // FQC
+      12, // TESTING2
+      10, // GLUE
+      11, // TESTING1
+      10, // RETEST
+      12, // MODULE ASSY
+      11, // MERGING
+      14, // SENSOR CLEANING
+      10, // PROGRAM
+      10, // FAIL
+      11, // REWORK
+      10, // DEBUG
+      12, // RW IN DEBUG
+      12, // SENSOR ISSUE
+      10, // SCRAP
+      14, // CUSTOM STAGE
+      12, // TOTAL
+      28  // REMARKS
+    ];
+
+    ws.columns.forEach((col,i)=>{
+      col.width = widths[i] || 12;
+    });
+
+    // Keep the reference report's compact spreadsheet appearance.
+    ws.autoFilter = {
+      from:{row:1,column:1},
+      to:{row:Math.max(1,ws.rowCount),column:headerLabels.length}
+    };
+
+    ws.pageSetup.orientation = 'landscape';
+    ws.pageSetup.fitToPage = true;
+    ws.pageSetup.fitToWidth = 1;
+    ws.pageSetup.fitToHeight = 0;
+    ws.pageMargins = {
+      left:0.25,
+      right:0.25,
+      top:0.4,
+      bottom:0.4,
+      header:0.1,
+      footer:0.1
+    };
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ECON_WIP_Export_${todayISO()}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    showToast('Excel report exported');
   }
 
   // ---------- Image export: single product's stage table as a PNG (matches the product detail screen) ----------
@@ -2246,16 +2628,41 @@
 
 
   function buildExcelRowsFromState(){
-    const cols=getReportStageColumns();
+    // Excel Report only:
+    // Keep one fixed CUSTOM STAGE column. Do not create separate columns
+    // for each custom-stage name. The custom-stage quantity goes into
+    // CUSTOM STAGE, while the custom-stage name + quantity goes into REMARKS.
+    const cols=[...STAGE_COLUMNS, OTHERS_LABEL];
+
     const makeRow=(label,owner)=>{
-      const sums={}; cols.forEach(c=>sums[c]=0);
+      const sums={};
+      cols.forEach(c=>sums[c]=0);
+      const customRemarks=[];
+
       (owner?.stages||[]).forEach(s=>{
-        const key=resolveStageKey(s), col=key===OTHERS_KEY?displayStageName(s):key;
-        if(Object.prototype.hasOwnProperty.call(sums,col)) sums[col]+=stageQty(s);
+        const key=resolveStageKey(s);
+        const qty=Number(stageQty(s)||0);
+
+        if(key===OTHERS_KEY){
+          sums[OTHERS_LABEL] += qty;
+          const customName=String(s.name||'').trim().toUpperCase() || OTHERS_LABEL;
+          if(qty){
+            customRemarks.push(`${customName} - ${qty}`);
+          }
+        }else if(Object.prototype.hasOwnProperty.call(sums,key)){
+          sums[key] += qty;
+        }
       });
-      const total=cols.reduce((sum,c)=>sum+(sums[c]||0),0);
-      return {product:label,sums,total,remarks:''};
+
+      const total=totalFromStageSums(sums);
+      return {
+        product:label,
+        sums,
+        total,
+        remarks:customRemarks.join(', ')
+      };
     };
+
     const rows=[];
     sortedProducts().forEach(p=>{
       rows.push(makeRow(p.code,p));
@@ -2293,7 +2700,8 @@
 
   function renderExcelReport(scroll){
     const rows=buildExcelRowsFromState();
-    const headers=['PRODUCT',...getReportStageColumns(),'TOTAL'];
+    // Excel Report fixed layout. Custom stage names are NOT columns.
+    const headers=['PRODUCT',...STAGE_COLUMNS,OTHERS_LABEL,'TOTAL','REMARKS'];
     scroll.className='dashboard-scroll';
     scroll.innerHTML=`
       <div class="dashboard-head">
@@ -2329,16 +2737,16 @@
                   ${rows.map((r,ri)=>`
                     <tr data-report-row="${ri}">
                       <td>${escapeHtml(r.product)}</td>
-                      ${STAGE_COLUMNS.map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
-                      <td data-col="OTHERS">${r.sums[OTHERS_KEY]||''}</td>
+                      ${headers.slice(1,-3).map(c=>`<td data-col="${escapeAttr(c)}">${r.sums[c]||''}</td>`).join('')}
+                      <td data-col="${escapeAttr(OTHERS_LABEL)}">${r.sums[OTHERS_LABEL]||''}</td>
                       <td class="report-total" data-col="TOTAL">${r.total||''}</td>
-                      <td class="remarks-cell" data-col="REMARKS">${escapeHtml(r.remarks)}</td>
+                      <td class="remarks-cell" data-col="REMARKS">${escapeHtml(r.remarks||'')}</td>
                     </tr>
                   `).join('')}
                 </tbody>
               </table>
             </div>
-            <div class="excel-note">Read-only report. Sub-products are shown as separate rows with their own stage quantities. Custom stages are shown by their actual stage name.</div>
+            <div class="excel-note">Read-only report. Sub-products are shown as separate rows. Custom-stage quantity is shown in CUSTOM STAGE, and the custom stage name with quantity is shown in REMARKS.</div>
           </div>
         </div>
 
@@ -2667,7 +3075,7 @@
         <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
         <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
         <button class="icon-btn search-btn" id="searchToggleBtn" title="Search">${icon('search')}</button>
-        <button class="icon-btn" id="consolBtn" title="CONSOL">${icon('consol')}</button>
+        <button class="icon-btn" id="consolBtn" title="Consolidated Excel Report" aria-label="Consolidated Excel Report">${icon('consol')}</button>
         ${isOwnerUser ? `<button class="icon-btn" id="exportBtn" title="Export">${icon('export')}</button>` : ''}
         ${isOwnerUser ? `<button class="icon-btn" id="usersBtn" title="Users">${icon('users')}${pendingCount()>0 ? `<span class="req-badge">${pendingCount()}</span>` : ''}</button>` : ''}
         ${!isOwnerUser ? `<button class="icon-btn" id="changePwBtn" title="Change password">${icon('key')}</button>` : ''}
