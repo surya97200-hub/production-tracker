@@ -714,6 +714,7 @@
      ============================================================ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 
 <script>
@@ -729,14 +730,28 @@
   // Firebase is optional for the login screen. If the CDN is blocked/offline,
   // the owner login must still respond instead of stopping the whole script.
   let db = null;
+  let firebaseAuth = null;
   let stateDocRef = null;
   let attendanceDocRef = null;
+  let firebaseAuthReady = Promise.resolve(false);
   try {
     if (window.firebase && firebase.initializeApp) {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
       stateDocRef = db.collection('productionTracker').doc('sharedState');
       attendanceDocRef = db.collection('attendance').doc('sharedAttendance');
+
+      // Sign in anonymously so Firestore rules using request.auth != null can work.
+      // If Anonymous Auth is not enabled, the app still works with open Firestore rules.
+      if (firebase.auth) {
+        firebaseAuth = firebase.auth();
+        firebaseAuthReady = firebaseAuth.currentUser
+          ? Promise.resolve(true)
+          : firebaseAuth.signInAnonymously().then(()=>true).catch(err=>{
+              console.warn('Anonymous Firebase Auth unavailable:', err);
+              return false;
+            });
+      }
     }
   } catch (e) {
     console.warn('Firebase unavailable; running with local login fallback.', e);
@@ -763,6 +778,7 @@
 
   async function loadRequestsOnce(){
     try{
+      await firebaseAuthReady;
       if(!REQUESTS_DOC) { resetRequests={}; return; }
       const snap = await REQUESTS_DOC.get();
       resetRequests = snap.exists ? (snap.data().requests || {}) : {};
@@ -816,6 +832,7 @@
       btn.onclick = async ()=>{
         const reqId = btn.dataset.reject;
         try{
+          if(!REQUESTS_DOC) throw new Error('Firebase unavailable');
           resetRequests[reqId].status='rejected';
           await REQUESTS_DOC.set({requests:resetRequests});
           renderResetRequestsList();
@@ -897,6 +914,7 @@
 
   async function loadUsers(){
     // Always keep a local owner fallback so the login screen never waits for Firebase.
+    await firebaseAuthReady;
     const localOwner={ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, access:'write', createdAt:new Date().toISOString() };
     authUsers={ [OWNER_ID]: localOwner };
     try{
@@ -1000,6 +1018,7 @@
     if(curPw!==authUsers[OWNER_ID].password){ msgEl.textContent='Current password is wrong'; return; }
     if(newPw.length<6){ msgEl.textContent='New password must be at least 6 characters'; return; }
     try{
+      if(!AUTH_DOC) throw new Error('Firebase unavailable');
       authUsers[OWNER_ID].password=newPw;
       await AUTH_DOC.set({users:authUsers});
       msgEl.style.color='#4CAF6D';
@@ -1049,6 +1068,7 @@
     };
 
     try{
+      if(!AUTH_DOC) throw new Error('Firebase unavailable');
       await AUTH_DOC.set({users:authUsers});
       document.getElementById('newUserId').value='';
       document.getElementById('newUserPassword').value='';
@@ -1104,6 +1124,8 @@
         if(pw1.length<6){ alert('New password must be at least 6 characters'); return; }
         if(pw1!==pw2){ alert('Passwords do not match'); return; }
         try{
+          await firebaseAuthReady;
+          if(!REQUESTS_DOC) throw new Error('Firebase unavailable');
           const snap = await REQUESTS_DOC.get();
           const requests = snap.exists ? (snap.data().requests||{}) : {};
           const reqId = 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -1276,31 +1298,86 @@
   }
 
   // ---------- Firestore sync (shared, multi-user) ----------
-  function subscribeState(){
+  const STATE_CACHE_KEY = 'econWipTracker_state_cache_v7';
+  function cacheState(){
+    try{ localStorage.setItem(STATE_CACHE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function loadCachedState(){
+    try{
+      const raw=localStorage.getItem(STATE_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function firestoreErrorText(err, action){
+    const code=String((err&&err.code)||'').toLowerCase();
+    if(code.includes('permission-denied')) return `${action}: Firestore permission denied`;
+    if(code.includes('unauthenticated')) return `${action}: Firebase authentication required`;
+    if(code.includes('not-found')) return `${action}: Firestore database not found`;
+    if(code.includes('failed-precondition')) return `${action}: Firestore not ready`;
+    if(code.includes('unavailable')) return `${action}: Firebase temporarily unavailable`;
+    return `${action}: ${err&&err.message ? err.message : 'check Firebase config / rules'}`;
+  }
+
+  async function subscribeState(){
+    const cached=loadCachedState();
+    if(cached && Array.isArray(cached.products)){ state=cached; syncStatus='connecting'; render(); }
+
+    if(!stateDocRef){
+      state=state || seed();
+      cacheState();
+      syncStatus='err';
+      render();
+      showToast('Firebase unavailable — local mode');
+      return;
+    }
+
+    await firebaseAuthReady;
     stateDocRef.onSnapshot(async (docSnap)=>{
       if(docSnap.exists){
         state = docSnap.data();
         syncStatus = 'on';
+        cacheState();
         render();
       } else {
-        state = seed();
-        try{ await stateDocRef.set(state); syncStatus='on'; }
-        catch(e){ syncStatus='err'; console.error(e); }
+        state = state || seed();
+        cacheState();
+        try{
+          await stateDocRef.set(state);
+          syncStatus='on';
+        }catch(e){
+          syncStatus='err';
+          console.error('Initial Firestore save failed',e);
+          showToast(firestoreErrorText(e,'Sync error'));
+        }
         render();
       }
     }, (err)=>{
       console.error('Firestore sync error', err);
       syncStatus = 'err';
-      showToast('Sync error — check Firebase config / rules');
+      state = state || cached || seed();
+      cacheState();
+      showToast(firestoreErrorText(err,'Sync error'));
       render();
     });
   }
 
   async function saveState(){
-    try{ await stateDocRef.set(state); }
-    catch(e){
+    cacheState();
+    if(!stateDocRef){
+      syncStatus='err';
+      showToast('Saved locally — Firebase unavailable');
+      render();
+      return;
+    }
+    await firebaseAuthReady;
+    try{
+      await stateDocRef.set(state);
+      syncStatus='on';
+    }catch(e){
+      syncStatus='err';
       console.error('Save failed', e);
-      showToast('Save failed — check connection');
+      showToast(firestoreErrorText(e,'Save failed'));
+      render();
     }
   }
 
@@ -2911,10 +2988,23 @@
     set.add(attendanceMonth);
     return Array.from(set).sort().reverse();
   }
+  const ATT_CACHE_KEY = 'econWipTracker_attendance_cache_v7';
+  function cacheAttendance(){
+    try{ localStorage.setItem(ATT_CACHE_KEY, JSON.stringify(attendanceState)); }catch(e){}
+  }
+  function loadCachedAttendance(){
+    try{
+      const raw=localStorage.getItem(ATT_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
   async function saveAttendance(){
     ensureAttendanceState();
+    cacheAttendance();
+    if(!attendanceDocRef){ showToast('Attendance saved locally — Firebase unavailable'); return; }
+    await firebaseAuthReady;
     try{ await attendanceDocRef.set(attendanceState); }
-    catch(e){ console.error(e); showToast('Attendance save failed — check connection'); }
+    catch(e){ console.error(e); showToast(firestoreErrorText(e,'Attendance save failed')); }
   }
   function addEmployee(){
     if(!window.__auth.isOwner()){showToast('Only owner can edit attendance');return;}
@@ -3354,21 +3444,40 @@
 
   // ---------- Start data sync ----------
   subscribeState();
-  attendanceUnsub = attendanceDocRef.onSnapshot((snap)=>{
-    attendanceState = snap.exists ? (snap.data() || {employees:{},months:{}}) : {employees:{},months:{}};
+
+  const cachedAttendance=loadCachedAttendance();
+  if(cachedAttendance){
+    attendanceState=cachedAttendance;
     ensureAttendanceState();
-    if(currentNav().view==='attendance') render();
-  }, (err)=>{ console.error('Attendance sync error',err); });
+  }
+  if(attendanceDocRef){
+    firebaseAuthReady.then(()=>{
+      attendanceUnsub = attendanceDocRef.onSnapshot((snap)=>{
+        attendanceState = snap.exists ? (snap.data() || {employees:{},months:{}}) : (attendanceState || {employees:{},months:{}});
+        ensureAttendanceState();
+        cacheAttendance();
+        if(currentNav().view==='attendance') render();
+      }, (err)=>{
+        console.error('Attendance sync error',err);
+        showToast(firestoreErrorText(err,'Attendance sync'));
+        ensureAttendanceState();
+        if(currentNav().view==='attendance') render();
+      });
+    });
+  } else {
+    attendanceState=attendanceState || {employees:{},months:{}};
+    ensureAttendanceState();
+  }
   setupSortable(document.getElementById('scroll'));
 
   // Owner gets a live notification badge when a new password request comes in,
   // and the users list stays in sync with Firestore in real time.
   if(user.role==='owner' && AUTH_DOC){
-    AUTH_DOC.onSnapshot((snap)=>{
+    firebaseAuthReady.then(()=>AUTH_DOC.onSnapshot((snap)=>{
       authUsers = snap.exists ? (snap.data().users || {}) : authUsers;
       renderUsersList();
-    }, (err)=>{ console.error('Users sync error', err); });
-    REQUESTS_DOC.onSnapshot((snap)=>{
+    }, (err)=>{ console.error('Users sync error', err); }));
+    if(REQUESTS_DOC) REQUESTS_DOC.onSnapshot((snap)=>{
       resetRequests = snap.exists ? (snap.data().requests || {}) : {};
       render();
       renderResetRequestsList();
