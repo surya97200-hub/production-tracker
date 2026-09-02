@@ -1297,17 +1297,60 @@
     };
   }
 
-  // ---------- Firestore sync (shared, multi-user) ----------
-  const STATE_CACHE_KEY = 'econWipTracker_state_cache_v7';
+  // ---------- Firestore sync (RECOVERY MODE — NEVER OVERWRITE CLOUD DATA) ----------
+  const STATE_CACHE_KEYS = [
+    'econWipLocalState',
+    'econWipTracker_state_cache_v7',
+    'econWipTracker_state_cache_v6',
+    'econWipTracker_state_cache_v5',
+    'econWipTracker_state_cache',
+    'econWip_state',
+    'econWipTrackerState'
+  ];
+
+  function stateLooksValid(x){
+    return !!(x && typeof x==='object' && Array.isArray(x.products));
+  }
+
   function cacheState(){
-    try{ localStorage.setItem(STATE_CACHE_KEY, JSON.stringify(state)); }catch(e){}
-  }
-  function loadCachedState(){
     try{
-      const raw=localStorage.getItem(STATE_CACHE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    }catch(e){ return null; }
+      if(stateLooksValid(state)){
+        // Keep the newest recovery-compatible cache. Do NOT remove old keys.
+        localStorage.setItem('econWipLocalState', JSON.stringify(state));
+        localStorage.setItem('econWipTracker_state_cache_v7', JSON.stringify(state));
+      }
+    }catch(e){ console.warn('Local cache save failed',e); }
   }
+
+  function loadCachedState(){
+    let best=null, bestCount=-1;
+    try{
+      for(const key of STATE_CACHE_KEYS){
+        const raw=localStorage.getItem(key);
+        if(!raw) continue;
+        let parsed;
+        try{ parsed=JSON.parse(raw); }catch(e){ continue; }
+        if(stateLooksValid(parsed)){
+          const count=parsed.products.length;
+          if(count>bestCount){ best=parsed; bestCount=count; }
+        }
+      }
+      // Also inspect likely WIP/state keys without changing or deleting anything.
+      for(let i=0;i<localStorage.length;i++){
+        const key=localStorage.key(i)||'';
+        if(!/wip|tracker|production|sharedstate|state/i.test(key)) continue;
+        if(STATE_CACHE_KEYS.includes(key)) continue;
+        const raw=localStorage.getItem(key);
+        if(!raw || raw.length<20) continue;
+        try{
+          const parsed=JSON.parse(raw);
+          if(stateLooksValid(parsed) && parsed.products.length>bestCount){ best=parsed; bestCount=parsed.products.length; }
+        }catch(e){}
+      }
+    }catch(e){ console.warn('Recovery cache scan failed',e); }
+    return best;
+  }
+
   function firestoreErrorText(err, action){
     const code=String((err&&err.code)||'').toLowerCase();
     if(code.includes('permission-denied')) return `${action}: Firestore permission denied`;
@@ -1320,64 +1363,101 @@
 
   async function subscribeState(){
     const cached=loadCachedState();
-    if(cached && Array.isArray(cached.products)){ state=cached; syncStatus='connecting'; render(); }
+    if(cached){
+      state=cached;
+      syncStatus='connecting';
+      render();
+      showToast(`Recovered ${cached.products.length} products from this browser`);
+    }
 
     if(!stateDocRef){
-      state=state || seed();
-      cacheState();
+      if(!state) state={products:[]};
       syncStatus='err';
       render();
-      showToast('Firebase unavailable — local mode');
+      showToast(cached ? 'Firebase unavailable — showing recovered local data' : 'Firebase unavailable — cloud data was NOT changed');
       return;
     }
 
-    await firebaseAuthReady;
-    stateDocRef.onSnapshot(async (docSnap)=>{
+    try{ await firebaseAuthReady; }catch(e){}
+
+    stateDocRef.onSnapshot((docSnap)=>{
       if(docSnap.exists){
-        state = docSnap.data();
-        syncStatus = 'on';
-        cacheState();
-        render();
-      } else {
-        state = state || seed();
-        cacheState();
-        try{
-          await stateDocRef.set(state);
+        const remote=docSnap.data() || {};
+        if(stateLooksValid(remote)){
+          // Cloud data is authoritative ONLY when it contains a valid product array.
+          // Never replace a richer local recovery cache with a smaller empty/seed state.
+          const remoteCount=remote.products.length;
+          const localCount=(state && Array.isArray(state.products)) ? state.products.length : 0;
+          if(remoteCount===0 && localCount>0){
+            syncStatus='err';
+            render();
+            showToast(`Cloud returned 0 products; kept ${localCount} recovered local products. NOTHING was overwritten.`);
+            return;
+          }
+          state=remote;
           syncStatus='on';
-        }catch(e){
+          cacheState();
+          render();
+        }else{
           syncStatus='err';
-          console.error('Initial Firestore save failed',e);
-          showToast(firestoreErrorText(e,'Sync error'));
+          render();
+          showToast('Cloud data format error — existing local/cloud data was NOT replaced');
         }
+      }else{
+        // CRITICAL: missing document must never trigger seed() or an automatic write.
+        syncStatus='err';
+        if(!state) state={products:[]};
         render();
+        showToast(state.products.length ? `sharedState missing — kept ${state.products.length} recovered products` : 'sharedState missing — NO data was created or overwritten');
       }
-    }, (err)=>{
-      console.error('Firestore sync error', err);
-      syncStatus = 'err';
-      state = state || cached || seed();
-      cacheState();
-      showToast(firestoreErrorText(err,'Sync error'));
+    },(err)=>{
+      console.error('Firestore sync error',err);
+      syncStatus='err';
       render();
+      showToast(firestoreErrorText(err,'Sync error') + ' — existing data was NOT overwritten');
     });
   }
 
   async function saveState(){
+    // Local backup first. Never write to Firestore on an error.
     cacheState();
     if(!stateDocRef){
       syncStatus='err';
-      showToast('Saved locally — Firebase unavailable');
+      showToast('Saved locally — Firebase unavailable; cloud data was NOT changed');
       render();
-      return;
+      return false;
     }
-    await firebaseAuthReady;
     try{
+      await firebaseAuthReady;
+      // Before any write, re-read cloud state. This prevents a stale local copy
+      // from overwriting newer cloud data during recovery.
+      const snap=await stateDocRef.get();
+      if(!snap.exists){
+        syncStatus='err';
+        showToast('Cloud document is missing — SAVE BLOCKED to protect your data');
+        render();
+        return false;
+      }
+      const remote=snap.data()||{};
+      const remoteCount=Array.isArray(remote.products)?remote.products.length:-1;
+      const localCount=Array.isArray(state.products)?state.products.length:-1;
+      if(remoteCount>localCount && localCount>=0){
+        syncStatus='err';
+        showToast(`SAVE BLOCKED: cloud has ${remoteCount} products, local has ${localCount}`);
+        render();
+        return false;
+      }
       await stateDocRef.set(state);
       syncStatus='on';
+      cacheState();
+      render();
+      return true;
     }catch(e){
       syncStatus='err';
-      console.error('Save failed', e);
-      showToast(firestoreErrorText(e,'Save failed'));
+      console.error('Save failed',e);
+      showToast(firestoreErrorText(e,'Save failed') + ' — cloud data was NOT replaced');
       render();
+      return false;
     }
   }
 
