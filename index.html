@@ -754,6 +754,12 @@
   let currentUser = null;
   let authUsers = {};
   let resetRequests = {};
+  // Keep login independent from Firebase timing. Existing users are cached locally
+  // after a successful Firestore read, so a temporary Firestore delay does not
+  // make the login button reject a valid user.
+  let authLoaded = false;
+  let authLoadPromise = null;
+  const AUTH_CACHE_KEY = 'econ_wip_auth_users_v2';
 
   function esc(s){
     return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -894,38 +900,64 @@
   }
 
   async function loadUsers(){
-    // Always keep a local owner fallback so the login screen never waits for Firebase.
     const localOwner={ password:DEFAULT_OWNER_PASSWORD, role:'owner', active:true, access:'write', createdAt:new Date().toISOString() };
-    authUsers={ [OWNER_ID]: localOwner };
+
+    // First restore the last known user list. This is only a login fallback;
+    // Firestore remains the source of truth whenever it is reachable.
+    let cachedUsers=null;
     try{
-      if(!AUTH_DOC) return;
+      const raw=localStorage.getItem(AUTH_CACHE_KEY);
+      if(raw) cachedUsers=JSON.parse(raw);
+    }catch(e){}
+
+    authUsers = (cachedUsers && typeof cachedUsers==='object') ? cachedUsers : {};
+    if(!authUsers[OWNER_ID]) authUsers[OWNER_ID]=localOwner;
+
+    if(!AUTH_DOC){
+      authLoaded=true;
+      return authUsers;
+    }
+
+    try{
       const snap=await AUTH_DOC.get();
       if(snap.exists){
         const rawUsers=snap.data().users || {};
-        // Normalize all stored user IDs so login is case-insensitive and old users continue to work.
-        authUsers={};
-        let needsSave=false;
+        const normalized={};
         Object.entries(rawUsers).forEach(([storedId,user])=>{
           const normalizedId=String(storedId).trim().toLowerCase();
-          if(!normalizedId) return;
-          if(authUsers[normalizedId] && normalizedId!==storedId) needsSave=true;
-          authUsers[normalizedId]={...(user||{})};
+          if(normalizedId) normalized[normalizedId]={...(user||{})};
         });
-        if(!authUsers[OWNER_ID]){ authUsers[OWNER_ID]=localOwner; needsSave=true; }
-        else if(!authUsers[OWNER_ID].password){ authUsers[OWNER_ID].password=DEFAULT_OWNER_PASSWORD; needsSave=true; }
-        Object.keys(authUsers).forEach(id=>{
-          if(id===OWNER_ID) return;
-          if(!authUsers[id].password){ authUsers[id].password='ResetMe@123'; needsSave=true; }
-          if(authUsers[id].access!=='read' && authUsers[id].access!=='write'){ authUsers[id].access='write'; needsSave=true; }
+        if(!normalized[OWNER_ID]) normalized[OWNER_ID]=localOwner;
+        else if(!normalized[OWNER_ID].password) normalized[OWNER_ID].password=DEFAULT_OWNER_PASSWORD;
+
+        Object.keys(normalized).forEach(id=>{
+          if(id!==OWNER_ID){
+            if(!normalized[id].password) normalized[id].password='ResetMe@123';
+            if(normalized[id].access!=='read' && normalized[id].access!=='write') normalized[id].access='write';
+          }
         });
-        if(needsSave){ try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Auth migration save skipped',e); } }
+
+        authUsers=normalized;
+        try{ localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(authUsers)); }catch(e){}
+
+        // Keep the existing Firestore structure. Only repair missing metadata;
+        // never replace the whole user list with the local fallback.
+        let needsSave=false;
+        if(!rawUsers[OWNER_ID]) needsSave=true;
+        if(needsSave){ try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Auth repair skipped',e); } }
       }else{
+        authUsers={ [OWNER_ID]: localOwner };
         try{ await AUTH_DOC.set({users:authUsers}); }catch(e){ console.warn('Initial auth save skipped',e); }
+        try{ localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(authUsers)); }catch(e){}
       }
     }catch(e){
-      console.warn('Firebase auth load failed; using local owner fallback',e);
-      authUsers={ [OWNER_ID]: localOwner };
+      // Do NOT erase cached users when Firestore is temporarily unavailable.
+      console.warn('Firebase auth load failed; using cached login users.',e);
+      if(!authUsers || !Object.keys(authUsers).length) authUsers={ [OWNER_ID]: localOwner };
+    }finally{
+      authLoaded=true;
     }
+    return authUsers;
   }
 
   function showLogin(){
@@ -941,18 +973,29 @@
 
   async function login(){
     const rawId=document.getElementById('loginId').value.trim();
-    const id=rawId.trim().toLowerCase();
+    const id=rawId.toLowerCase();
     const pw=document.getElementById('loginPassword').value;
     if(!id || !pw){ authMessage('Enter User ID and password'); return; }
 
-    // Owner can always log in immediately, even while Firebase is loading/offline.
+    // If Firebase is still loading, give it a short chance to load the real
+    // users. The login screen itself never waits indefinitely.
+    if(!authLoaded && authLoadPromise){
+      authMessage('Checking login…', true);
+      await Promise.race([
+        authLoadPromise.catch(()=>{}),
+        new Promise(resolve=>setTimeout(resolve,4000))
+      ]);
+    }
+
     let u=authUsers[id];
+    // Built-in owner fallback is retained for first-time/offline access.
     if(!u && id===OWNER_ID && pw===DEFAULT_OWNER_PASSWORD){
       u={password:DEFAULT_OWNER_PASSWORD,role:'owner',active:true,access:'write'};
       authUsers[OWNER_ID]=u;
     }
+
     if(!u || u.active===false){ authMessage('Invalid User ID or password'); return; }
-    if(pw!==u.password){ authMessage('Invalid User ID or password'); return; }
+    if(String(pw)!==String(u.password)){ authMessage('Invalid User ID or password'); return; }
 
     currentUser={id, role:u.role || 'user', access:u.access || 'write'};
     showApp(currentUser);
@@ -961,7 +1004,6 @@
       startWipApp(currentUser);
     }catch(e){
       console.error(e);
-      // Login itself succeeded; keep the user informed instead of silently returning to login.
       showApp(currentUser);
       authMessage('Login successful, but app startup failed. Check Firebase/internet connection.');
     }
@@ -1780,6 +1822,34 @@
     });
   }
 
+  // Ask the user where the generated Excel report should be saved.
+  // Modern Chromium browsers show the native Save As dialog; if unavailable,
+  // fall back to the normal browser download location.
+  async function saveExcelBuffer(buffer, suggestedName){
+    const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    if(window.showSaveFilePicker){
+      try{
+        const handle = await window.showSaveFilePicker({
+          suggestedName,
+          types:[{description:'Excel Workbook',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        showToast('Excel report saved successfully');
+        return true;
+      }catch(e){
+        if(e && e.name==='AbortError') return false;
+        console.warn('Save As dialog unavailable, using browser download.', e);
+      }
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=suggestedName;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Save As is not supported here — downloaded to browser Downloads');
+    return true;
+  }
+
   async function exportConsolExcel(){
     if(!state || !state.products || state.products.length===0){ showToast('No products to export'); return; }
     if(typeof ExcelJS === 'undefined'){ showToast('Export library failed to load — check connection'); return; }
@@ -1793,10 +1863,13 @@
     const BORDER={style:'thin',color:{argb:'FFC9C9C9'}};
     const thinBorder={top:BORDER,left:BORDER,bottom:BORDER,right:BORDER};
     const products=sortedProducts();
-    const reportCols=getReportStageColumns();
+    // Dashboard sheet uses one fixed CUSTOM STAGE column.
+    // Custom stage names are kept inside the quantity cell, e.g. 60(FQC REWORK).
+    // Product Detail sheet below continues to show the full custom stage name.
+    const dashboardCols=[...STAGE_COLUMNS, OTHERS_LABEL];
 
     // Dashboard page: product + sub-product stage matrix
-    ws.addRow(['PRODUCT',...reportCols,'TOTAL']);
+    ws.addRow(['PRODUCT',...dashboardCols,'TOTAL']);
     ws.getRow(1).height=34;
     ws.getRow(1).eachCell(c=>{
       c.font={bold:true,color:{argb:'FF14231C'}};
@@ -1806,24 +1879,33 @@
     });
 
     function stageMap(owner){
-      const sums={}; reportCols.forEach(c=>sums[c]=0);
+      const sums={}; STAGE_COLUMNS.forEach(c=>sums[c]=0);
+      const customParts=[];
       (owner?.stages||[]).forEach(st=>{
-        const key=resolveStageKey(st), label=key===OTHERS_KEY?displayStageName(st):key;
-        if(Object.prototype.hasOwnProperty.call(sums,label)) sums[label]+=stageQty(st);
+        const key=resolveStageKey(st);
+        const qty=stageQty(st);
+        if(key===OTHERS_KEY){
+          const customName=String(st.name||'').trim().toUpperCase() || OTHERS_LABEL;
+          if(qty) customParts.push(`${qty}(${customName})`);
+        }else if(Object.prototype.hasOwnProperty.call(sums,key)){
+          sums[key]+=qty;
+        }
       });
-      const total=reportCols.reduce((a,c)=>a+(sums[c]||0),0);
-      return {sums,total};
+      // Keep the same TOTAL basis as the existing Dashboard export, while
+      // displaying custom stage names only inside the CUSTOM STAGE cell.
+      const total=STAGE_COLUMNS.reduce((a,c)=>a+(sums[c]||0),0) + (owner?.stages||[]).reduce((a,st)=>resolveStageKey(st)===OTHERS_KEY ? a+stageQty(st) : a,0);
+      return {sums,total,customText:customParts.join(', ')};
     }
     products.forEach(p=>{
       const main=stageMap(p);
-      const r=ws.addRow([p.code,...reportCols.map(c=>main.sums[c]||null),main.total||null]);
+      const r=ws.addRow([p.code,...STAGE_COLUMNS.map(c=>main.sums[c]||null),main.customText||null,main.total||null]);
       r.eachCell((cell,i)=>{
         cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
         if(i===1) cell.font={bold:true};
       });
       ensureSubProducts(p).forEach(sp=>{
         const sub=stageMap(sp);
-        const sr=ws.addRow(['> '+sp.code,...reportCols.map(c=>sub.sums[c]||null),sub.total||null]);
+        const sr=ws.addRow(['> '+sp.code,...STAGE_COLUMNS.map(c=>sub.sums[c]||null),sub.customText||null,sub.total||null]);
         sr.eachCell((cell,i)=>{
           cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
           if(i===1){ cell.font={bold:true}; cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:SUB_FILL}}; }
@@ -1832,38 +1914,116 @@
     });
     ws.columns.forEach((col,i)=>col.width=i===0?28:13);
 
-    // Product Detail page: stage/qty rows for every main and sub product.
-    detail.addRow(['PRODUCT','STAGE','QTY','TOTAL']);
-    detail.getRow(1).eachCell(c=>{
-      c.font={bold:true}; c.alignment={vertical:'middle',horizontal:'center',wrapText:true};
-      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:HEADER_FILL}}; c.border=thinBorder;
-    });
-    products.forEach(p=>{
-      const mainStages=p.stages||[];
-      mainStages.forEach(st=>{
-        const r=detail.addRow([p.code,displayStageName(st),stageQty(st),null]);
-        r.eachCell(c=>c.border=thinBorder);
+    // Product Detail page: visual card layout matching the on-screen Product Detail view.
+    // Each product is shown as a 2-column card (STAGE / QTY), with 3 cards per row.
+    // Sub-products stay inside the same product card with a light-green sub-header.
+    const CARD_STAGE_COLS = 2;
+    const CARD_GAP_COLS = 1;
+    const CARDS_PER_ROW = 3;
+    const CARD_WIDTHS = [30, 12];
+    const CARD_GAP_WIDTH = 4;
+    const CARD_START_COLS = [1, 1 + CARD_STAGE_COLS + CARD_GAP_COLS, 1 + 2*(CARD_STAGE_COLS + CARD_GAP_COLS)];
+
+    // Keep the Product Detail sheet clean like the reference: no table header, just cards.
+    // Existing sheet is blank at this point, so start directly with the cards.
+    for(let c=1;c<=9;c++){
+      const col=detail.getColumn(c);
+      if(c===2 || c===5 || c===8) col.width=CARD_WIDTHS[1];
+      else if(c===3 || c===6 || c===9) col.width=CARD_GAP_WIDTH;
+      else col.width=CARD_WIDTHS[0];
+    }
+    detail.views=[{showGridLines:false}];
+
+    const cardBorder={
+      top:{style:'thin',color:{argb:'FFD0D0D0'}},
+      left:{style:'thin',color:{argb:'FFD0D0D0'}},
+      bottom:{style:'thin',color:{argb:'FFD0D0D0'}},
+      right:{style:'thin',color:{argb:'FFD0D0D0'}}
+    };
+    const CARD_HEADER='FF3DD68C';
+    const CARD_SUB='FFEAF8F1';
+    const CARD_TOTAL='FFE9E9E9';
+
+    function detailCardRows(owner){
+      const rows=[];
+      (owner?.stages||[]).forEach(st=>{
+        rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st)});
       });
-      const total=productTotalQty(p);
-      const tr=detail.addRow([p.code,'TOTAL',total,null]);
-      tr.eachCell(c=>{c.border=thinBorder;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTAL_FILL}};c.font={bold:true};});
-      ensureSubProducts(p).forEach(sp=>{
-        (sp.stages||[]).forEach(st=>{
-          const r=detail.addRow(['> '+sp.code,displayStageName(st),stageQty(st),null]);
-          r.eachCell(c=>{c.border=thinBorder;if(c.column===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:SUB_FILL}};});
-        });
-        const str=detail.addRow(['> '+sp.code,'TOTAL',subProductTotalQty(sp),null]);
-        str.eachCell(c=>{c.border=thinBorder;c.fill={type:'pattern',pattern:'solid',fgColor:{argb:TOTAL_FILL}};c.font={bold:true};});
+      rows.push({type:'total',name:'TOTAL',qty:productTotalQty(owner)});
+      ensureSubProducts(owner).forEach(sp=>{
+        rows.push({type:'subheader',name:sp.code});
+        (sp.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st),sub:true}));
+        rows.push({type:'total',name:'TOTAL',qty:subProductTotalQty(sp),sub:true});
       });
+      return rows;
+    }
+
+    function renderDetailCard(product, startRow, startCol){
+      const rows=detailCardRows(product);
+      const endCol=startCol+1;
+      const headerRow=detail.getRow(startRow);
+      detail.mergeCells(startRow,startCol,startRow,endCol);
+      const h=headerRow.getCell(startCol);
+      h.value=product.code;
+      h.fill={type:'pattern',pattern:'solid',fgColor:{argb:CARD_HEADER}};
+      h.font={bold:true,size:16,color:{argb:'FF111111'}};
+      h.alignment={vertical:'middle',horizontal:'center'};
+      h.border=cardBorder;
+      detail.getRow(startRow).height=30;
+
+      let r=startRow+1;
+      rows.forEach(item=>{
+        if(item.type==='subheader'){
+          detail.mergeCells(r,startCol,r,endCol);
+          const cell=detail.getRow(r).getCell(startCol);
+          cell.value=item.name;
+          cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:CARD_SUB}};
+          cell.font={bold:true,size:12,color:{argb:'FF174A32'}};
+          cell.alignment={vertical:'middle',horizontal:'center'};
+          cell.border=cardBorder;
+          detail.getRow(r).height=23;
+        }else{
+          const nameCell=detail.getRow(r).getCell(startCol);
+          const qtyCell=detail.getRow(r).getCell(endCol);
+          nameCell.value=item.name;
+          qtyCell.value=item.qty;
+          nameCell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+          qtyCell.alignment={vertical:'middle',horizontal:'center'};
+          nameCell.font={bold:true,size:11,color:{argb:'FF111111'}};
+          qtyCell.font={bold:item.type==='total',size:11,color:{argb:'FF111111'}};
+          nameCell.border=cardBorder; qtyCell.border=cardBorder;
+          if(item.type==='total'){
+            nameCell.fill={type:'pattern',pattern:'solid',fgColor:{argb:CARD_TOTAL}};
+            qtyCell.fill={type:'pattern',pattern:'solid',fgColor:{argb:CARD_TOTAL}};
+          }
+          detail.getRow(r).height=21;
+        }
+        r++;
+      });
+      return r-startRow;
+    }
+
+    products.forEach((p,idx)=>{
+      const cardIndex=idx % CARDS_PER_ROW;
+      const blockRow=Math.floor(idx / CARDS_PER_ROW);
+      // Calculate the starting row of this 3-card block from all previous blocks.
+      let startRow=1;
+      for(let b=0;b<blockRow;b++){
+        const blockProducts=products.slice(b*CARDS_PER_ROW,b*CARDS_PER_ROW+CARDS_PER_ROW);
+        const blockHeights=blockProducts.map(detailCardRows).map(rows=>rows.length+1);
+        startRow += Math.max(...blockHeights) + 2;
+      }
+      const startCol=CARD_START_COLS[cardIndex];
+      renderDetailCard(p,startRow,startCol);
     });
-    detail.columns.forEach((col,i)=>col.width=[28,24,13,13][i]||13);
+
+    detail.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
+    detail.properties.defaultRowHeight=21;
+    detail.views=[{showGridLines:false}];
 
     const buffer=await wb.xlsx.writeBuffer();
-    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Consol_${todayISO()}.xlsx`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Excel dashboard + sub-product report exported');
+    const saved=await saveExcelBuffer(buffer,`ECON_WIP_Consol_${todayISO()}.xlsx`);
+    if(saved) showToast('Excel dashboard + sub-product report generated');
   }
 
   // ---------- Excel export: flat table, one row per product, columns per stage ----------
@@ -1909,11 +2069,8 @@
     ws.columns.forEach((col,i)=>col.width=i===0?28:13);
 
     const buffer=await wb.xlsx.writeBuffer();
-    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Export_${todayISO()}.xlsx`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Excel report with sub-products exported');
+    const saved=await saveExcelBuffer(buffer,`ECON_WIP_Export_${todayISO()}.xlsx`);
+    if(saved) showToast('Excel report with sub-products generated');
   }
 
   // ---------- Image export: single product's stage table as a PNG (matches the product detail screen) ----------
@@ -1935,8 +2092,8 @@
       const colSplit=Math.round(width*0.77);
       const canvas=document.createElement('canvas'); canvas.width=width*SCALE; canvas.height=height*SCALE;
       const ctx=canvas.getContext('2d'); ctx.scale(SCALE,SCALE);
+      // Original product-share colors retained; all text is centered.
       ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,width,height);
-
       ctx.fillStyle='#3DD68C'; ctx.fillRect(0,0,width,headerHeight);
       ctx.fillStyle='#14231C'; ctx.font='bold 18px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(product.code,width/2,headerHeight/2);
@@ -1946,13 +2103,14 @@
         const h=r.type==='subheader'?subHeaderHeight:rowHeight;
         if(r.type==='subheader'){
           ctx.fillStyle='#EAF8F1'; ctx.fillRect(0,y,width,h);
-          ctx.fillStyle='#174A32'; ctx.font='bold 14px Arial,sans-serif'; ctx.textAlign='center';
+          ctx.fillStyle='#174A32'; ctx.font='bold 14px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
           ctx.fillText(r.name,width/2,y+h/2);
         }else{
           ctx.fillStyle=r.type==='total'?'#E9E9E9':'#FFFFFF'; ctx.fillRect(0,y,width,h);
-          ctx.fillStyle='#111'; ctx.font=r.type==='total'?'bold 13px Arial,sans-serif':'bold 13px Arial,sans-serif'; ctx.textAlign='left';
-          ctx.fillText(r.name,10,y+h/2);
-          ctx.textAlign='center'; ctx.font='bold 13px Arial,sans-serif'; ctx.fillText(String(r.qty??0),colSplit+(width-colSplit)/2,y+h/2);
+          ctx.fillStyle='#111111'; ctx.font='bold 13px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          // Both stage name and quantity are centered within their columns.
+          ctx.fillText(r.name,colSplit/2,y+h/2);
+          ctx.fillText(String(r.qty??0),colSplit+(width-colSplit)/2,y+h/2);
         }
         y+=h;
       });
@@ -2414,11 +2572,8 @@
     });
     ws.columns.forEach((col,i)=>col.width=i===0?20:(i===headers.length-1?34:13));
     const buffer=await wb.xlsx.writeBuffer();
-    const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`ECON_WIP_Excel_Report_${todayISO()}.xlsx`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Editable Excel report exported');
+    const saved=await saveExcelBuffer(buffer,`ECON_WIP_Excel_Report_${todayISO()}.xlsx`);
+    if(saved) showToast('Editable Excel report generated');
   }
 
   // ---------- Department Attendance ----------
@@ -2705,7 +2860,6 @@
           <button class="back-btn" id="backBtn">${icon('back')}</button>
           <div class="appbar-title mono">${escapeHtml(product.code)}</div>
           ${canWrite ? `<button class="icon-btn subproduct-top-btn" id="addSubProductTopBtn" title="Add Sub Product">SUB</button>` : ''}
-          <button class="icon-btn" id="stageExportBtn" title="Share">${icon('share')}</button>
         </div>
       `;
       searchWrap.classList.remove('open');
@@ -2715,7 +2869,6 @@
       // Fast path: + always opens Add Stage for the main product.
       fab.onclick = ()=>openStageSheet(product.id,null,null);
       document.getElementById('backBtn').onclick = goBack;
-      document.getElementById('stageExportBtn').onclick = ()=>exportProductStageImage(product);
       const addSubProductTopBtn=document.getElementById('addSubProductTopBtn');
       if(addSubProductTopBtn) addSubProductTopBtn.onclick=()=>openSubProductSheet(product.id,null);
       const sideToggle = document.getElementById('sideToggleBtn');
@@ -2764,6 +2917,7 @@
         <div class="row-body">
           <div class="row-title">${escapeHtml(p.code)}</div>
         </div>
+        <button class="icon-btn product-share-btn" data-share-product="${p.id}" title="Share">${icon('share')}</button>
         ${canWrite ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
         ${canWrite ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
         <div class="chev">${icon('chev')}</div>
@@ -2779,6 +2933,13 @@
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
         openProductSheet(findProduct(btn.dataset.edit));
+      });
+    });
+    scroll.querySelectorAll('[data-share-product]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const p = findProduct(btn.dataset.shareProduct);
+        if(p) exportProductStageImage(p);
       });
     });
     scroll.querySelectorAll('[data-del]').forEach(btn=>{
@@ -2971,7 +3132,13 @@
   // ---------- Init ----------
   // Show login immediately. Firebase loading must never block the login button.
   showLogin();
-  loadUsers().catch(e=>console.warn('loadUsers failed',e));
+  // Start loading users immediately, but keep a promise so a fast login click
+  // can wait briefly for Firestore instead of failing because of a race.
+  authLoadPromise = loadUsers().catch(e=>{
+    console.warn('loadUsers failed',e);
+    authLoaded=true;
+    return authUsers;
+  });
   loadRequestsOnce().catch(e=>console.warn('loadRequests failed',e));
 })();
 </script>
@@ -3018,6 +3185,8 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <style>
+  .product-share-btn{width:30px;height:30px;min-width:30px;flex:0 0 30px;padding:0;background:#241B48;color:#3DD68C;}
+  .product-share-btn:hover{background:#2F2458;color:#fff;}
   .subproduct-section{margin:10px 0 12px;border:1px solid #3B2C70;border-radius:14px;background:#17102F;overflow:hidden;}
   .subproduct-header{display:flex;align-items:center;gap:7px;padding:9px 10px;background:linear-gradient(100deg,rgba(61,214,140,.14),rgba(91,140,255,.12));border-bottom:1px solid #3B2C70;}
   .subproduct-header .row-icon{width:30px;height:30px;flex:0 0 30px;background:linear-gradient(135deg,#3DD68C,#5B8CFF);}
