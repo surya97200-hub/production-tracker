@@ -535,6 +535,45 @@
 </style>
 
 
+
+<style id="shift-output-css">
+.so-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.so-toolbar label{font-size:11px;color:var(--dim);font-weight:700;display:flex;align-items:center;gap:7px}
+.so-toolbar input,.so-toolbar select{background:#17102F;color:#fff;border:1px solid var(--rule);border-radius:10px;padding:9px 10px;font-family:var(--sans);font-weight:600}
+.so-toolbar .so-spacer{flex:1}
+.so-navbtn{border:1px solid var(--rule);background:#17102F;color:#fff;border-radius:10px;width:36px;height:38px;cursor:pointer;font-size:16px}
+.so-btn{border:1px solid var(--rule);background:#211A42;color:#fff;border-radius:10px;padding:9px 13px;font-weight:700;cursor:pointer}
+.so-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.so-card{background:#17102F;border:1px solid var(--rule);border-radius:14px;padding:13px 15px}
+.so-card-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:800}
+.so-card-num{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:4px}
+.so-card-num small{font-size:14px;color:var(--dim);font-weight:600}
+.so-card-sub{font-size:11px;color:var(--dim);margin-top:3px}
+.so-bar{height:6px;border-radius:6px;background:#2A2050;margin-top:8px;overflow:hidden}
+.so-bar>i{display:block;height:100%;background:linear-gradient(90deg,#3DD68C,#5B8CFF)}
+.so-panel{background:#17102F;border:1px solid var(--rule);border-radius:14px;padding:14px}
+.so-panel h3{margin:0 0 4px;font-size:16px}
+.so-panel .so-meta{font-size:11px;color:var(--dim);margin-bottom:10px}
+.so-panel .so-meta b{color:#3DD68C}
+.so-wrap{overflow:auto;border:1px solid #34275F;border-radius:10px;background:#fff}
+.so-table{border-collapse:collapse;width:100%;min-width:980px;font-family:Arial,sans-serif;font-size:12px;color:#171233}
+.so-table th{background:#BEDCEA;padding:9px 8px;text-align:center;border:1px solid #D5D9DD;font-size:11px;letter-spacing:.03em;position:sticky;top:0}
+.so-table td{padding:9px 8px;text-align:center;border:1px solid #E1E4E8}
+.so-table td.l{text-align:left}
+.so-table .mono{font-family:ui-monospace,Consolas,monospace}
+.so-tag{display:inline-block;padding:3px 9px;border-radius:7px;font-weight:800;font-size:11px}
+.so-tag.day{background:#FFF1CC;color:#8A5A16}
+.so-tag.night{background:#E6E2F8;color:#4B3C8C}
+.so-pct{font-weight:800}
+.so-pct.g{color:#167A48}.so-pct.a{color:#B7791F}.so-pct.r{color:#B21F3A}
+.so-total td{background:#E9EEF2;font-weight:800}
+.so-empty{padding:30px;text-align:center;color:#6B5AA8}
+.so-act button{border:0;background:transparent;cursor:pointer;padding:4px 6px;color:#B7791F}
+.so-act button.d{color:#D9364F}
+.so-form{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.so-form .full{grid-column:1/-1}
+@media(max-width:899px){.so-cards{grid-template-columns:1fr}.so-form{grid-template-columns:1fr}.so-toolbar .so-spacer{display:none}}
+</style>
 <style id="attendance-css">
 .attendance-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.attendance-toolbar label{font-size:11px;color:var(--dim);font-weight:700;display:flex;align-items:center;gap:7px}.attendance-toolbar input,.attendance-toolbar select{background:#17102F;color:#fff;border:1px solid var(--rule);border-radius:10px;padding:9px 10px;min-width:150px}.attendance-month-filter{display:flex;align-items:center;gap:7px}.attendance-month-filter select{font-family:var(--sans);font-weight:600}.attendance-actions{display:flex;gap:6px;flex-wrap:wrap}.att-order{font-family:var(--mono);font-weight:700;color:#6B5AA8}.att-delete{width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--danger);cursor:pointer}.att-delete:active{background:#00000010}.att-order-input{width:70px!important;min-width:70px!important}.att-dash{color:#A79FD6}.attendance-legend{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}.attendance-legend span{padding:5px 8px;border-radius:8px;font-size:10px;font-weight:700}.attendance-wrap{overflow:auto;border:1px solid #34275F;border-radius:12px;background:#fff}.attendance-table{border-collapse:collapse;width:max-content;min-width:100%;font-family:Arial,sans-serif;font-size:10px;color:#171233}.attendance-table th,.attendance-table td{border:1px solid #D5D9DD;padding:5px 6px;text-align:center;min-width:28px;height:30px}.attendance-table th{position:sticky;top:0;background:#BEDCEA;z-index:3}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){position:sticky;left:0;z-index:4;background:#EAF4F8;min-width:90px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){position:sticky;left:90px;z-index:4;background:#F5FAFC;min-width:150px;text-align:left}.attendance-table th small{display:block;font-size:8px;opacity:.65}.attendance-table td{cursor:default}.attendance-table td[data-att]{cursor:pointer;font-weight:700}.att-p{background:#D8F6E6!important;color:#167A48}.att-a{background:#FFE0E5!important;color:#B21F3A}.att-s{background:#E6E2F8!important;color:#62539B}.att-h{background:#FFE8C2!important;color:#8A5A16}.att-empty{background:#fff;color:#A79FD6}.att-empty-row{padding:28px!important;text-align:center}.mono-cell{font-family:var(--mono)}.name-cell{font-weight:700}.attendance-overall{margin-top:14px}.attendance-overall-grid{display:flex;flex-direction:column;gap:7px}.attendance-person{display:grid;grid-template-columns:minmax(180px,1fr) 110px 110px 100px;gap:8px;align-items:center;background:#211A42;border:1px solid #2D2354;border-radius:10px;padding:9px;color:#fff}.attendance-person strong{display:block}.attendance-person small{display:block;color:var(--dim);font-family:var(--mono);margin-top:2px}.attendance-person span{font-size:11px;color:var(--dim)}.attendance-person b{color:#fff;font-family:var(--mono)}@media(max-width:899px){.attendance-person{grid-template-columns:1fr 1fr;gap:5px}.attendance-table{font-size:9px}.attendance-table th,.attendance-table td{min-width:27px;padding:4px}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){min-width:75px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){left:75px;min-width:130px}}
 </style>
@@ -649,6 +688,9 @@
       </button>
       <button class="side-nav-btn" data-side-nav="attendance">
         <span class="side-nav-icon">✓</span><span>Dept Attendance</span>
+      </button>
+      <button class="side-nav-btn" data-side-nav="shiftoutput">
+        <span class="side-nav-icon">⇄</span><span>Shift Output</span>
       </button>
       <div class="sidebar-spacer"></div>
       <div style="padding:8px 10px;font-size:10px;color:#6C6699;">Live data • Firebase</div>
@@ -1296,28 +1338,37 @@
   }
 
 
-  function seed(){
-    const now = new Date().toISOString();
-    return {
-      products:[
-        { id:uid(), code:'A897-064-3206-00', stages:[], subProducts:[], createdAt:now, updatedAt:now },
-        { id:uid(), code:'A897-064-3207-00', stages:[], subProducts:[], createdAt:now, updatedAt:now },
-        { id:uid(), code:'A897-064-3208-00', stages:[], subProducts:[], createdAt:now, updatedAt:now }
-      ]
-    };
-  }
-
   // ---------- Firestore sync (shared, multi-user) ----------
+  let stateLoaded = false;   // true only after a real snapshot has arrived
+  let backupDoneToday = false;
+  let syncedRev = 0;         // revision of the server copy this device last saw
+  let lastCount = 0;         // product count at last sync/save
+  let saveQueue = Promise.resolve();
   function subscribeState(){
     stateDocRef.onSnapshot(async (docSnap)=>{
       if(docSnap.exists){
-        state = docSnap.data();
+        const incoming = docSnap.data() || {};
+        if(!Array.isArray(incoming.products)) incoming.products = [];
+        state = incoming;
+        stateLoaded = true;
+        syncedRev = Number(incoming._rev||0);
+        lastCount = incoming.products.length;
         syncStatus = 'on';
+        // Daily safety backup: one copy per day, written once per session
+        if(!backupDoneToday && state.products.length>0){
+          backupDoneToday = true;
+          const day = new Date().toISOString().slice(0,10);
+          try{ await db.collection('productionTrackerBackups').doc('sharedState_'+day).set(state); }
+          catch(e){ console.warn('Backup skipped', e); }
+        }
         render();
       } else {
-        state = seed();
-        try{ await stateDocRef.set(state); syncStatus='on'; }
-        catch(e){ syncStatus='err'; console.error(e); }
+        // IMPORTANT: never auto-create dummy products. Show empty state and warn.
+        state = { products: [] };
+        stateLoaded = true;
+        syncedRev = 0;
+        syncStatus = 'err';
+        showToast('WARNING: database document missing. Restore from backup before adding data.');
         render();
       }
     }, (err)=>{
@@ -1328,11 +1379,55 @@
     });
   }
 
-  async function saveState(){
-    try{ await stateDocRef.set(state); }
-    catch(e){
-      console.error('Save failed', e);
-      showToast('Save failed — check connection');
+  function saveState(){
+    // Saves run one at a time so the revision check never races with itself
+    saveQueue = saveQueue.then(doSave).catch(e=>console.error(e));
+    return saveQueue;
+  }
+
+  async function reloadFromServer(){
+    try{
+      const snap = await stateDocRef.get();
+      if(snap.exists){
+        const d = snap.data() || {}; if(!Array.isArray(d.products)) d.products=[];
+        state = d; syncedRev = Number(d._rev||0); lastCount = d.products.length;
+      }
+      render();
+    }catch(e){ console.error(e); }
+  }
+
+  async function doSave(){
+    // 1) never save before real data has loaded
+    if(!stateLoaded || !state){ showToast('Not synced yet — save blocked'); return; }
+    // 2) block accidental mass deletion (e.g. empty/stale state overwriting real data)
+    const n = (state.products||[]).length;
+    if((n===0 && lastCount>1) || (lastCount>=6 && n < lastCount*0.5)){
+      showToast('Save BLOCKED: would remove '+(lastCount-n)+' products. Reloading server data.');
+      await reloadFromServer();
+      return;
+    }
+    // 3) version check: refuse to overwrite newer data saved by someone else
+    try{
+      let newRev = 0;
+      await db.runTransaction(async (tx)=>{
+        const snap = await tx.get(stateDocRef);
+        const serverRev = snap.exists ? Number((snap.data()||{})._rev||0) : 0;
+        if(snap.exists && serverRev !== syncedRev){
+          const err = new Error('conflict'); err.code='rev-conflict'; throw err;
+        }
+        newRev = serverRev + 1;
+        state._rev = newRev;
+        tx.set(stateDocRef, state);
+      });
+      syncedRev = newRev; lastCount = n; syncStatus='on';
+    }catch(e){
+      if(e && e.code==='rev-conflict'){
+        showToast('Someone else updated the data. Latest data loaded — please redo your last change.');
+        await reloadFromServer();
+      } else {
+        console.error('Save failed', e);
+        showToast('Save failed — check connection');
+      }
     }
   }
 
@@ -1612,8 +1707,8 @@
       closeDashboardModal();
       pushInternalHistory();
       render();
-    }else if(view==='attendance'){
-      nav = [{view:'products'}, {view:'attendance'}];
+    }else if(view==='attendance' || view==='shiftoutput'){
+      nav = [{view:'products'}, {view}];
       searchOpen = false; searchTerm = '';
       closeDashboardModal();
       pushInternalHistory();
@@ -2767,6 +2862,303 @@
     }
   }
 
+
+  // ---------- Shift Output ----------
+  let shiftEntries = {};              // id -> entry (live from Firestore collection "shiftOutput")
+  let shiftDate = todayISO();
+  let shiftFilter = 'all';            // all | Day | Night
+  const shiftCol = ()=> db.collection('shiftOutput');
+
+  function soNum(v){ const n=Number(v); return isFinite(n)?n:0; }
+  function soPctVal(a,p){ return p>0 ? Math.round((a/p)*100) : null; }
+  function soPctHtml(a,p){
+    const v=soPctVal(a,p);
+    if(v===null) return '<span class="so-pct">-</span>';
+    return `<span class="so-pct ${v>=100?'g':(v>=80?'a':'r')}">${v}%</span>`;
+  }
+  function soDayEntries(date, shift){
+    return Object.values(shiftEntries)
+      .filter(e=>!e.deleted && e.date===date && (shift==='all' || e.shift===shift))
+      .sort((a,b)=> (a.shift===b.shift ? String(a.createdAt||'').localeCompare(String(b.createdAt||'')) : (a.shift==='General'?-1:1)));
+  }
+  function soSum(list){
+    return list.reduce((t,e)=>({plan:t.plan+soNum(e.planQty),ach:t.ach+soNum(e.achievedQty),req:t.req+soNum(e.reqManpower),avail:t.avail+soNum(e.availManpower),n:t.n+1}),{plan:0,ach:0,req:0,avail:0,n:0});
+  }
+  function soShiftDate(iso){
+    const d=new Date(iso+'T00:00:00');
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'2-digit',year:'numeric'});
+  }
+  function soMoveDay(delta){
+    const d=new Date(shiftDate+'T00:00:00'); d.setDate(d.getDate()+delta);
+    const off=d.getTimezoneOffset(); shiftDate=new Date(d.getTime()-off*60000).toISOString().slice(0,10);
+    render();
+  }
+  function soProductOptions(){
+    const set=new Set();
+    (state.products||[]).forEach(p=>{ set.add(String(p.code).replace(/^econ\s+/i,'').trim()); ensureSubProducts(p).forEach(sp=>set.add(String(sp.code).trim())); });
+    Object.values(shiftEntries).forEach(e=>{ if(e.product) set.add(e.product); });
+    return [...set].filter(Boolean).sort();
+  }
+  function soStageOptions(){
+    const set=new Set(STAGE_COLUMNS);
+    Object.values(shiftEntries).forEach(e=>{ if(e.stage) set.add(e.stage); });
+    return [...set];
+  }
+  const SO_SUPERVISORS = ['Suriya','Hariraj','Tharam singh','Ambalavanan','Mathivanan'];
+  function soSupervisorOptions(current){
+    // Fixed list; an older entry's name is kept only so editing it does not lose the value
+    const list=[...SO_SUPERVISORS];
+    if(current && !list.some(n=>n.toLowerCase()===String(current).toLowerCase())) list.push(current);
+    return list;
+  }
+
+  function openShiftSheet(existing){
+    if(!canWrite){ showToast('Read-only access'); return; }
+    const isEdit=!!existing;
+    const e=existing||{ date:shiftDate, shift:(shiftFilter==='Night'?'Night':'General') };
+    const opt=(arr)=>arr.map(x=>`<option value="${escapeAttr(x)}"></option>`).join('');
+    openSheet(`
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">${isEdit?'Edit':'Add'} Shift Output</div>
+      <div class="so-form">
+        <div class="field"><label>Date</label><input type="date" id="soDate" value="${escapeAttr(e.date)}"></div>
+        <div class="field"><label>Shift</label><select id="soShift"><option value="General" ${e.shift==='General'?'selected':''}>General Shift</option><option value="Night" ${e.shift==='Night'?'selected':''}>Night Shift</option></select></div>
+        <div class="field"><label>Supervisor</label><select id="soSupervisor"><option value="">Select supervisor</option>${soSupervisorOptions(e.supervisor).map(n=>`<option value="${escapeAttr(n)}" ${n===e.supervisor?'selected':''}>${escapeHtml(n)}</option>`).join('')}</select></div>
+        <div class="field"><label>Product</label><input id="soProduct" class="mono" list="soProdList" placeholder="Product" autocomplete="off" value="${escapeAttr(e.product||'')}"><datalist id="soProdList">${opt(soProductOptions())}</datalist></div>
+        <div class="field"><label>Stage</label><input id="soStage" list="soStageList" placeholder="e.g. TESTING" autocomplete="off" value="${escapeAttr(e.stage||'')}"><datalist id="soStageList">${opt(soStageOptions())}</datalist></div>
+        <div class="field"><label>Plan Qty</label><input type="number" inputmode="numeric" min="0" id="soPlan" value="${e.planQty??''}"></div>
+        <div class="field"><label>Req Manpower</label><input type="number" inputmode="numeric" min="0" id="soReq" value="${e.reqManpower??''}"></div>
+        <div class="field"><label>Avail Manpower</label><input type="number" inputmode="numeric" min="0" id="soAvail" value="${e.availManpower??''}"></div>
+        <div class="field"><label>Achived Qty</label><input type="number" inputmode="numeric" min="0" id="soAch" value="${e.achievedQty??''}"></div>
+        <div class="field full"><label>Remarks</label><textarea id="soRemarks" placeholder="Failures, pending qty, issues, etc.">${escapeHtml(e.remarks||'')}</textarea></div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn">${isEdit?'Save changes':'Save Output'}</button>
+      </div>`);
+    document.getElementById('cancelBtn').onclick=closeSheet;
+    document.getElementById('saveBtn').onclick=async ()=>{
+      const v=id=>document.getElementById(id).value.trim();
+      const date=v('soDate'), shift=v('soShift'), product=v('soProduct'), stage=v('soStage');
+      if(!date){ showToast('Select a date'); return; }
+      if(!v('soSupervisor')){ showToast('Select supervisor'); return; }
+      if(!product){ showToast('Enter product'); return; }
+      if(!stage){ showToast('Enter stage'); return; }
+      const now=new Date().toISOString();
+      const id=isEdit?existing.id:uid();
+      const entry={
+        id, date, shift, supervisor:v('soSupervisor'), product, stage,
+        planQty:soNum(v('soPlan')), reqManpower:soNum(v('soReq')), availManpower:soNum(v('soAvail')), achievedQty:soNum(v('soAch')),
+        remarks:v('soRemarks'), deleted:false,
+        createdAt:isEdit?(existing.createdAt||now):now, updatedAt:now
+      };
+      try{
+        await shiftCol().doc(id).set(entry);
+        shiftEntries[id]=entry; shiftDate=date;
+        showToast(isEdit?'Output updated':'Output saved');
+        closeSheet(); render();
+      }catch(err){ console.error(err); showToast('Save failed — check connection'); }
+    };
+  }
+
+  function deleteShiftEntry(entry){
+    if(!canWrite){ showToast('Read-only access'); return; }
+    confirmDelete(`Delete ${entry.shift} shift entry for ${entry.product} (${entry.stage})?`, async ()=>{
+      try{
+        // Soft delete: the record stays in Firestore so it can be recovered
+        await shiftCol().doc(entry.id).set({...entry, deleted:true, deletedAt:new Date().toISOString()});
+        entry.deleted=true; render(); showToast('Entry deleted');
+      }catch(err){ console.error(err); showToast('Delete failed — check connection'); }
+    });
+  }
+
+  async function exportShiftDay(){
+    if(typeof ExcelJS==='undefined'){ showToast('Export library failed to load — check connection'); return; }
+    const list=soDayEntries(shiftDate,'all');
+    if(!list.length){ showToast('No entries for this date'); return; }
+    const wb=new ExcelJS.Workbook(); const ws=wb.addWorksheet('Shift Output');
+    const heads=['DATE','SHIFT','SUPERVISOR','PRODUCT','STAGE','PLAN QTY','REQ MANPOWER','AVAIL MANPOWER','ACHIVED QTY','ACHIEVEMENT %','REMARKS'];
+    ws.addRow(heads);
+    const border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+    ws.getRow(1).eachCell(c=>{ c.font={bold:true,name:'Arial',size:10}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFBEDCEA'}}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border=border; });
+    list.forEach(e=>{
+      const pv=soPctVal(soNum(e.achievedQty),soNum(e.planQty));
+      const r=ws.addRow([e.date,e.shift.toUpperCase(),e.supervisor||'',e.product,e.stage,soNum(e.planQty),soNum(e.reqManpower),soNum(e.availManpower),soNum(e.achievedQty),pv===null?'':pv/100,e.remarks||'']);
+      r.eachCell(c=>{ c.font={name:'Arial',size:10}; c.border=border; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; });
+      r.getCell(10).numFmt='0%';
+    });
+    const t=soSum(list); const tp=soPctVal(t.ach,t.plan);
+    const tr=ws.addRow(['TOTAL','','','','',t.plan,t.req,t.avail,t.ach,tp===null?'':tp/100,'']);
+    tr.eachCell(c=>{ c.font={bold:true,name:'Arial',size:10}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE9EEF2'}}; c.border=border; c.alignment={horizontal:'center'}; });
+    tr.getCell(10).numFmt='0%';
+    [12,9,18,20,18,10,14,15,13,14,34].forEach((w,i)=>ws.getColumn(i+1).width=w);
+    ws.views=[{state:'frozen',ySplit:1}];
+    const buf=await wb.xlsx.writeBuffer();
+    await saveExcelBuffer(buf,`ECON_Shift_Output_${shiftDate}.xlsx`);
+  }
+
+
+  // Build a PNG of the selected day's shift output and share it (or download it)
+  async function shareShiftImage(){
+    const list=soDayEntries(shiftDate,'all');
+    if(!list.length){ showToast('No entries for this date'); return; }
+    const cols=[
+      {h:'SHIFT',w:96,k:'shift'},{h:'SUPERVISOR',w:150,k:'supervisor',l:1},{h:'PRODUCT',w:190,k:'product',l:1},
+      {h:'STAGE',w:170,k:'stage',l:1},{h:'PLAN',w:78,k:'plan'},{h:'REQ MP',w:82,k:'req'},{h:'AVAIL MP',w:92,k:'avail'},
+      {h:'ACHIEVED',w:104,k:'ach'},{h:'%',w:74,k:'pct'},{h:'REMARKS',w:300,k:'remarks',l:1}
+    ];
+    const PAD=28, TW=cols.reduce((a,c)=>a+c.w,0), W=TW+PAD*2;
+    const HEAD=104, CARD_H=84, GAP=14, TH=42, RH=44;
+    const H=HEAD+GAP+CARD_H+GAP+TH+RH*(list.length+1)+PAD+22;
+    const SC=2, cv=document.createElement('canvas'); cv.width=W*SC; cv.height=H*SC;
+    const ctx=cv.getContext('2d'); ctx.scale(SC,SC);
+    const F='Arial, sans-serif';
+    const fit=(t,max)=>{ t=String(t==null?'':t); if(ctx.measureText(t).width<=max) return t; while(t.length>1 && ctx.measureText(t+'…').width>max) t=t.slice(0,-1); return t+'…'; };
+    const rr=(x,y,w,h,r)=>{ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); };
+
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,W,H);
+    // header
+    const g=ctx.createLinearGradient(0,0,W,0); g.addColorStop(0,'#241B48'); g.addColorStop(1,'#4B3C8C');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,HEAD);
+    ctx.fillStyle='#3DD68C'; ctx.font=`bold 13px ${F}`; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('PRODUCTION / SHIFT OUTPUT',PAD,30);
+    ctx.fillStyle='#FFFFFF'; ctx.font=`bold 30px ${F}`; ctx.fillText('ECON WIP - Shift Output',PAD,62);
+    ctx.font=`600 15px ${F}`; ctx.fillStyle='#D8D2F5'; ctx.fillText(soShiftDate(shiftDate),PAD,88);
+
+    // summary cards
+    const gen=soSum(list.filter(e=>e.shift==='General')), ngt=soSum(list.filter(e=>e.shift==='Night')), all=soSum(list);
+    const cw=(TW-GAP*2)/3; let cy=HEAD+GAP;
+    [['GENERAL SHIFT',gen],['NIGHT SHIFT',ngt],['DAY TOTAL',all]].forEach(([label,sm],i)=>{
+      const x=PAD+i*(cw+GAP);
+      ctx.fillStyle='#F3F1FB'; rr(x,cy,cw,CARD_H,12); ctx.fill();
+      ctx.strokeStyle='#DAD5F2'; ctx.lineWidth=1; rr(x,cy,cw,CARD_H,12); ctx.stroke();
+      ctx.textAlign='left'; ctx.fillStyle='#6B5AA8'; ctx.font=`bold 12px ${F}`; ctx.fillText(label,x+16,cy+20);
+      ctx.fillStyle='#171233'; ctx.font=`bold 28px ${F}`; ctx.fillText(String(sm.ach),x+16,cy+50);
+      const nw=ctx.measureText(String(sm.ach)).width;
+      ctx.fillStyle='#8A85A8'; ctx.font=`600 16px ${F}`; ctx.fillText('/ '+sm.plan,x+16+nw+8,cy+52);
+      const pv=soPctVal(sm.ach,sm.plan);
+      ctx.font=`bold 13px ${F}`; ctx.fillStyle=pv===null?'#8A85A8':(pv>=100?'#167A48':(pv>=80?'#B7791F':'#B21F3A'));
+      ctx.textAlign='right'; ctx.fillText(pv===null?'-':pv+'%',x+cw-16,cy+22); ctx.textAlign='left';
+      ctx.fillStyle='#8A85A8'; ctx.font=`12px ${F}`; ctx.fillText('Achieved / Plan • '+sm.n+' entries',x+16,cy+72);
+    });
+
+    // table
+    let y=cy+CARD_H+GAP;
+    const drawRow=(vals,opts)=>{
+      let x=PAD;
+      ctx.fillStyle=opts.bg; ctx.fillRect(PAD,y,TW,opts.h);
+      cols.forEach((c,i)=>{
+        ctx.strokeStyle='#C9CED6'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,c.w,opts.h);
+        const v=vals[i]; ctx.font=`${opts.bold?'bold':'600'} ${opts.size||13}px ${F}`;
+        ctx.fillStyle=(v&&v.color)||opts.color||'#171233';
+        const txt=fit(v&&v.t!==undefined?v.t:v,c.w-16);
+        if(c.l){ ctx.textAlign='left'; ctx.fillText(txt,x+8,y+opts.h/2+1); }
+        else { ctx.textAlign='center'; ctx.fillText(txt,x+c.w/2,y+opts.h/2+1); }
+        x+=c.w;
+      });
+      y+=opts.h;
+    };
+    drawRow(cols.map(c=>c.h),{bg:'#BEDCEA',h:TH,bold:true,size:12,color:'#171233'});
+    list.forEach((e,i)=>{
+      const pv=soPctVal(soNum(e.achievedQty),soNum(e.planQty));
+      drawRow([
+        {t:e.shift.toUpperCase(),color:e.shift==='General'?'#8A5A16':'#4B3C8C'},e.supervisor||'',e.product,e.stage,
+        soNum(e.planQty),soNum(e.reqManpower),soNum(e.availManpower),soNum(e.achievedQty),
+        {t:pv===null?'-':pv+'%',color:pv===null?'#8A85A8':(pv>=100?'#167A48':(pv>=80?'#B7791F':'#B21F3A'))},e.remarks||''
+      ],{bg:i%2?'#F7F9FB':'#FFFFFF',h:RH});
+    });
+    const tp=soPctVal(all.ach,all.plan);
+    drawRow(['TOTAL','','','',all.plan,all.req,all.avail,all.ach,{t:tp===null?'-':tp+'%'},''],{bg:'#E9EEF2',h:RH,bold:true});
+    ctx.textAlign='right'; ctx.fillStyle='#8A85A8'; ctx.font=`11px ${F}`;
+    ctx.fillText('Generated '+new Date().toLocaleString('en-GB'),W-PAD,H-14);
+
+    const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
+    if(!blob){ showToast('Could not create image'); return; }
+    const fname=`ECON_Shift_Output_${shiftDate}.png`;
+    const file=new File([blob],fname,{type:'image/png'});
+    try{
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'Shift Output '+shiftDate});
+        return;
+      }
+    }catch(err){ if(err && err.name==='AbortError') return; console.warn('Share failed, downloading instead',err); }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    showToast('Image downloaded — share it from Downloads');
+  }
+
+  function renderShiftOutput(scroll){
+    const dayList=soDayEntries(shiftDate,'General'), nightList=soDayEntries(shiftDate,'Night');
+    const dS=soSum(dayList), nS=soSum(nightList);
+    const tS={plan:dS.plan+nS.plan,ach:dS.ach+nS.ach,n:dS.n+nS.n};
+    const shown=soDayEntries(shiftDate,shiftFilter);
+    const card=(label,sum)=>{
+      const pv=soPctVal(sum.ach,sum.plan);
+      return `<div class="so-card"><div class="so-card-label">${label}</div>
+        <div class="so-card-num">${sum.ach} <small>/ ${sum.plan}</small></div>
+        <div class="so-card-sub">Achived / Plan • ${sum.n} entries${pv===null?'':` • ${pv}%`}</div>
+        <div class="so-bar"><i style="width:${Math.min(100,pv||0)}%"></i></div></div>`;
+    };
+    const t=soSum(shown);
+    const rows=shown.map(e=>`
+      <tr>
+        <td class="mono">${escapeHtml(e.date)}</td>
+        <td><span class="so-tag ${e.shift==='General'?'day':'night'}">${e.shift.toUpperCase()}</span></td>
+        <td class="l">${escapeHtml(e.supervisor||'')}</td>
+        <td class="mono">${escapeHtml(e.product)}</td>
+        <td class="l">${escapeHtml(e.stage)}</td>
+        <td class="mono"><b>${soNum(e.planQty)}</b></td>
+        <td class="mono">${soNum(e.reqManpower)}</td>
+        <td class="mono">${soNum(e.availManpower)}</td>
+        <td class="mono"><b>${soNum(e.achievedQty)}</b></td>
+        <td>${soPctHtml(soNum(e.achievedQty),soNum(e.planQty))}</td>
+        <td class="l">${escapeHtml(e.remarks||'')}</td>
+        ${canWrite?`<td class="so-act"><button data-so-edit="${e.id}" title="Edit">${icon('pencil')}</button><button class="d" data-so-del="${e.id}" title="Delete">${icon('trash')}</button></td>`:''}
+      </tr>`).join('');
+    scroll.className='dashboard-scroll';
+    scroll.innerHTML=`
+      <div class="dashboard-head">
+        <div><div class="dashboard-kicker">PRODUCTION / SHIFT OUTPUT</div><div class="dashboard-title">Shift Output</div>
+          <div class="dashboard-subtitle">Select a date to view that day's General Shift + Night Shift output</div></div>
+        <div class="dashboard-total-card"><div class="dashboard-total-label">Selected Date</div><div class="dashboard-total-num" style="font-size:18px">${escapeHtml(soShiftDate(shiftDate))}</div></div>
+      </div>
+      <div class="so-toolbar">
+        <button class="so-navbtn" id="soPrev" title="Previous day">‹</button>
+        <label>Date <input type="date" id="soPickDate" value="${escapeAttr(shiftDate)}"></label>
+        <button class="so-navbtn" id="soNext" title="Next day">›</button>
+        <button class="so-btn" id="soToday">Today</button>
+        <label>Shift <select id="soPickShift"><option value="all" ${shiftFilter==='all'?'selected':''}>All Shifts</option><option value="General" ${shiftFilter==='General'?'selected':''}>General Shift</option><option value="Night" ${shiftFilter==='Night'?'selected':''}>Night Shift</option></select></label>
+        <span class="so-spacer"></span>
+        ${canWrite?'<button class="excel-export-btn" id="soAdd">+ Add Output</button>':''}
+        <button class="so-btn" id="soShare">${icon('share')} Share</button>
+        <button class="so-btn" id="soExport">Export Day</button>
+      </div>
+      <div class="so-cards">
+        ${card('General Shift',dS)}${card('Night Shift',nS)}${card('Selected Day Total',tS)}
+      </div>
+      <div class="so-panel">
+        <h3>Shift Output Entry</h3>
+        <div class="so-meta">${escapeHtml(shiftDate)} • <b>${shown.length} shown</b></div>
+        <div class="so-wrap"><table class="so-table">
+          <thead><tr><th>DATE</th><th>SHIFT</th><th>SUPERVISOR</th><th>PRODUCT</th><th>STAGE</th><th>PLAN QTY</th><th>REQ MANPOWER</th><th>AVAIL MANPOWER</th><th>ACHIVED QTY</th><th>%</th><th>REMARKS</th>${canWrite?'<th>ACTION</th>':''}</tr></thead>
+          <tbody>${rows || `<tr><td class="so-empty" colspan="${canWrite?12:11}">No shift output entries for this date${canWrite?'. Tap “+ Add Output”.':'.'}</td></tr>`}
+          ${shown.length?`<tr class="so-total"><td colspan="5">TOTAL</td><td class="mono">${t.plan}</td><td class="mono">${t.req}</td><td class="mono">${t.avail}</td><td class="mono">${t.ach}</td><td>${soPctHtml(t.ach,t.plan)}</td><td></td>${canWrite?'<td></td>':''}</tr>`:''}
+          </tbody></table></div>
+      </div>`;
+    document.getElementById('soPrev').onclick=()=>soMoveDay(-1);
+    document.getElementById('soNext').onclick=()=>soMoveDay(1);
+    document.getElementById('soToday').onclick=()=>{ shiftDate=todayISO(); render(); };
+    document.getElementById('soPickDate').onchange=(ev)=>{ if(ev.target.value){ shiftDate=ev.target.value; render(); } };
+    document.getElementById('soPickShift').onchange=(ev)=>{ shiftFilter=ev.target.value; render(); };
+    document.getElementById('soExport').onclick=exportShiftDay;
+    document.getElementById('soShare').onclick=shareShiftImage;
+    document.getElementById('soAdd')?.addEventListener('click',()=>openShiftSheet(null));
+    scroll.querySelectorAll('[data-so-edit]').forEach(b=>b.onclick=()=>openShiftSheet(shiftEntries[b.dataset.soEdit]));
+    scroll.querySelectorAll('[data-so-del]').forEach(b=>b.onclick=()=>deleteShiftEntry(shiftEntries[b.dataset.soDel]));
+  }
+
   // ---------- Rendering ----------
   function render(){
     if(!state) return;
@@ -2778,7 +3170,14 @@
     const dotClass = syncStatus==='on' ? 'on' : (syncStatus==='err' ? 'err' : '');
     const sidebar = document.getElementById('sidebar');
 
-    if(n.view==='attendance'){
+    if(n.view==='shiftoutput'){
+      setSideActive('shiftoutput');
+      appbar.innerHTML = `<div class="appbar-row"><button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button><button class="back-btn" id="shiftBackBtn" title="Back">${icon('back')}</button><div class="appbar-title root">Shift Output</div><button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button></div>`;
+      searchWrap.classList.remove('open'); renderShiftOutput(scroll); fab.style.display='none';
+      document.getElementById('logoutBtn').onclick=window.__auth.logout; document.getElementById('shiftBackBtn').onclick=goBack;
+      document.getElementById('sideToggleBtn')?.addEventListener('click',()=>sidebar?.classList.toggle('open'));
+    }
+    else if(n.view==='attendance'){
       setSideActive('attendance');
       appbar.innerHTML = `<div class="appbar-row"><button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button><button class="back-btn" id="attendanceBackBtn" title="Back">${icon('back')}</button><div class="appbar-title root">Attendance</div><button class="icon-btn" id="logoutBtn" title="Logout">${icon('logout')}</button></div>`;
       searchWrap.classList.remove('open'); renderAttendance(scroll); fab.style.display='none';
@@ -3112,6 +3511,12 @@
     ensureAttendanceState();
     if(currentNav().view==='attendance') render();
   }, (err)=>{ console.error('Attendance sync error',err); });
+  shiftCol().onSnapshot((snap)=>{
+    const m={};
+    snap.forEach(d=>{ const x=d.data()||{}; if(x.date && x.shift){ m[d.id]={...x,id:x.id||d.id,shift:(x.shift==='Day'?'General':x.shift)}; } });
+    shiftEntries=m;
+    if(currentNav().view==='shiftoutput' && !document.getElementById('overlay').classList.contains('open')) render();
+  }, (err)=>{ console.error('Shift output sync error',err); });
   setupSortable(document.getElementById('scroll'));
 
   // Owner gets a live notification badge when a new password request comes in,
