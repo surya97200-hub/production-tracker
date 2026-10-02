@@ -289,6 +289,19 @@
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   ::-webkit-scrollbar{ display:none; }
+
+/* Premium WIP product card */
+ .wip-product-card{position:relative;display:grid;grid-template-columns:24px minmax(145px,220px) minmax(0,1fr) 24px;grid-template-rows:auto auto;align-items:center;column-gap:7px;row-gap:2px;padding:6px 8px;margin:4px 0;border:1px solid rgba(80,150,255,.22);border-radius:11px;background:linear-gradient(100deg,rgba(12,24,57,.98),rgba(14,12,39,.98));box-shadow:0 4px 14px rgba(0,0,0,.18);overflow:hidden;cursor:pointer;min-height:58px}.wip-product-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#00e5ff,#6d4aff,#00d4a8);opacity:.95}.wip-product-card:hover{border-color:rgba(64,210,255,.55);transform:translateY(-1px)}.wip-last-update{position:absolute;right:7px;top:3px;font-size:7px;color:#6f86b7;letter-spacing:.15px;z-index:1}.wip-last-update b{color:#9fb7e8;font-weight:800}.wip-drag{display:flex;align-items:center;justify-content:center;color:#5974a9;letter-spacing:2px;font-size:15px;line-height:1}.wip-product-main{min-width:0;grid-row:1 / 3}.wip-product-code{font-size:11px;font-weight:850;letter-spacing:.05px;color:#f7f9ff;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wip-product-kind{display:none}.wip-metrics{grid-column:3;grid-row:1;display:grid;grid-template-columns:repeat(5,minmax(58px,1fr));gap:4px;min-width:0}.wip-metric{padding:4px 6px;border-radius:8px;background:linear-gradient(135deg,rgba(35,78,148,.32),rgba(24,34,74,.5));border:1px solid rgba(92,170,255,.22);min-height:31px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}.wip-metric:nth-child(2){background:linear-gradient(135deg,rgba(0,191,165,.23),rgba(12,71,83,.42));border-color:rgba(0,232,198,.27)}.wip-metric:nth-child(3){background:linear-gradient(135deg,rgba(255,171,0,.22),rgba(90,51,8,.42));border-color:rgba(255,190,50,.27)}.wip-metric:nth-child(4){background:linear-gradient(135deg,rgba(123,67,255,.27),rgba(55,27,106,.44));border-color:rgba(164,114,255,.3)}.wip-metric:nth-child(5){background:linear-gradient(135deg,rgba(255,34,122,.2),rgba(94,20,61,.4));border-color:rgba(255,83,158,.3)}.wip-metric-label{font-size:6.5px;text-transform:uppercase;letter-spacing:.35px;color:#a9b7d8;font-weight:800}.wip-metric-value{margin-top:1px;font-size:10px;font-weight:850;line-height:1.1;color:#fff}.wip-metric.pending .wip-metric-value{color:#ffd36b}.wip-metric.smt .wip-metric-value{color:#78e5ff}.wip-metric.fail .wip-metric-value{color:#ff86ad}.wip-smt-list{display:flex;flex-direction:column;gap:0}.wip-smt-line{white-space:nowrap;font-size:9px;line-height:1.05;color:#8eeaff}.wip-progress{grid-column:3;grid-row:2;min-width:92px;margin-left:2px}.wip-progress-head{display:flex;justify-content:space-between;align-items:center;font-size:7px;color:#7890ba;margin-bottom:3px}.wip-progress-head b{color:#e6edff;font-weight:850;font-size:9px}.wip-progress-track{height:6px;border-radius:99px;background:#18284b;overflow:hidden;border:1px solid rgba(90,145,220,.15)}.wip-progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00d9b5,#00d9ff,#6e5cff);box-shadow:0 0 10px rgba(0,217,255,.24);transition:width .3s ease}.wip-progress-note{display:none}.wip-product-actions{grid-column:4;grid-row:1 / 3;display:flex;align-items:center;justify-content:flex-end;gap:3px}.wip-card-actions{display:flex;gap:3px;align-items:center}.wip-card-actions button{position:relative;z-index:2;transform:scale(.84)}.wip-product-actions .chev{margin-top:0;color:#76b9ff}.wip-sub-row{position:relative;display:grid;grid-template-columns:20px minmax(135px,190px) minmax(0,1fr) 24px;align-items:center;gap:7px;margin:2px 0 2px 28px;padding:4px 7px;border-radius:9px;background:linear-gradient(100deg,rgba(18,18,48,.92),rgba(11,18,39,.94));border:1px solid rgba(111,91,220,.2);cursor:pointer;min-height:45px}.wip-sub-row:before{content:"";position:absolute;left:-18px;top:-3px;bottom:50%;width:12px;border-left:1px solid rgba(91,123,205,.5);border-bottom:1px solid rgba(91,123,205,.5);border-radius:0 0 0 6px}.wip-sub-row .wip-product-code{font-size:10px}.wip-sub-row .wip-product-kind{font-size:6px;color:#8f72ff}.wip-sub-row .wip-metrics{grid-template-columns:repeat(5,minmax(52px,1fr));gap:3px}.wip-sub-row .wip-metric{min-height:27px;padding:3px 5px}.wip-sub-row .wip-progress{min-width:78px}.wip-sub-row .wip-metric-label{font-size:6px}.wip-sub-row .wip-metric-value{font-size:9px}.wip-sub-row .wip-drag{font-size:12px}.wip-sub-row .wip-metric:nth-child(1){background:linear-gradient(135deg,rgba(35,78,148,.25),rgba(24,34,74,.45))}.wip-sub-row .wip-metric:nth-child(2){background:linear-gradient(135deg,rgba(0,191,165,.2),rgba(12,71,83,.4))}.wip-sub-row .wip-metric:nth-child(3){background:linear-gradient(135deg,rgba(123,67,255,.24),rgba(55,27,106,.42))}.wip-sub-row .wip-metric:nth-child(4){background:linear-gradient(135deg,rgba(255,34,122,.18),rgba(94,20,61,.38))}@media(max-width:1000px){.wip-product-card{grid-template-columns:20px 150px minmax(0,1fr) 20px}.wip-metrics{grid-template-columns:repeat(5,minmax(55px,1fr))}.wip-metric{padding:3px 4px}.wip-metric-value{font-size:9px}.wip-sub-row{grid-template-columns:18px 125px minmax(0,1fr) 18px}.wip-sub-row .wip-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:760px){.wip-product-card{grid-template-columns:18px 1fr 20px;gap:5px;padding:6px}.wip-product-card>.wip-product-main{grid-column:2}.wip-product-card>.wip-progress{grid-column:2}.wip-product-card>.wip-product-actions{grid-column:3;grid-row:1 / span 2}.wip-metrics{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}.wip-metric{padding:3px}.wip-metric-label{font-size:5.5px}.wip-metric-value{font-size:8px}.wip-sub-row{margin-left:18px;grid-template-columns:16px 1fr 18px;gap:4px}.wip-sub-row .wip-metrics{grid-column:2;grid-template-columns:repeat(4,minmax(0,1fr))}.wip-sub-row .wip-progress{grid-column:2}.wip-sub-row .wip-product-actions{grid-column:3;grid-row:1 / span 3}.wip-product-actions .wip-card-actions{display:none}}
+
+
+/* FINAL screenshot-matched WIP row styling */
+.premium-wip-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:2px 0 10px;padding:8px 12px;border:1px solid rgba(57,143,255,.18);border-radius:14px;background:linear-gradient(100deg,rgba(7,18,48,.88),rgba(15,10,48,.82));box-shadow:0 8px 24px rgba(0,0,0,.16)}
+.premium-wip-title{font-size:18px;font-weight:900;letter-spacing:.2px;color:#eef5ff;display:flex;align-items:center;gap:7px}.premium-pulse{width:7px;height:7px;border-radius:50%;background:#00e5b0;box-shadow:0 0 12px #00e5b0}.premium-wip-subtitle{font-size:9px;color:#6f8fca;margin-top:1px;letter-spacing:.35px}.premium-wip-summary{display:flex;align-items:center;gap:12px;font-size:8px;color:#7791be;white-space:nowrap}.premium-wip-summary b{font-size:11px;color:#eaf1ff}.premium-wip-list{display:flex;flex-direction:column;gap:5px}
+.wip-product-card{grid-template-columns:18px minmax(135px,205px) minmax(0,1fr) minmax(92px,125px) auto!important;gap:8px!important;min-height:63px!important;padding:8px 9px!important;margin:0!important;border-radius:13px!important;background:linear-gradient(105deg,rgba(9,25,58,.98),rgba(13,13,43,.98))!important;box-shadow:0 5px 16px rgba(0,0,0,.2)!important}.wip-product-card:before{width:4px!important}.wip-product-code{font-size:12px!important;font-weight:900!important}.wip-metrics{gap:5px!important}.wip-metric{min-height:34px!important;padding:5px 7px!important;border-radius:9px!important}.wip-metric-label{font-size:6px!important;letter-spacing:.45px!important}.wip-metric-value{font-size:10px!important}.wip-progress{margin-right:2px!important}.wip-progress-head{font-size:7px!important}.wip-progress-track{height:6px!important}.wip-product-actions{gap:4px!important;padding-top:7px!important}.wip-card-actions button{transform:scale(.78)!important}.wip-last-update{right:10px!important;top:4px!important;font-size:6px!important;color:#7590bd!important}.wip-sub-row{grid-template-columns:16px minmax(125px,190px) minmax(0,1fr) minmax(80px,110px) 28px!important;gap:7px!important;min-height:49px!important;margin:0 0 0 30px!important;padding:5px 8px!important;border-radius:11px!important;background:linear-gradient(105deg,rgba(17,19,51,.94),rgba(10,19,40,.96))!important}.wip-sub-row .wip-product-code{font-size:10px!important}.wip-sub-row .wip-metric{min-height:28px!important;padding:4px 5px!important}.wip-sub-row .wip-metric-label{font-size:5.5px!important}.wip-sub-row .wip-metric-value{font-size:8.5px!important}.wip-sub-row .wip-progress{min-width:72px!important}.wip-sub-row .wip-product-actions{padding-top:0!important}.wip-smt-list{gap:1px!important}.wip-smt-line{font-size:8px!important;line-height:1.05!important}.wip-smt-line b{font-weight:900!important}.wip-product-card:hover,.wip-sub-row:hover{transform:translateY(-1px);border-color:rgba(66,199,255,.52)!important}
+@media(max-width:1100px){.premium-wip-summary{gap:7px}.wip-product-card{grid-template-columns:16px 145px minmax(0,1fr) 90px auto!important}.wip-metrics{gap:3px!important}.wip-metric{padding:4px!important}.wip-metric-label{font-size:5.5px!important}.wip-metric-value{font-size:9px!important}}
+@media(max-width:820px){.premium-wip-head{padding:7px 9px}.premium-wip-summary{display:none}.premium-wip-title{font-size:15px}.wip-product-card{grid-template-columns:16px 120px minmax(0,1fr) 72px 22px!important}.wip-metric{min-height:30px!important;padding:4px 3px!important}.wip-metric-label{font-size:5px!important}.wip-metric-value{font-size:8px!important}.wip-product-actions .wip-card-actions{display:none}.wip-sub-row{grid-template-columns:14px 110px minmax(0,1fr) 60px 18px!important;margin-left:20px!important}}
+
+.appbar-title.root small{display:block;font-size:8px;line-height:1.05;color:#7794c9;font-weight:600;letter-spacing:.35px;margin-top:1px}.appbar-title.root{line-height:1.05}
 </style>
 
 <style id="dashboard-enhancement-css">
@@ -577,6 +590,213 @@
 <style id="attendance-css">
 .attendance-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.attendance-toolbar label{font-size:11px;color:var(--dim);font-weight:700;display:flex;align-items:center;gap:7px}.attendance-toolbar input,.attendance-toolbar select{background:#17102F;color:#fff;border:1px solid var(--rule);border-radius:10px;padding:9px 10px;min-width:150px}.attendance-month-filter{display:flex;align-items:center;gap:7px}.attendance-month-filter select{font-family:var(--sans);font-weight:600}.attendance-actions{display:flex;gap:6px;flex-wrap:wrap}.att-order{font-family:var(--mono);font-weight:700;color:#6B5AA8}.att-delete{width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--danger);cursor:pointer}.att-delete:active{background:#00000010}.att-order-input{width:70px!important;min-width:70px!important}.att-dash{color:#A79FD6}.attendance-legend{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}.attendance-legend span{padding:5px 8px;border-radius:8px;font-size:10px;font-weight:700}.attendance-wrap{overflow:auto;border:1px solid #34275F;border-radius:12px;background:#fff}.attendance-table{border-collapse:collapse;width:max-content;min-width:100%;font-family:Arial,sans-serif;font-size:10px;color:#171233}.attendance-table th,.attendance-table td{border:1px solid #D5D9DD;padding:5px 6px;text-align:center;min-width:28px;height:30px}.attendance-table th{position:sticky;top:0;background:#BEDCEA;z-index:3}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){position:sticky;left:0;z-index:4;background:#EAF4F8;min-width:90px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){position:sticky;left:90px;z-index:4;background:#F5FAFC;min-width:150px;text-align:left}.attendance-table th small{display:block;font-size:8px;opacity:.65}.attendance-table td{cursor:default}.attendance-table td[data-att]{cursor:pointer;font-weight:700}.att-p{background:#D8F6E6!important;color:#167A48}.att-a{background:#FFE0E5!important;color:#B21F3A}.att-s{background:#E6E2F8!important;color:#62539B}.att-h{background:#FFE8C2!important;color:#8A5A16}.att-empty{background:#fff;color:#A79FD6}.att-empty-row{padding:28px!important;text-align:center}.mono-cell{font-family:var(--mono)}.name-cell{font-weight:700}.attendance-overall{margin-top:14px}.attendance-overall-grid{display:flex;flex-direction:column;gap:7px}.attendance-person{display:grid;grid-template-columns:minmax(180px,1fr) 110px 110px 100px;gap:8px;align-items:center;background:#211A42;border:1px solid #2D2354;border-radius:10px;padding:9px;color:#fff}.attendance-person strong{display:block}.attendance-person small{display:block;color:var(--dim);font-family:var(--mono);margin-top:2px}.attendance-person span{font-size:11px;color:var(--dim)}.attendance-person b{color:#fff;font-family:var(--mono)}@media(max-width:899px){.attendance-person{grid-template-columns:1fr 1fr;gap:5px}.attendance-table{font-size:9px}.attendance-table th,.attendance-table td{min-width:27px;padding:4px}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){min-width:75px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){left:75px;min-width:130px}}
 </style>
+
+<style id="premium-v5-final">
+/* FINAL compact colorful product-row treatment */
+.wip-product-card{
+  grid-template-columns:24px minmax(175px,235px) minmax(0,1fr) auto!important;
+  grid-template-rows:auto auto!important;
+  gap:3px 8px!important;
+  min-height:66px!important;
+  padding:7px 9px!important;
+  border-radius:12px!important;
+  background:linear-gradient(105deg,#071b42 0%,#10104a 48%,#071f4a 100%)!important;
+  border:1px solid rgba(54,181,255,.38)!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.05)!important;
+}
+.wip-product-card:before{
+  width:4px!important;
+  background:linear-gradient(180deg,#00eaff,#7b4dff,#ff2d91,#00e5b0)!important;
+}
+.wip-product-main{
+  grid-column:2!important;
+  grid-row:1 / 3!important;
+  align-self:center!important;
+}
+.wip-product-code{
+  font-size:13px!important;
+  font-weight:900!important;
+  color:#f8fbff!important;
+  letter-spacing:.1px!important;
+  margin:0!important;
+}
+.wip-product-kind{display:none!important}
+.wip-product-month{font-size:10px!important;font-weight:700!important;color:#7fd8ff!important;margin-top:2px!important;letter-spacing:.3px!important}
+
+/* Label above, small colored quantity box below */
+.wip-metrics{
+  grid-column:3!important;
+  grid-row:1!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(54px,1fr))!important;
+  gap:5px!important;
+  align-items:end!important;
+}
+.wip-metric{
+  min-width:0!important;
+  min-height:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+}
+.wip-metric-label{
+  text-align:center!important;
+  font-size:6.5px!important;
+  line-height:8px!important;
+  font-weight:900!important;
+  letter-spacing:.35px!important;
+  color:#b9c9ed!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+}
+.wip-metric-box{
+  height:24px!important;
+  min-width:48px!important;
+  padding:2px 6px!important;
+  border-radius:7px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  border:1px solid rgba(255,255,255,.15)!important;
+  box-shadow:0 2px 9px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.14)!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+.wip-metric:nth-child(1) .wip-metric-box{
+  background:linear-gradient(135deg,#087ff5,#2451e6)!important;
+  border-color:#2bb9ff!important;
+}
+.wip-metric:nth-child(2) .wip-metric-box{
+  background:linear-gradient(135deg,#00c8a4,#0788c9)!important;
+  border-color:#22efd0!important;
+}
+.wip-metric:nth-child(3) .wip-metric-box{
+  background:linear-gradient(135deg,#ffae19,#e85b1d)!important;
+  border-color:#ffd05a!important;
+}
+.wip-metric:nth-child(4) .wip-metric-box{
+  background:linear-gradient(135deg,#9b3cff,#4b25d5)!important;
+  border-color:#c27cff!important;
+}
+.wip-metric:nth-child(5) .wip-metric-box{
+  background:linear-gradient(135deg,#ff287f,#c51d67)!important;
+  border-color:#ff68ad!important;
+}
+
+/* SMT pending can contain multiple sub-product quantities without exposing names as rows */
+.wip-smt-list{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  align-items:center!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+.wip-smt-line{
+  font-size:8px!important;
+  line-height:10px!important;
+  color:#fff!important;
+  white-space:nowrap!important;
+}
+.wip-smt-line span{color:#d8c4ff!important;font-weight:800!important}
+.wip-smt-line b{color:#fff!important;font-weight:900!important}
+
+/* Sub-product incoming quantities are shown inside the main Incomming box,
+   the same compact way as SMT Pending. */
+.wip-incoming-list{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  align-items:center!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+.wip-incoming-main{
+  font-size:8px!important;
+  line-height:10px!important;
+  color:#fff!important;
+  white-space:nowrap!important;
+}
+.wip-incoming-main b{color:#fff!important;font-weight:900!important}
+.wip-incoming-line{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  width:100%!important;
+  font-size:7px!important;
+  line-height:9px!important;
+  color:#d8c4ff!important;
+  white-space:nowrap!important;
+}
+.wip-incoming-line span{color:#a9c7ff!important;font-weight:800!important}
+.wip-incoming-line b{color:#39e9ff!important;font-weight:900!important}
+
+/* Thin colorful progress line directly under the five metric boxes */
+.wip-progress{
+  grid-column:3!important;
+  grid-row:2!important;
+  min-width:0!important;
+  margin:1px 0 0!important;
+}
+.wip-progress-head{
+  display:none!important;
+}
+.wip-progress-track{
+  height:3px!important;
+  border:0!important;
+  background:rgba(67,88,145,.48)!important;
+  border-radius:99px!important;
+  overflow:hidden!important;
+}
+.wip-progress-fill{
+  height:100%!important;
+  background:linear-gradient(90deg,#00e7ff 0%,#00e5a4 35%,#7c55ff 70%,#ff3f9a 100%)!important;
+  box-shadow:0 0 10px rgba(0,224,255,.55)!important;
+  border-radius:99px!important;
+}
+.wip-last-update{
+  top:4px!important;
+  right:9px!important;
+  font-size:6.5px!important;
+  color:#78bfff!important;
+}
+
+/* Keep sub-product names out of the outer WIP list */
+.wip-sub-row{display:none!important}
+
+/* Extra color on product hover */
+.wip-product-card:hover{
+  border-color:rgba(0,229,255,.75)!important;
+  box-shadow:0 7px 22px rgba(0,200,255,.14),inset 0 1px 0 rgba(255,255,255,.07)!important;
+}
+
+@media(max-width:1000px){
+  .wip-product-card{grid-template-columns:20px 155px minmax(0,1fr) auto!important}
+  .wip-metrics{gap:3px!important}
+  .wip-metric-label{font-size:6px!important}
+  .wip-metric-box{height:22px!important;font-size:9px!important}
+}
+@media(max-width:760px){
+  .wip-product-card{grid-template-columns:18px 1fr 20px!important}
+  .wip-product-main{grid-column:2!important;grid-row:1!important}
+  .wip-metrics{grid-column:2!important;grid-row:2!important}
+  .wip-progress{grid-column:2!important;grid-row:3!important}
+  .wip-product-actions{grid-column:3!important;grid-row:1 / span 3!important}
+}
+</style>
+
+
+
+
 </head>
 <body>
 <style>
@@ -1735,6 +1955,10 @@
     return d.toLocaleDateString('en-US',{ month:'short', day:'numeric', year:'numeric' });
   }
 
+  function fmtMonth(m){
+    const mm=/^(\d{4})-(\d{2})$/.exec(String(m||'')); if(!mm) return '';
+    return new Date(Number(mm[1]),Number(mm[2])-1,1).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  }
   function todayISO(){
     const d = new Date();
     const off = d.getTimezoneOffset();
@@ -1807,6 +2031,10 @@
         <label>Product code</label>
         <input class="mono" id="inpCode" placeholder="e.g. A897-064-3209-00" value="${isEdit ? escapeAttr(existing.code) : ''}">
       </div>
+      <div class="field">
+        <label>Month (optional)</label>
+        <input type="month" id="inpMonth" value="${isEdit ? escapeAttr(existing.month||'') : ''}">
+      </div>
       <div class="sheet-actions">
         <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
         <button class="btn btn-primary" id="saveBtn">${isEdit ? 'Save changes' : 'Add product'}</button>
@@ -1817,8 +2045,9 @@
       const code = document.getElementById('inpCode').value.trim();
       if(!code){ showToast('Enter a product code'); return; }
       const now = new Date().toISOString();
-      if(isEdit){ existing.code = code; existing.updatedAt = now; showToast('Product updated'); }
-      else { state.products.push({ id:uid(), code, stages:[], subProducts:[], createdAt:now, updatedAt:now }); showToast('Product added'); }
+      const month = (document.getElementById('inpMonth').value||'').trim();
+      if(isEdit){ existing.code = code; existing.month = month; existing.updatedAt = now; showToast('Product updated'); }
+      else { state.products.push({ id:uid(), code, month, stages:[], subProducts:[], createdAt:now, updatedAt:now }); showToast('Product added'); }
       saveState();
       closeSheet();
       render();
@@ -1993,7 +2222,7 @@
     }
     products.forEach(p=>{
       const main=stageMap(p);
-      const r=ws.addRow([p.code,...STAGE_COLUMNS.map(c=>main.sums[c]||null),main.customText||null,main.total||null]);
+      const r=ws.addRow([p.code+(p.month?'\n'+fmtMonth(p.month):''),...STAGE_COLUMNS.map(c=>main.sums[c]||null),main.customText||null,main.total||null]);
       r.eachCell((cell,i)=>{
         cell.border=thinBorder; cell.alignment={vertical:'middle',horizontal:i===1?'left':'center',wrapText:true};
         if(i===1) cell.font={bold:true};
@@ -2059,12 +2288,12 @@
       const headerRow=detail.getRow(startRow);
       detail.mergeCells(startRow,startCol,startRow,endCol);
       const h=headerRow.getCell(startCol);
-      h.value=product.code;
+      h.value=product.code+(product.month?'\n'+fmtMonth(product.month):'');
       h.fill={type:'pattern',pattern:'solid',fgColor:{argb:CARD_HEADER}};
       h.font={bold:true,size:16,color:{argb:'FF111111'}};
-      h.alignment={vertical:'middle',horizontal:'center'};
+      h.alignment={vertical:'middle',horizontal:'center',wrapText:true};
       h.border=cardBorder;
-      detail.getRow(startRow).height=30;
+      detail.getRow(startRow).height=product.month?44:30;
 
       let r=startRow+1;
       rows.forEach(item=>{
@@ -2115,6 +2344,29 @@
     detail.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0};
     detail.properties.defaultRowHeight=21;
     detail.views=[{showGridLines:false}];
+
+    // Shift Output sheet (all saved shift entries, oldest date first)
+    try{
+      const so=wb.addWorksheet('Shift Output');
+      so.addRow(['DATE','SHIFT','SUPERVISOR','PRODUCT','STAGE','PLAN QTY','REQ MANPOWER','AVAIL MANPOWER','ACHIVED QTY','ACHIEVEMENT %','REMARKS']);
+      const soBorder={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+      so.getRow(1).eachCell(c=>{ c.font={bold:true,name:'Arial',size:10}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFBEDCEA'}}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; c.border=soBorder; });
+      const soList=Object.values(shiftEntries||{}).filter(e=>!e.deleted).sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.shift===b.shift?String(a.createdAt||'').localeCompare(String(b.createdAt||'')):(a.shift==='General'?-1:1)));
+      soList.forEach(e=>{
+        const pv=soPctVal(soNum(e.achievedQty),soNum(e.planQty));
+        const r=so.addRow([e.date,String(e.shift||'').toUpperCase(),e.supervisor||'',e.product||'',e.stage||'',soNum(e.planQty),soNum(e.reqManpower),soNum(e.availManpower),soNum(e.achievedQty),pv===null?'':pv/100,e.remarks||'']);
+        r.eachCell(c=>{ c.font={name:'Arial',size:10}; c.border=soBorder; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; });
+        r.getCell(10).numFmt='0%';
+      });
+      if(soList.length){
+        const t=soSum(soList); const tp=soPctVal(t.ach,t.plan);
+        const tr=so.addRow(['TOTAL','','','','',t.plan,t.req,t.avail,t.ach,tp===null?'':tp/100,'']);
+        tr.eachCell(c=>{ c.font={bold:true,name:'Arial',size:10}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE9EEF2'}}; c.border=soBorder; c.alignment={horizontal:'center'}; });
+        tr.getCell(10).numFmt='0%';
+      }
+      [12,9,18,20,18,10,14,15,13,14,34].forEach((w,i)=>so.getColumn(i+1).width=w);
+      so.views=[{state:'frozen',ySplit:1}];
+    }catch(e){ console.warn('Shift sheet skipped',e); }
 
     const buffer=await wb.xlsx.writeBuffer();
     const saved=await saveExcelBuffer(buffer,`ECON_WIP_Consol_${todayISO()}.xlsx`);
@@ -2842,7 +3094,7 @@
         ${owner?'<button class="excel-export-btn" id="addEmployeeBtn">+ Employee</button>':''}
       </div>
       <div class="attendance-legend"><span class="att-p">P Present</span><span class="att-a">A Absent</span><span class="att-h">H Holiday</span><span class="att-s">S Sunday</span><span class="att-empty">- Not Marked</span></div>
-      <div class="attendance-wrap"><table class="attendance-table"><thead><tr><th>Emp No</th><th>Employee Name</th>${Array.from({length:days},(_,i)=>`<th>${i+1}<small>${new Date(Number(ym.slice(0,4)),Number(ym.slice(5))-1,i+1).toLocaleDateString('en-US',{weekday:'short'}).slice(0,1)}</small></th>`).join('')}<th>Working</th><th>Present</th><th>Absent</th>${owner?'<th>Edit / Delete</th>':''}</tr></thead><tbody>
+      <div class="attendance-wrap"><table class="attendance-table"><thead><tr><th>Emp No</th><th>Employee Name</th>${Array.from({length:days},(_,i)=>`<th>${i+1}<small>${new Date(Number(ym.slice(0,4)),Number(ym.slice(5))-1,i+1).toLocaleDateString('en-US',{weekday:'short'}).slice(0,3)}</small></th>`).join('')}<th>Working</th><th>Present</th><th>Absent</th>${owner?'<th>Edit / Delete</th>':''}</tr></thead><tbody>
       ${emps.length?emps.map(emp=>{const sum=attendanceEmpSummary(emp.id,ym); return `<tr><td class="mono-cell"><span class="att-order">${Number(emp.order)||0}</span> ${escapeHtml(emp.empNo)}</td><td class="name-cell">${escapeHtml(emp.name)}</td>${Array.from({length:days},(_,i)=>{const d=i+1,iso=attendanceDate(ym,d),st=attendanceStatus(ym,emp.id,d); const cls=st==='P'?'att-p':st==='A'?'att-a':st==='S'?'att-s':st==='H'?'att-h':'att-empty'; return `<td class="${cls}" data-att="${emp.id}|${d}">${st}</td>`}).join('')}<td>${sum.working}</td><td>${sum.present}</td><td>${sum.absent}</td>${owner?`<td><button class="edit-btn" data-att-edit="${emp.id}" title="Edit">${icon('pencil')}</button><button class="att-delete" data-att-del="${emp.id}" title="Delete">${icon('trash')}</button></td>`:''}</tr>`}).join(''):`<tr><td colspan="${days+(owner?6:5)}" class="att-empty-row">No employees. Owner can add employees.</td></tr>`}
       </tbody></table></div>
     `;
@@ -3219,7 +3471,7 @@
       const isOwnerUser = window.__auth && window.__auth.isOwner();
       appbar.innerHTML = `<div class="appbar-row">
         <button class="side-toggle" id="sideToggleBtn" title="Menu">☰</button>
-        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span>ECON WIP TrackeR</div>
+        <div class="appbar-title root"><span class="sync-dot ${dotClass}"></span><span>WIP Tracker</span><small>Track • Monitor • Deliver</small></div>
         <button class="icon-btn search-btn" id="searchToggleBtn" title="Search">${icon('search')}</button>
         <button class="icon-btn" id="consolBtn" title="CONSOL">${icon('consol')}</button>
         ${isOwnerUser ? `<button class="icon-btn" id="exportBtn" title="Export">${icon('export')}</button>` : ''}
@@ -3298,61 +3550,116 @@
     }
   }
 
+  function formatLastUpdated(value){
+    if(!value) return '—';
+    const d=new Date(value);
+    if(Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString([], {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+  }
+
   function renderProducts(scroll){
     const term = searchTerm.trim().toLowerCase();
-    const tabs = '';
-    const list = sortedProducts().filter(p=>p.code.toLowerCase().includes(term));
-    if(state.products.length===0){
-      scroll.innerHTML = tabs + emptyState('crate','No products yet','Tap + to add your first product');
-      return;
-    }
-    if(list.length===0){
-      scroll.innerHTML = tabs + emptyState('crate','No matches','Try a different search term');
-      return;
-    }
-    scroll.innerHTML = tabs + list.map((p,i)=>`
-      <div class="row c${(i%6)+1}" data-id="${p.id}">
-        <div class="row-icon">${icon('crate')}</div>
-        <div class="row-body">
-          <div class="row-title">${escapeHtml(p.code)}</div>
+    const list = sortedProducts().filter(p=>p.code.toLowerCase().includes(term) || ensureSubProducts(p).some(sp=>String(sp.code||'').toLowerCase().includes(term)));
+    const qtyBy = (obj, names) => (obj.stages||[]).filter(st=>names.includes(resolveStageKey(st))).reduce((n,st)=>n+stageQty(st),0);
+    const completedStages = ['SHIPPED','PACKING','OQA','LOG'];
+    const failureStages = ['REWORK','FAIL','DEBUG','SENSOR ISSUE','SCRAP'];
+    if(state.products.length===0){ scroll.innerHTML = emptyState('crate','No products yet','Tap + to add your first product'); return; }
+    if(list.length===0){ scroll.innerHTML = emptyState('crate','No matches','Try a different search term'); return; }
+
+    const metric = (label,value,cls='') => `
+      <div class="wip-metric ${cls}">
+        <span class="wip-metric-label">${label}</span>
+        <div class="wip-metric-box">${value}</div>
+      </div>`;
+    const shortCode = code => { const a=String(code||'').split('-'); return a.length>=2 ? a[a.length-2] : String(code||''); };
+
+    scroll.innerHTML = `
+      <div class="premium-wip-head">
+        <div class="premium-wip-title-wrap">
+          <div class="premium-wip-title"><span class="premium-pulse"></span> WIP Tracker</div>
+          <div class="premium-wip-subtitle">Track • Monitor • Deliver</div>
         </div>
-        <button class="icon-btn product-share-btn" data-share-product="${p.id}" title="Share">${icon('share')}</button>
-        ${canWrite ? `<button class="edit-btn" data-edit="${p.id}">${icon('pencil')}</button>` : ''}
-        ${canWrite ? `<button class="del-btn" data-del="${p.id}">${icon('trash')}</button>` : ''}
-        <div class="chev">${icon('chev')}</div>
+        <div class="premium-wip-summary">
+          <span><b>${list.length}</b> Products</span>
+        </div>
       </div>
-    `).join('');
-    scroll.querySelectorAll('.row').forEach(row=>{
-      row.addEventListener('click', (e)=>{
-        if(e.target.closest('[data-del]') || e.target.closest('[data-edit]')) return;
-        goTo({ view:'stages', productId: row.dataset.id });
-      });
-    });
-    scroll.querySelectorAll('[data-edit]').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        openProductSheet(findProduct(btn.dataset.edit));
-      });
-    });
-    scroll.querySelectorAll('[data-share-product]').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const p = findProduct(btn.dataset.shareProduct);
-        if(p) exportProductStageImage(p);
-      });
-    });
-    scroll.querySelectorAll('[data-del]').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        if(!canWrite){ showToast('Read-only access'); return; }
-        const id = btn.dataset.del;
-        const p = findProduct(id);
-        confirmDelete(`Delete product ${p.code}? This removes all its stages and entries.`, ()=>{
-          state.products = state.products.filter(x=>x.id!==id);
-          saveState(); render();
-        });
-      });
-    });
+      <div class="premium-wip-list"></div>
+    `;
+
+    const listEl = scroll.querySelector('.premium-wip-list');
+    listEl.innerHTML = list.map((p)=>{
+      const kit = qtyBy(p,['KIT QTY']);
+      const incoming = qtyBy(p,['INCOMMING']);
+      const completed = qtyBy(p,completedStages);
+      const pending = Math.max(0, incoming - completed);
+      const failures = qtyBy(p,failureStages);
+      const subProducts = ensureSubProducts(p);
+      const smtPending = Math.max(0, kit - incoming);
+      const base = incoming > 0 ? incoming : kit;
+      const pct = base > 0 ? Math.max(0,Math.min(100,(completed/base)*100)) : 0;
+      const smtHtml = subProducts.length
+        ? `<div class="wip-smt-list">${subProducts.map(sp=>{
+            const subIncoming=qtyBy(sp,['INCOMMING']);
+            return `<div class="wip-smt-line"><span>${escapeHtml(shortCode(sp.code))}</span><b>— ${Math.max(0,kit-subIncoming)} B</b></div>`;
+          }).join('')}</div>`
+        : `${smtPending}`;
+
+      const incLines = subProducts
+        .map(sp=>({sp, q:qtyBy(sp,['INCOMMING'])}))
+        .filter(x=>x.q>0);
+      const incomingHtml = incLines.length
+        ? `<div class="wip-smt-list">${incLines.map(x=>`<div class="wip-smt-line"><span>${escapeHtml(shortCode(x.sp.code))}</span><b>\u2014 ${x.q} B</b></div>`).join('')}</div>`
+        : `${incoming}`;
+
+      const main = `
+      <div class="wip-product-card" data-id="${p.id}">
+        <div class="wip-last-update">${escapeHtml(formatLastUpdated(p.updatedAt || p.createdAt))}</div>
+        <div class="wip-drag" title="Drag">••<br>••</div>
+        <div class="wip-product-main">
+          <div class="wip-product-code">${escapeHtml(p.code)}</div>
+          ${p.month ? `<div class="wip-product-month">${escapeHtml(fmtMonth(p.month))}</div>` : ''}
+        </div>
+        <div class="wip-metrics">
+          ${metric('Kit Qty',kit)}
+          ${metric('Incomming',incomingHtml)}
+          ${metric('Pending',pending,'pending')}
+          ${metric('SMT Pending',smtHtml,'smt')}
+          ${metric('Failures',failures,'fail')}
+        </div>
+        <div class="wip-progress">
+          <div class="wip-progress-head"><span>Process</span><b>${Math.round(pct)}%</b></div>
+          <div class="wip-progress-track"><div class="wip-progress-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="wip-product-actions">
+          <div class="wip-card-actions">
+            <button class="icon-btn product-share-btn" data-share-product="${p.id}" title="Share">${icon('share')}</button>
+            ${canWrite ? `<button class="edit-btn" data-edit="${p.id}" title="Edit">${icon('pencil')}</button>` : ''}
+            ${canWrite ? `<button class="del-btn" data-del="${p.id}" title="Delete">${icon('trash')}</button>` : ''}
+          </div>
+          <div class="chev">${icon('chev')}</div>
+        </div>
+      </div>`;
+
+      // Sub-products are intentionally hidden from the outer WIP list.
+      // They remain available inside the product/stages view, and their
+      // individual SMT-pending values are summarized inside the main card.
+      return main;
+    }).join('');
+
+    listEl.querySelectorAll('.wip-product-card').forEach(card=>card.addEventListener('click',e=>{
+      if(e.target.closest('[data-del]') || e.target.closest('[data-edit]') || e.target.closest('[data-share-product]')) return;
+      goTo({view:'stages',productId:card.dataset.id});
+    }));
+    listEl.querySelectorAll('.wip-sub-row').forEach(row=>row.addEventListener('click',e=>{
+      goTo({view:'stages',productId:row.dataset.parentId,subProductId:row.dataset.subId});
+    }));
+    listEl.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();openProductSheet(findProduct(btn.dataset.edit));}));
+    listEl.querySelectorAll('[data-share-product]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();const p=findProduct(btn.dataset.shareProduct);if(p)exportProductStageImage(p);}));
+    listEl.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',e=>{
+      e.stopPropagation(); if(!canWrite){showToast('Read-only access');return;}
+      const p=findProduct(btn.dataset.del); if(!p) return;
+      if(confirm(`Delete product ${p.code}?`)){ state.products=state.products.filter(x=>x.id!==p.id); saveState(); render(); }
+    }));
   }
 
   function renderStageRowHTML(product, stage, i, subProductId=null){
@@ -3611,4 +3918,10 @@ document.addEventListener('DOMContentLoaded', function(){
 .consolidated-subproduct{margin-top:8px;border-top:2px solid #3fd38a;}
 .consolidated-subproduct-title{background:#eaf8f1;color:#174a32;font-size:13px;font-weight:800;text-align:center;padding:5px 7px;border-bottom:1px solid #bdbdbd;}
 .consolidated-subrow{font-size:12px;}
+</style>
+
+<style id="final-product-ui-overrides">
+.wip-product-card .wip-product-kind,.wip-sub-row .wip-product-kind{display:none!important}
+.wip-product-card .status,.wip-product-card .status-badge,.wip-sub-row .status,.wip-sub-row .status-badge{display:none!important}
+.wip-last-update{pointer-events:none}
 </style>
