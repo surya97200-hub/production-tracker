@@ -591,6 +591,82 @@
 .attendance-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.attendance-toolbar label{font-size:11px;color:var(--dim);font-weight:700;display:flex;align-items:center;gap:7px}.attendance-toolbar input,.attendance-toolbar select{background:#17102F;color:#fff;border:1px solid var(--rule);border-radius:10px;padding:9px 10px;min-width:150px}.attendance-month-filter{display:flex;align-items:center;gap:7px}.attendance-month-filter select{font-family:var(--sans);font-weight:600}.attendance-actions{display:flex;gap:6px;flex-wrap:wrap}.att-order{font-family:var(--mono);font-weight:700;color:#6B5AA8}.att-delete{width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:var(--danger);cursor:pointer}.att-delete:active{background:#00000010}.att-order-input{width:70px!important;min-width:70px!important}.att-dash{color:#A79FD6}.attendance-legend{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}.attendance-legend span{padding:5px 8px;border-radius:8px;font-size:10px;font-weight:700}.attendance-wrap{overflow:auto;border:1px solid #34275F;border-radius:12px;background:#fff}.attendance-table{border-collapse:collapse;width:max-content;min-width:100%;font-family:Arial,sans-serif;font-size:10px;color:#171233}.attendance-table th,.attendance-table td{border:1px solid #D5D9DD;padding:5px 6px;text-align:center;min-width:28px;height:30px}.attendance-table th{position:sticky;top:0;background:#BEDCEA;z-index:3}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){position:sticky;left:0;z-index:4;background:#EAF4F8;min-width:90px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){position:sticky;left:90px;z-index:4;background:#F5FAFC;min-width:150px;text-align:left}.attendance-table th small{display:block;font-size:8px;opacity:.65}.attendance-table td{cursor:default}.attendance-table td[data-att]{cursor:pointer;font-weight:700}.att-p{background:#D8F6E6!important;color:#167A48}.att-a{background:#FFE0E5!important;color:#B21F3A}.att-s{background:#E6E2F8!important;color:#62539B}.att-h{background:#FFE8C2!important;color:#8A5A16}.att-empty{background:#fff;color:#A79FD6}.att-empty-row{padding:28px!important;text-align:center}.mono-cell{font-family:var(--mono)}.name-cell{font-weight:700}.attendance-overall{margin-top:14px}.attendance-overall-grid{display:flex;flex-direction:column;gap:7px}.attendance-person{display:grid;grid-template-columns:minmax(180px,1fr) 110px 110px 100px;gap:8px;align-items:center;background:#211A42;border:1px solid #2D2354;border-radius:10px;padding:9px;color:#fff}.attendance-person strong{display:block}.attendance-person small{display:block;color:var(--dim);font-family:var(--mono);margin-top:2px}.attendance-person span{font-size:11px;color:var(--dim)}.attendance-person b{color:#fff;font-family:var(--mono)}@media(max-width:899px){.attendance-person{grid-template-columns:1fr 1fr;gap:5px}.attendance-table{font-size:9px}.attendance-table th,.attendance-table td{min-width:27px;padding:4px}.attendance-table th:nth-child(1),.attendance-table td:nth-child(1){min-width:75px}.attendance-table th:nth-child(2),.attendance-table td:nth-child(2){left:75px;min-width:130px}}
 </style>
 
+<style id="wip-longpress-share-css">
+  /* Mobile-friendly product selection / share mode */
+  .wip-product-card{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    touch-action:manipulation;
+  }
+  .wip-product-card.wip-selected{
+    border-color:#00e5ff!important;
+    box-shadow:0 0 0 2px rgba(0,229,255,.34),0 8px 24px rgba(0,210,255,.18),inset 0 1px 0 rgba(255,255,255,.10)!important;
+    transform:translateY(-1px);
+  }
+  .wip-product-card.wip-selected:after{
+    content:'✓';
+    position:absolute;
+    right:8px;
+    top:8px;
+    width:22px;height:22px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#00e5b0,#00a8ff);
+    color:#06152e;
+    font-size:14px;font-weight:900;
+    box-shadow:0 3px 10px rgba(0,229,255,.28);
+    z-index:8;
+  }
+  .wip-selection-hint{
+    margin:-3px 0 7px;
+    padding:7px 10px;
+    border:1px solid rgba(0,229,255,.18);
+    border-radius:10px;
+    background:rgba(0,229,255,.055);
+    color:#86bfe9;
+    font-size:9px;
+    text-align:center;
+    letter-spacing:.15px;
+  }
+  .wip-selection-bar{
+    position:absolute;
+    left:10px;right:10px;bottom:72px;
+    z-index:28;
+    display:none;
+    align-items:center;
+    gap:8px;
+    padding:9px;
+    border:1px solid rgba(0,229,255,.32);
+    border-radius:16px;
+    background:linear-gradient(105deg,rgba(10,25,58,.97),rgba(25,13,57,.97));
+    box-shadow:0 10px 30px rgba(0,0,0,.42),0 0 22px rgba(0,210,255,.10);
+    backdrop-filter:blur(12px);
+  }
+  .wip-selection-bar.open{display:flex}
+  .wip-selection-count{
+    flex:1;min-width:0;
+    color:#eef7ff;font-size:12px;font-weight:800;
+  }
+  .wip-selection-count b{color:#00e5ff}
+  .wip-selection-btn{
+    border:0;border-radius:11px;padding:10px 12px;
+    font-family:var(--sans);font-size:12px;font-weight:800;
+    cursor:pointer;white-space:nowrap;
+  }
+  .wip-selection-btn.share{
+    background:linear-gradient(120deg,#00c8a4,#087ff5);
+    color:#fff;
+  }
+  .wip-selection-btn.cancel{
+    background:#292047;color:#c9c4e7;border:1px solid #3c2e68;
+  }
+  .wip-product-card.wip-selection-press{transform:scale(.995)}
+  @media(max-width:760px){
+    .wip-selection-bar{bottom:76px}
+    .wip-selection-btn{padding:10px 11px}
+  }
+</style>
 <style id="premium-v5-final">
 /* FINAL compact colorful product-row treatment */
 .wip-product-card{
@@ -797,6 +873,13 @@
 
 
 
+
+<style>
+/* Mobile WIP product names: slightly larger for readability */
+.wip-product-card .wip-product-title,
+.wip-product-card .product-title,
+.wip-product-card .wip-product-name { font-size: 20px !important; line-height: 1.2 !important; }
+</style>
 </head>
 <body>
 <style>
@@ -1427,6 +1510,11 @@
   let nav = [{ view:'products' }]; // app always opens at WIP Tracker
   let searchTerm = '';
   let searchOpen = false;
+  // Mobile WIP multi-select: long-press a product to enter selection mode.
+  const selectedProductIds = new Set();
+  let productSelectionMode = false;
+  let productLongPressTimer = null;
+  let productLongPressTriggered = false;
   let attendanceState = { employees:{}, months:{} };
   let attendanceUnsub = null;
   let attendanceMonth = todayISO().slice(0,7);
@@ -2421,83 +2509,201 @@
   }
 
   // ---------- Image export: single product's stage table as a PNG (matches the product detail screen) ----------
-  function exportProductStageImage(product){
-    if(!product){ showToast('No product to export'); return; }
+  function buildProductStageCanvas(product){
+    if(!product) return null;
     const subProducts=ensureSubProducts(product);
-    if((product.stages||[]).length===0 && subProducts.length===0){ showToast('No stages to export'); return; }
-    try{
-      const SCALE=2, width=502, headerHeight=44, rowHeight=34, subHeaderHeight=32;
-      const rows=[];
-      (product.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st)}));
-      rows.push({type:'total',name:'TOTAL',qty:productTotalQty(product)});
-      subProducts.forEach(sp=>{
-        rows.push({type:'subheader',name:sp.code,qty:null});
-        (sp.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st),sub:true}));
-        rows.push({type:'total',name:'TOTAL',qty:subProductTotalQty(sp),sub:true});
-      });
-      const height=headerHeight+rows.reduce((h,r)=>h+(r.type==='subheader'?subHeaderHeight:rowHeight),0);
-      const colSplit=Math.round(width*0.77);
-      const canvas=document.createElement('canvas'); canvas.width=width*SCALE; canvas.height=height*SCALE;
-      const ctx=canvas.getContext('2d'); ctx.scale(SCALE,SCALE);
-      // Original product-share colors retained; all text is centered.
-      ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,width,height);
-      ctx.fillStyle='#3DD68C'; ctx.fillRect(0,0,width,headerHeight);
-      ctx.fillStyle='#14231C'; ctx.font='bold 18px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(product.code,width/2,headerHeight/2);
+    if((product.stages||[]).length===0 && subProducts.length===0) return null;
+    const SCALE=2, width=502, headerHeight=44, rowHeight=34, subHeaderHeight=32;
+    const rows=[];
+    (product.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st)}));
+    rows.push({type:'total',name:'TOTAL',qty:productTotalQty(product)});
+    subProducts.forEach(sp=>{
+      rows.push({type:'subheader',name:sp.code,qty:null});
+      (sp.stages||[]).forEach(st=>rows.push({type:'stage',name:displayStageName(st),qty:stageQty(st),sub:true}));
+      rows.push({type:'total',name:'TOTAL',qty:subProductTotalQty(sp),sub:true});
+    });
+    const height=headerHeight+rows.reduce((h,r)=>h+(r.type==='subheader'?subHeaderHeight:rowHeight),0);
+    const colSplit=Math.round(width*0.77);
+    const canvas=document.createElement('canvas');
+    canvas.width=width*SCALE; canvas.height=height*SCALE;
+    const ctx=canvas.getContext('2d'); ctx.scale(SCALE,SCALE);
 
-      let y=headerHeight;
-      rows.forEach(r=>{
-        const h=r.type==='subheader'?subHeaderHeight:rowHeight;
-        if(r.type==='subheader'){
-          ctx.fillStyle='#EAF8F1'; ctx.fillRect(0,y,width,h);
-          ctx.fillStyle='#174A32'; ctx.font='bold 14px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(r.name,width/2,y+h/2);
-        }else{
-          ctx.fillStyle=r.type==='total'?'#E9E9E9':'#FFFFFF'; ctx.fillRect(0,y,width,h);
-          ctx.fillStyle='#111111'; ctx.font='bold 13px Arial,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          // Both stage name and quantity are centered within their columns.
-          ctx.fillText(r.name,colSplit/2,y+h/2);
-          ctx.fillText(String(r.qty??0),colSplit+(width-colSplit)/2,y+h/2);
-        }
-        y+=h;
-      });
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,width,height);
+    ctx.fillStyle='#3DD68C'; ctx.fillRect(0,0,width,headerHeight);
+    ctx.fillStyle='#14231C'; ctx.font='bold 18px Arial,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(product.code,width/2,headerHeight/2);
 
-      ctx.strokeStyle='#BDBDBD'; ctx.lineWidth=1; ctx.strokeRect(.5,.5,width-1,height-1);
-      ctx.beginPath(); y=headerHeight;
-      ctx.moveTo(colSplit+.5,headerHeight); ctx.lineTo(colSplit+.5,height);
-      rows.forEach(r=>{ y+=(r.type==='subheader'?subHeaderHeight:rowHeight); ctx.moveTo(0,Math.round(y)+.5); ctx.lineTo(width,Math.round(y)+.5); });
-      ctx.stroke();
-      shareOrDownloadCanvas(canvas,`${product.code}.png`);
-    }catch(e){ console.error('Product image export failed',e); showToast('Image generation failed — try again'); }
+    let y=headerHeight;
+    rows.forEach(r=>{
+      const h=r.type==='subheader'?subHeaderHeight:rowHeight;
+      if(r.type==='subheader'){
+        ctx.fillStyle='#EAF8F1'; ctx.fillRect(0,y,width,h);
+        ctx.fillStyle='#174A32'; ctx.font='bold 14px Arial,sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(r.name,width/2,y+h/2);
+      }else{
+        ctx.fillStyle=r.type==='total'?'#E9E9E9':'#FFFFFF'; ctx.fillRect(0,y,width,h);
+        ctx.fillStyle='#111111'; ctx.font='bold 13px Arial,sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(r.name,colSplit/2,y+h/2);
+        ctx.fillText(String(r.qty??0),colSplit+(width-colSplit)/2,y+h/2);
+      }
+      y+=h;
+    });
+
+    ctx.strokeStyle='#BDBDBD'; ctx.lineWidth=1; ctx.strokeRect(.5,.5,width-1,height-1);
+    ctx.beginPath(); y=headerHeight;
+    ctx.moveTo(colSplit+.5,headerHeight); ctx.lineTo(colSplit+.5,height);
+    rows.forEach(r=>{
+      y+=(r.type==='subheader'?subHeaderHeight:rowHeight);
+      ctx.moveTo(0,Math.round(y)+.5); ctx.lineTo(width,Math.round(y)+.5);
+    });
+    ctx.stroke();
+    return canvas;
   }
 
-  // ---------- Share (Web Share API) with automatic download fallback ----------
-  function shareOrDownloadCanvas(canvas, filename){
-    canvas.toBlob(async (blob)=>{
-      if(!blob){ showToast('Failed — try again'); return; }
+  function exportProductStageImage(product){
+    if(!product){ showToast('No product to export'); return; }
+    const canvas=buildProductStageCanvas(product);
+    if(!canvas){ showToast('No stages to share'); return; }
+    // IMPORTANT: share only. Never download the generated image automatically.
+    shareCanvasOnly(canvas,`${product.code}.png`);
+  }
+
+  function canvasToPngFile(canvas, filename){
+    return new Promise(resolve=>{
+      canvas.toBlob(blob=>{
+        if(!blob){ resolve(null); return; }
+        resolve(new File([blob],filename,{type:'image/png'}));
+      },'image/png');
+    });
+  }
+
+  // Share ONE product only. There is intentionally NO download fallback.
+  async function shareProductStageImage(product){
+    if(!product) return false;
+    const canvas=buildProductStageCanvas(product);
+    if(!canvas){ showToast(`${product.code}: no stages to share`); return false; }
+    const file=await canvasToPngFile(canvas,`${product.code}.png`);
+    if(!file){ showToast(`${product.code}: image creation failed`); return false; }
+
+    if(!navigator.share || !navigator.canShare || !navigator.canShare({files:[file]})){
+      showToast('Sharing is not supported in this browser');
+      return false;
+    }
+    try{
+      await navigator.share({files:[file],title:product.code,text:`WIP report — ${product.code}`});
+      return true;
+    }catch(err){
+      if(err && err.name==='AbortError') return false;
+      console.warn('Product share failed',err);
+      showToast('Share failed — please try again');
+      return false;
+    }
+  }
+
+  // Share ALL selected products in ONE native share action.
+  // Each product is a separate PNG file, so WhatsApp/other apps receive
+  // every selected product separately instead of only the first one.
+  async function shareSelectedProducts(){
+    const ids=Array.from(selectedProductIds);
+    if(!ids.length){ showToast('Long-press products to select'); return; }
+    const products=ids.map(id=>findProduct(id)).filter(Boolean);
+    if(!products.length){ clearProductSelection(); return; }
+
+    const shareBtn=document.querySelector('.wip-selection-btn.share');
+    if(shareBtn){ shareBtn.disabled=true; shareBtn.textContent='Preparing…'; }
+
+    try{
+      const files=[];
+      for(const product of products){
+        const canvas=buildProductStageCanvas(product);
+        if(!canvas) continue;
+        const file=await canvasToPngFile(canvas,`${product.code}.png`);
+        if(file) files.push(file);
+      }
+
+      if(!files.length){
+        showToast('No product images available to share');
+        return;
+      }
+
+      if(!navigator.share || !navigator.canShare || !navigator.canShare({files})){
+        showToast('Multi-file sharing is not supported in this browser');
+        return;
+      }
+
+      // One user gesture -> one native share sheet, containing ALL selected
+      // products as separate image files.
+      await navigator.share({
+        files
+      });
+      showToast(`${files.length} product${files.length===1?'':'s'} shared`);
+    }catch(err){
+      if(err && err.name!=='AbortError'){
+        console.warn('Multi-product share failed',err);
+        showToast('Share failed — please try again');
+      }
+    }finally{
+      clearProductSelection();
+    }
+  }
+
+  function clearProductSelection(){
+    selectedProductIds.clear();
+    productSelectionMode=false;
+    productLongPressTriggered=false;
+    if(productLongPressTimer){ clearTimeout(productLongPressTimer); productLongPressTimer=null; }
+    const bar=document.getElementById('wipSelectionBar');
+    if(bar) bar.classList.remove('open');
+    document.querySelectorAll('.wip-product-card.wip-selected').forEach(c=>c.classList.remove('wip-selected'));
+    const fabEl=document.getElementById('fab');
+    if(fabEl) fabEl.style.display='';
+  }
+
+  function updateProductSelectionUI(){
+    const bar=document.getElementById('wipSelectionBar');
+    const count=document.getElementById('wipSelectionCount');
+    if(count) count.innerHTML=`<b>${selectedProductIds.size}</b> selected`;
+    if(bar) bar.classList.toggle('open',productSelectionMode);
+    document.querySelectorAll('.wip-product-card').forEach(card=>{
+      card.classList.toggle('wip-selected',selectedProductIds.has(card.dataset.id));
+    });
+    const shareBtn=bar?.querySelector('.wip-selection-btn.share');
+    if(shareBtn) shareBtn.disabled=selectedProductIds.size===0;
+  }
+
+  function toggleProductSelection(id){
+    if(selectedProductIds.has(id)) selectedProductIds.delete(id);
+    else selectedProductIds.add(id);
+    productSelectionMode=true;
+    updateProductSelectionUI();
+  }
+
+  function enterProductSelection(id){
+    productSelectionMode=true;
+    toggleProductSelection(id);
+    const fabEl=document.getElementById('fab');
+    if(fabEl) fabEl.style.display='none';
+  }
+
+  // Share only — never download.
+  function shareCanvasOnly(canvas, filename){
+    canvasToPngFile(canvas,filename).then(async file=>{
+      if(!file){ showToast('Image creation failed'); return; }
+      if(!navigator.share || !navigator.canShare || !navigator.canShare({files:[file]})){
+        showToast('Sharing is not supported in this browser');
+        return;
+      }
       try{
-        const file = new File([blob], filename, { type:'image/png' });
-        if(navigator.canShare && navigator.canShare({ files:[file] })){
-          try{
-            await navigator.share({ files:[file], title: filename });
-            return;
-          }catch(shareErr){
-            if(shareErr && shareErr.name==='AbortError') return; // user cancelled the share sheet
-            console.error('Share failed, falling back to download', shareErr);
-          }
-        }
-      }catch(e){ console.error('Share check failed', e); }
-      // Fallback: plain download (desktop browsers / no Web Share support)
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('Downloaded (share not supported here)');
-    }, 'image/png');
+        await navigator.share({files:[file],title:filename});
+      }catch(err){
+        if(err && err.name==='AbortError') return;
+        console.warn('Share failed',err);
+        showToast('Share failed — please try again');
+      }
+    });
   }
 
   // ---------- Consolidated image: all products, one sheet, matches CONSOL reference layout ----------
@@ -2628,7 +2834,7 @@
       });
 
       showToast('Preparing CONSOL image…');
-      shareOrDownloadCanvas(canvas, `ECON_WIP_Consol_${todayISO()}.png`);
+      shareCanvasOnly(canvas, `ECON_WIP_Consol_${todayISO()}.png`);
     }catch(e){
       console.error('Consol image export failed', e);
       showToast('Image generation failed — try again');
@@ -3251,94 +3457,82 @@
   }
 
 
-  // Build a PNG of the selected day's shift output and share it (or download it)
+  // Share only the visible Shift Output table as a PNG. No header/cards/text/download.
   async function shareShiftImage(){
-    const list=soDayEntries(shiftDate,'all');
-    if(!list.length){ showToast('No entries for this date'); return; }
+    const list=soDayEntries(shiftDate,shiftFilter);
+    if(!list.length){ showToast('No entries for this date/shift'); return; }
+
     const cols=[
-      {h:'SHIFT',w:96,k:'shift'},{h:'SUPERVISOR',w:150,k:'supervisor',l:1},{h:'PRODUCT',w:190,k:'product',l:1},
-      {h:'STAGE',w:170,k:'stage',l:1},{h:'PLAN',w:78,k:'plan'},{h:'REQ MP',w:82,k:'req'},{h:'AVAIL MP',w:92,k:'avail'},
-      {h:'ACHIEVED',w:104,k:'ach'},{h:'%',w:74,k:'pct'},{h:'REMARKS',w:300,k:'remarks',l:1}
+      {h:'DATE',w:105,k:'date'},
+      {h:'SHIFT',w:96,k:'shift'},
+      {h:'SUPERVISOR',w:150,k:'supervisor',l:1},
+      {h:'PRODUCT',w:190,k:'product',l:1},
+      {h:'STAGE',w:170,k:'stage',l:1},
+      {h:'PLAN QTY',w:88,k:'plan'},
+      {h:'REQ MANPOWER',w:118,k:'req'},
+      {h:'AVAIL MANPOWER',w:125,k:'avail'},
+      {h:'ACHIVED QTY',w:105,k:'ach'},
+      {h:'%',w:70,k:'pct'},
+      {h:'REMARKS',w:300,k:'remarks',l:1}
     ];
-    const PAD=28, TW=cols.reduce((a,c)=>a+c.w,0), W=TW+PAD*2;
-    const HEAD=104, CARD_H=84, GAP=14, TH=42, RH=44;
-    const H=HEAD+GAP+CARD_H+GAP+TH+RH*(list.length+1)+PAD+22;
+    const PAD=18, TW=cols.reduce((a,c)=>a+c.w,0), W=TW+PAD*2;
+    const TH=46, RH=48, TOTAL_H=RH;
+    const H=PAD+TH+RH*list.length+TOTAL_H+PAD;
     const SC=2, cv=document.createElement('canvas'); cv.width=W*SC; cv.height=H*SC;
     const ctx=cv.getContext('2d'); ctx.scale(SC,SC);
     const F='Arial, sans-serif';
     const fit=(t,max)=>{ t=String(t==null?'':t); if(ctx.measureText(t).width<=max) return t; while(t.length>1 && ctx.measureText(t+'…').width>max) t=t.slice(0,-1); return t+'…'; };
-    const rr=(x,y,w,h,r)=>{ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); };
-
     ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,W,H);
-    // header
-    const g=ctx.createLinearGradient(0,0,W,0); g.addColorStop(0,'#241B48'); g.addColorStop(1,'#4B3C8C');
-    ctx.fillStyle=g; ctx.fillRect(0,0,W,HEAD);
-    ctx.fillStyle='#3DD68C'; ctx.font=`bold 13px ${F}`; ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText('PRODUCTION / SHIFT OUTPUT',PAD,30);
-    ctx.fillStyle='#FFFFFF'; ctx.font=`bold 30px ${F}`; ctx.fillText('ECON WIP - Shift Output',PAD,62);
-    ctx.font=`600 15px ${F}`; ctx.fillStyle='#D8D2F5'; ctx.fillText(soShiftDate(shiftDate),PAD,88);
 
-    // summary cards
-    const gen=soSum(list.filter(e=>e.shift==='General')), ngt=soSum(list.filter(e=>e.shift==='Night')), all=soSum(list);
-    const cw=(TW-GAP*2)/3; let cy=HEAD+GAP;
-    [['GENERAL SHIFT',gen],['NIGHT SHIFT',ngt],['DAY TOTAL',all]].forEach(([label,sm],i)=>{
-      const x=PAD+i*(cw+GAP);
-      ctx.fillStyle='#F3F1FB'; rr(x,cy,cw,CARD_H,12); ctx.fill();
-      ctx.strokeStyle='#DAD5F2'; ctx.lineWidth=1; rr(x,cy,cw,CARD_H,12); ctx.stroke();
-      ctx.textAlign='left'; ctx.fillStyle='#6B5AA8'; ctx.font=`bold 12px ${F}`; ctx.fillText(label,x+16,cy+20);
-      ctx.fillStyle='#171233'; ctx.font=`bold 28px ${F}`; ctx.fillText(String(sm.ach),x+16,cy+50);
-      const nw=ctx.measureText(String(sm.ach)).width;
-      ctx.fillStyle='#8A85A8'; ctx.font=`600 16px ${F}`; ctx.fillText('/ '+sm.plan,x+16+nw+8,cy+52);
-      const pv=soPctVal(sm.ach,sm.plan);
-      ctx.font=`bold 13px ${F}`; ctx.fillStyle=pv===null?'#8A85A8':(pv>=100?'#167A48':(pv>=80?'#B7791F':'#B21F3A'));
-      ctx.textAlign='right'; ctx.fillText(pv===null?'-':pv+'%',x+cw-16,cy+22); ctx.textAlign='left';
-      ctx.fillStyle='#8A85A8'; ctx.font=`12px ${F}`; ctx.fillText('Achieved / Plan • '+sm.n+' entries',x+16,cy+72);
-    });
-
-    // table
-    let y=cy+CARD_H+GAP;
+    let y=PAD;
     const drawRow=(vals,opts)=>{
       let x=PAD;
       ctx.fillStyle=opts.bg; ctx.fillRect(PAD,y,TW,opts.h);
       cols.forEach((c,i)=>{
         ctx.strokeStyle='#C9CED6'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,c.w,opts.h);
-        const v=vals[i]; ctx.font=`${opts.bold?'bold':'600'} ${opts.size||13}px ${F}`;
+        const v=vals[i];
+        ctx.font=`${opts.bold?'bold':'600'} ${opts.size||13}px ${F}`;
         ctx.fillStyle=(v&&v.color)||opts.color||'#171233';
-        const txt=fit(v&&v.t!==undefined?v.t:v,c.w-16);
-        if(c.l){ ctx.textAlign='left'; ctx.fillText(txt,x+8,y+opts.h/2+1); }
-        else { ctx.textAlign='center'; ctx.fillText(txt,x+c.w/2,y+opts.h/2+1); }
+        const txt=fit(v&&v.t!==undefined?v.t:v,c.w-14);
+        ctx.textBaseline='middle';
+        if(c.l){ ctx.textAlign='left'; ctx.fillText(txt,x+7,y+opts.h/2); }
+        else { ctx.textAlign='center'; ctx.fillText(txt,x+c.w/2,y+opts.h/2); }
         x+=c.w;
       });
       y+=opts.h;
     };
+
     drawRow(cols.map(c=>c.h),{bg:'#BEDCEA',h:TH,bold:true,size:12,color:'#171233'});
+    const all=soSum(list);
     list.forEach((e,i)=>{
       const pv=soPctVal(soNum(e.achievedQty),soNum(e.planQty));
       drawRow([
-        {t:e.shift.toUpperCase(),color:e.shift==='General'?'#8A5A16':'#4B3C8C'},e.supervisor||'',e.product,e.stage,
+        soShiftDate(e.date||shiftDate),
+        {t:e.shift.toUpperCase(),color:e.shift==='General'?'#8A5A16':'#4B3C8C'},
+        e.supervisor||'',e.product,e.stage,
         soNum(e.planQty),soNum(e.reqManpower),soNum(e.availManpower),soNum(e.achievedQty),
-        {t:pv===null?'-':pv+'%',color:pv===null?'#8A85A8':(pv>=100?'#167A48':(pv>=80?'#B7791F':'#B21F3A'))},e.remarks||''
+        {t:pv===null?'-':pv+'%',color:pv===null?'#8A85A8':(pv>=100?'#167A48':(pv>=80?'#B7791F':'#B21F3A'))},
+        e.remarks||''
       ],{bg:i%2?'#F7F9FB':'#FFFFFF',h:RH});
     });
     const tp=soPctVal(all.ach,all.plan);
-    drawRow(['TOTAL','','','',all.plan,all.req,all.avail,all.ach,{t:tp===null?'-':tp+'%'},''],{bg:'#E9EEF2',h:RH,bold:true});
-    ctx.textAlign='right'; ctx.fillStyle='#8A85A8'; ctx.font=`11px ${F}`;
-    ctx.fillText('Generated '+new Date().toLocaleString('en-GB'),W-PAD,H-14);
+    drawRow(['TOTAL','','','','',all.plan,all.req,all.avail,all.ach,{t:tp===null?'-':tp+'%'},''],{bg:'#E9EEF2',h:TOTAL_H,bold:true});
 
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-    if(!blob){ showToast('Could not create image'); return; }
+    if(!blob){ showToast('Could not create table image'); return; }
     const fname=`ECON_Shift_Output_${shiftDate}.png`;
     const file=new File([blob],fname,{type:'image/png'});
+    if(!(navigator.share && navigator.canShare && navigator.canShare({files:[file]}))){
+      showToast('Image sharing is not supported in this browser');
+      return;
+    }
     try{
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:'Shift Output '+shiftDate});
-        return;
-      }
-    }catch(err){ if(err && err.name==='AbortError') return; console.warn('Share failed, downloading instead',err); }
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),2000);
-    showToast('Image downloaded — share it from Downloads');
+      await navigator.share({files:[file]});
+    }catch(err){
+      if(err && err.name==='AbortError') return;
+      console.warn('Shift table share failed',err);
+      showToast('Share failed — please try again');
+    }
   }
 
   function renderShiftOutput(scroll){
@@ -3583,8 +3777,21 @@
           <span><b>${list.length}</b> Products</span>
         </div>
       </div>
+      
       <div class="premium-wip-list"></div>
     `;
+
+    const oldSelectionBar=document.getElementById('wipSelectionBar');
+    if(oldSelectionBar) oldSelectionBar.remove();
+    const selectionBar=document.createElement('div');
+    selectionBar.id='wipSelectionBar';
+    selectionBar.className='wip-selection-bar';
+    selectionBar.innerHTML=`
+      <div class="wip-selection-count" id="wipSelectionCount"><b>0</b> selected</div>
+      <button class="wip-selection-btn cancel" type="button">Cancel</button>
+      <button class="wip-selection-btn share" type="button">Share Selected</button>
+    `;
+    scroll.parentElement.appendChild(selectionBar);
 
     const listEl = scroll.querySelector('.premium-wip-list');
     listEl.innerHTML = list.map((p)=>{
@@ -3632,7 +3839,6 @@
         </div>
         <div class="wip-product-actions">
           <div class="wip-card-actions">
-            <button class="icon-btn product-share-btn" data-share-product="${p.id}" title="Share">${icon('share')}</button>
             ${canWrite ? `<button class="edit-btn" data-edit="${p.id}" title="Edit">${icon('pencil')}</button>` : ''}
             ${canWrite ? `<button class="del-btn" data-del="${p.id}" title="Delete">${icon('trash')}</button>` : ''}
           </div>
@@ -3646,15 +3852,58 @@
       return main;
     }).join('');
 
-    listEl.querySelectorAll('.wip-product-card').forEach(card=>card.addEventListener('click',e=>{
-      if(e.target.closest('[data-del]') || e.target.closest('[data-edit]') || e.target.closest('[data-share-product]')) return;
-      goTo({view:'stages',productId:card.dataset.id});
-    }));
+    // Mobile/desktop interaction:
+    // - short tap opens the product
+    // - long press selects the product
+    // - in selection mode, taps toggle selection instead of opening the product
+    listEl.querySelectorAll('.wip-product-card').forEach(card=>{
+      let pressTimer=null;
+      let longPressed=false;
+      const startPress=()=>{
+        if(pressTimer) clearTimeout(pressTimer);
+        longPressed=false;
+        card.classList.add('wip-selection-press');
+        pressTimer=setTimeout(()=>{
+          longPressed=true;
+          card.classList.remove('wip-selection-press');
+          enterProductSelection(card.dataset.id);
+        },550);
+      };
+      const cancelPress=()=>{
+        if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; }
+        card.classList.remove('wip-selection-press');
+      };
+
+      card.addEventListener('pointerdown',e=>{
+        if(e.target.closest('[data-del]') || e.target.closest('[data-edit]')) return;
+        startPress();
+      });
+      card.addEventListener('pointerup',cancelPress);
+      card.addEventListener('pointercancel',cancelPress);
+      card.addEventListener('pointerleave',cancelPress);
+
+      card.addEventListener('click',e=>{
+        if(e.target.closest('[data-del]') || e.target.closest('[data-edit]')) return;
+        e.preventDefault();
+        if(longPressed){
+          longPressed=false;
+          return;
+        }
+        if(productSelectionMode){
+          toggleProductSelection(card.dataset.id);
+          return;
+        }
+        goTo({view:'stages',productId:card.dataset.id});
+      });
+    });
+
+    selectionBar.querySelector('.cancel').onclick=clearProductSelection;
+    selectionBar.querySelector('.share').onclick=shareSelectedProducts;
+    updateProductSelectionUI();
     listEl.querySelectorAll('.wip-sub-row').forEach(row=>row.addEventListener('click',e=>{
       goTo({view:'stages',productId:row.dataset.parentId,subProductId:row.dataset.subId});
     }));
     listEl.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();openProductSheet(findProduct(btn.dataset.edit));}));
-    listEl.querySelectorAll('[data-share-product]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();const p=findProduct(btn.dataset.shareProduct);if(p)exportProductStageImage(p);}));
     listEl.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',e=>{
       e.stopPropagation(); if(!canWrite){showToast('Read-only access');return;}
       const p=findProduct(btn.dataset.del); if(!p) return;
