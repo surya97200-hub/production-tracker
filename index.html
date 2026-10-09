@@ -880,6 +880,28 @@
 .wip-product-card .product-title,
 .wip-product-card .wip-product-name { font-size: 20px !important; line-height: 1.2 !important; }
 </style>
+
+<style id="mini-calculator-css">
+  /* ===== Basic keypad calculator (compact Windows Calculator style) ===== */
+  .mini-calc{
+    flex:0 0 auto; margin:8px 0 7px; padding:8px; border:1px solid rgba(124,92,255,.28);
+    border-radius:11px; background:#17142a; box-shadow:0 5px 16px rgba(0,0,0,.18);
+  }
+  .mini-calc-title{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:#e9e6ff;margin:0 0 7px 1px;letter-spacing:0;}
+  .mini-calc-title-icon{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #aaa4c9;border-radius:3px;font-size:10px;line-height:1;}
+  .mini-calc-display{height:51px;margin-bottom:7px;padding:4px 8px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden;white-space:nowrap;border:1px solid #77758a;border-radius:5px;background:#f1f4f8;color:#101114;font-size:29px;font-weight:500;font-variant-numeric:tabular-nums;box-sizing:border-box;}
+  .mini-calc-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;}
+  .mini-calc-key{min-width:0;height:37px;border:1px solid #d3d4da;border-radius:5px;background:#f8f9fb;color:#202127;font-size:17px;font-weight:500;cursor:pointer;box-shadow:0 1px 1px rgba(0,0,0,.08);padding:0;}
+  .mini-calc-key:hover{background:#e8ebf1;}
+  .mini-calc-key:active{background:#dce3ed;transform:translateY(1px);}
+  .mini-calc-key.fn{background:#e9edf3;font-size:14px;}
+  .mini-calc-key.op{background:#edf0f6;font-size:19px;}
+  .mini-calc-key.equals{background:#b9470a;color:#fff;border-color:#b9470a;font-size:20px;}
+  .mini-calc-key.equals:hover{background:#a83d07;}
+  .mini-calc-key:focus-visible{outline:2px solid #917cff;outline-offset:1px;}
+  .sidebar{scrollbar-width:thin;}
+  @media(max-width:899px){.mini-calc{margin-top:10px;}.mini-calc-key{height:39px;}.mini-calc-display{height:48px;font-size:27px;}}
+</style>
 </head>
 <body>
 <style>
@@ -996,6 +1018,32 @@
         <span class="side-nav-icon">⇄</span><span>Shift Output</span>
       </button>
       <div class="sidebar-spacer"></div>
+      <div class="mini-calc" id="miniCalc" aria-label="Basic calculator">
+        <div class="mini-calc-title"><span class="mini-calc-title-icon" aria-hidden="true">▦</span>Calculator</div>
+        <div class="mini-calc-display" id="miniCalcDisplay" aria-live="polite" aria-label="Calculator display">0</div>
+        <div class="mini-calc-keys">
+          <button type="button" class="mini-calc-key fn" data-calc-key="CE" aria-label="Clear entry">CE</button>
+          <button type="button" class="mini-calc-key fn" data-calc-key="C" aria-label="Clear all">C</button>
+          <button type="button" class="mini-calc-key fn" data-calc-key="BACK" aria-label="Backspace">⌫</button>
+          <button type="button" class="mini-calc-key op" data-calc-key="/" aria-label="Divide">÷</button>
+          <button type="button" class="mini-calc-key" data-calc-key="7">7</button>
+          <button type="button" class="mini-calc-key" data-calc-key="8">8</button>
+          <button type="button" class="mini-calc-key" data-calc-key="9">9</button>
+          <button type="button" class="mini-calc-key op" data-calc-key="*" aria-label="Multiply">×</button>
+          <button type="button" class="mini-calc-key" data-calc-key="4">4</button>
+          <button type="button" class="mini-calc-key" data-calc-key="5">5</button>
+          <button type="button" class="mini-calc-key" data-calc-key="6">6</button>
+          <button type="button" class="mini-calc-key op" data-calc-key="-" aria-label="Subtract">−</button>
+          <button type="button" class="mini-calc-key" data-calc-key="1">1</button>
+          <button type="button" class="mini-calc-key" data-calc-key="2">2</button>
+          <button type="button" class="mini-calc-key" data-calc-key="3">3</button>
+          <button type="button" class="mini-calc-key op" data-calc-key="+" aria-label="Add">+</button>
+          <button type="button" class="mini-calc-key fn" data-calc-key="SIGN" aria-label="Change sign">+/−</button>
+          <button type="button" class="mini-calc-key" data-calc-key="0">0</button>
+          <button type="button" class="mini-calc-key" data-calc-key="." aria-label="Decimal point">.</button>
+          <button type="button" class="mini-calc-key equals" data-calc-key="=" aria-label="Equals">=</button>
+        </div>
+      </div>
       <div style="padding:8px 10px;font-size:10px;color:#6C6699;">Live data • Firebase</div>
     </aside>
 
@@ -1570,6 +1618,9 @@
     const overlayEl = document.getElementById('overlay');
     const sheetOpen = !!overlayEl && overlayEl.classList.contains('open');
     const active = document.activeElement;
+    const calculatorRoot = document.getElementById('miniCalc');
+    // Calculator keys must never trigger app shortcuts such as the product Add (+) button.
+    if(calculatorRoot && ((active && calculatorRoot.contains(active)) || (e.target && calculatorRoot.contains(e.target)))) return;
     const isTypingField = !!active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT');
 
     if(e.key==='Escape'){
@@ -3756,7 +3807,7 @@
     const list = sortedProducts().filter(p=>p.code.toLowerCase().includes(term) || ensureSubProducts(p).some(sp=>String(sp.code||'').toLowerCase().includes(term)));
     const qtyBy = (obj, names) => (obj.stages||[]).filter(st=>names.includes(resolveStageKey(st))).reduce((n,st)=>n+stageQty(st),0);
     const completedStages = ['SHIPPED','PACKING','OQA','LOG'];
-    const failureStages = ['REWORK','FAIL','DEBUG','SENSOR ISSUE','SCRAP'];
+    const failureStages = ['FAIL','REWORK','DEBUG','RW IN DEBUG','SENSOR ISSUE','SCRAP'];
     if(state.products.length===0){ scroll.innerHTML = emptyState('crate','No products yet','Tap + to add your first product'); return; }
     if(list.length===0){ scroll.innerHTML = emptyState('crate','No matches','Try a different search term'); return; }
 
@@ -3800,6 +3851,10 @@
       const completed = qtyBy(p,completedStages);
       const pending = Math.max(0, incoming - completed);
       const failures = qtyBy(p,failureStages);
+      const excludedFromProcess = new Set(['KIT QTY','INCOMMING','SHIPPED','PACKING',...failureStages]);
+      const process = (p.stages||[]).filter(st=>!excludedFromProcess.has(resolveStageKey(st))).reduce((n,st)=>n+stageQty(st),0);
+      const shipped = qtyBy(p,['SHIPPED']);
+      const packing = qtyBy(p,['PACKING']);
       const subProducts = ensureSubProducts(p);
       const smtPending = Math.max(0, kit - incoming);
       const base = incoming > 0 ? incoming : kit;
@@ -3829,9 +3884,11 @@
         <div class="wip-metrics">
           ${metric('Kit Qty',kit)}
           ${metric('Incomming',incomingHtml)}
-          ${metric('Pending',pending,'pending')}
-          ${metric('SMT Pending',smtHtml,'smt')}
+          ${metric('Shipped',shipped,'shipped')}
+          ${metric('Packing',packing,'packing')}
+          ${metric('Process',process,'process')}
           ${metric('Failures',failures,'fail')}
+          ${metric('SMT Pending',smtHtml,'smt')}
         </div>
         <div class="wip-progress">
           <div class="wip-progress-head"><span>Process</span><b>${Math.round(pct)}%</b></div>
@@ -4103,6 +4160,261 @@
   loadRequestsOnce().catch(e=>console.warn('loadRequests failed',e));
 })();
 </script>
+
+<script id="standalone-mini-calculator">
+/* Standalone calculator: intentionally independent of Firebase and app startup. */
+(function(){
+  function initMiniCalc(){
+    const root = document.getElementById('miniCalc');
+    const display = document.getElementById('miniCalcDisplay');
+    if (!root || !display || root.dataset.standaloneReady === '1') return;
+    root.dataset.standaloneReady = '1';
+    root.tabIndex = 0;
+
+    let current = '0';
+    let stored = null;
+    let pendingOp = null;
+    let waitingForOperand = false;
+    let justCalculated = false;
+
+    function formatNumber(n){
+      if (!Number.isFinite(n)) return 'Error';
+      if (Object.is(n, -0)) n = 0;
+      if (Math.abs(n) >= 1e15 || (n !== 0 && Math.abs(n) < 1e-7)) {
+        return n.toExponential(7).replace(/\.0+e/, 'e').replace(/(\.\d*?)0+e/, '$1e');
+      }
+      return String(Number(n.toPrecision(12)));
+    }
+    function paint(){
+      display.textContent = current;
+      display.title = current;
+      const len = current.length;
+      display.style.fontSize = len > 18 ? '12px' : len > 15 ? '14px' : len > 12 ? '18px' : len > 9 ? '23px' : '29px';
+    }
+    function clearAll(){
+      current = '0'; stored = null; pendingOp = null;
+      waitingForOperand = false; justCalculated = false; paint();
+    }
+    function inputDigit(d){
+      if (current === 'Error' || current === 'Cannot divide by 0' || waitingForOperand || justCalculated){
+        current = d; waitingForOperand = false; justCalculated = false;
+      } else if (current === '0') {
+        current = d;
+      } else if (current === '-0') {
+        current = '-' + d;
+      } else if (current.replace(/[-.]/g, '').length < 16) {
+        current += d;
+      }
+      paint();
+    }
+    function inputDecimal(){
+      if (current === 'Error' || current === 'Cannot divide by 0' || waitingForOperand || justCalculated){
+        current = '0.'; waitingForOperand = false; justCalculated = false;
+      } else if (current === '-0') {
+        current = '-0.';
+      } else if (!current.includes('.')) {
+        current += '.';
+      }
+      paint();
+    }
+    function calculate(a,b,op){
+      switch(op){
+        case '+': return a+b;
+        case '-': return a-b;
+        case '*': return a*b;
+        case '/': return b === 0 ? null : a/b;
+        default: return b;
+      }
+    }
+    function chooseOperator(op){
+      if (current === 'Error' || current === 'Cannot divide by 0') clearAll();
+      const value = Number(current);
+      if (pendingOp && !waitingForOperand){
+        const result = calculate(stored, value, pendingOp);
+        if (result === null){
+          current = 'Cannot divide by 0'; stored = null; pendingOp = null;
+          waitingForOperand = true; justCalculated = false; paint(); return;
+        }
+        current = formatNumber(result);
+        if (current === 'Error') { stored = null; pendingOp = null; waitingForOperand = true; paint(); return; }
+        stored = Number(current);
+      } else {
+        stored = value;
+      }
+      pendingOp = op; waitingForOperand = true; justCalculated = false; paint();
+    }
+    function equals(){
+      if (!pendingOp || stored === null || waitingForOperand || current === 'Error' || current === 'Cannot divide by 0') return;
+      const result = calculate(stored, Number(current), pendingOp);
+      if (result === null){
+        current = 'Cannot divide by 0'; stored = null; pendingOp = null;
+        waitingForOperand = true; justCalculated = false; paint(); return;
+      }
+      current = formatNumber(result); stored = null; pendingOp = null;
+      waitingForOperand = false; justCalculated = true; paint();
+    }
+    function press(key){
+      if (/^\d$/.test(key)) return inputDigit(key);
+      if (key === '.') return inputDecimal();
+      if (['+','-','*','/'].includes(key)) return chooseOperator(key);
+      if (key === '=') return equals();
+      if (key === 'C') return clearAll();
+      if (key === 'CE'){
+        current = '0'; waitingForOperand = false; justCalculated = false; paint(); return;
+      }
+      if (key === 'BACK'){
+        if (current === 'Error' || current === 'Cannot divide by 0' || waitingForOperand || justCalculated){
+          current = '0'; waitingForOperand = false; justCalculated = false;
+        } else if (current.length > 1){
+          current = current.slice(0, -1);
+          if (current === '-' || current === '-0') current = '0';
+        } else {
+          current = '0';
+        }
+        paint(); return;
+      }
+      if (key === 'SIGN' && current !== 'Error' && current !== 'Cannot divide by 0'){
+        if (Number(current) === 0) current = current.startsWith('-') ? '0' : '-0';
+        else current = formatNumber(-Number(current));
+        paint();
+      }
+    }
+
+    // Capture calculator clicks before the event can reach any app-level handlers.
+    // This keeps the calculator '+' strictly separate from the WIP product-add button.
+    root.addEventListener('click', function(event){
+      const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+      const btn = target?.closest('[data-calc-key]');
+      if (!btn || !root.contains(btn)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      press(btn.dataset.calcKey);
+    }, true);
+    root.addEventListener('keydown', function(event){
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const map = {Enter:'=', '=':'=', Backspace:'BACK', Escape:'C', Delete:'C'};
+      const key = map[event.key] || event.key;
+      if (/^\d$/.test(key) || ['.','+','-','*','/','=','BACK','C'].includes(key)){
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        press(key);
+      }
+    });
+    // Ensure keypad controls never submit any surrounding form.
+    root.querySelectorAll('button[data-calc-key]').forEach(btn => { btn.type = 'button'; });
+    paint();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMiniCalc, {once:true});
+  else initMiniCalc();
+})();
+</script>
+
+<style id="compact-boxes-request-update">
+/* Wider, readable product cards with all seven requested quantities */
+@media (min-width:900px){
+  .dashboard-main>.scroll{max-width:none!important}
+  .wip-product-card{
+    grid-template-columns:24px minmax(190px,230px) minmax(0,1fr) minmax(82px,105px) auto!important;
+    gap:5px 9px!important;padding:9px 12px!important;min-height:72px!important;
+  }
+  .wip-metrics{grid-template-columns:repeat(7,minmax(55px,1fr))!important;gap:6px!important}
+  .wip-metric-label{font-size:7px!important;line-height:9px!important}
+  .wip-metric-box{height:27px!important;min-width:0!important;font-size:11px!important;padding:2px 4px!important}
+  .wip-product-code{font-size:14px!important;letter-spacing:.15px!important}
+}
+.wip-metric:nth-child(3) .wip-metric-box{background:linear-gradient(135deg,#ffae19,#e85b1d)!important;border-color:#ffd05a!important}
+.wip-metric:nth-child(4) .wip-metric-box{background:linear-gradient(135deg,#168bff,#3154d9)!important;border-color:#65b7ff!important}
+.wip-metric:nth-child(5) .wip-metric-box{background:linear-gradient(135deg,#9b3cff,#4b25d5)!important;border-color:#c27cff!important}
+.wip-metric:nth-child(6) .wip-metric-box{background:linear-gradient(135deg,#ff287f,#c51d67)!important;border-color:#ff68ad!important}
+.wip-metric:nth-child(7) .wip-metric-box{background:linear-gradient(135deg,#00c8a4,#087ff5)!important;border-color:#22efd0!important}
+@media (max-width:899px){
+  .wip-product-card{
+    grid-template-columns:16px minmax(105px,1fr) 22px!important;
+    gap:5px!important;padding:8px 7px!important;min-height:0!important;
+  }
+  .wip-product-card>.wip-product-main{grid-column:2!important;grid-row:1!important;align-self:center!important;padding-top:7px}
+  .wip-product-card>.wip-metrics{grid-column:2!important;grid-row:2!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:3px!important;width:100%!important}
+  .wip-product-card>.wip-progress{grid-column:2!important;grid-row:3!important;min-width:0!important;margin:2px 0 0!important}
+  .wip-product-card>.wip-product-actions{grid-column:3!important;grid-row:1 / span 3!important;align-self:center!important}
+  .wip-metric{min-width:0!important;gap:3px!important}
+  .wip-metric-label{font-size:clamp(4px,1.25vw,6.5px)!important;letter-spacing:0!important;line-height:1.15!important;white-space:normal!important;min-height:12px;display:flex;align-items:flex-end;justify-content:center}
+  .wip-metric-box{height:25px!important;min-width:0!important;width:100%!important;padding:2px 1px!important;font-size:clamp(7px,2vw,10px)!important;border-radius:5px!important}
+  .wip-product-code{font-size:clamp(12px,3.5vw,15px)!important;line-height:1.25!important;white-space:normal!important;overflow-wrap:anywhere}
+  .wip-last-update{font-size:6px!important;right:7px!important;top:3px!important}
+}
+@media (min-width:520px) and (max-width:899px){
+  .wip-product-card{grid-template-columns:20px minmax(150px,190px) minmax(0,1fr) 22px!important}
+  .wip-product-card>.wip-product-main{grid-column:2!important;grid-row:1 / span 2!important;padding-top:7px}
+  .wip-product-card>.wip-metrics{grid-column:3!important;grid-row:1!important}
+  .wip-product-card>.wip-progress{grid-column:3!important;grid-row:2!important}
+  .wip-product-card>.wip-product-actions{grid-column:4!important;grid-row:1 / span 2!important}
+  .wip-metric-label{font-size:6px!important}
+}
+</style>
+
+
+<style id="single-row-seven-wip-boxes">
+/* Use the available card width efficiently: all seven metric boxes stay on one row. */
+.wip-product-card .wip-metrics{
+  grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  width:100%!important;
+  max-width:680px!important;
+  gap:5px!important;
+  justify-content:stretch!important;
+}
+.wip-product-card .wip-metric{min-width:0!important;width:100%!important;}
+.wip-product-card .wip-metric-label{
+  font-size:6.5px!important;
+  line-height:8px!important;
+  letter-spacing:.1px!important;
+  white-space:nowrap!important;
+}
+.wip-product-card .wip-metric-box{
+  width:100%!important;
+  min-width:0!important;
+  height:29px!important;
+  box-sizing:border-box!important;
+  padding:2px 3px!important;
+  font-size:10px!important;
+}
+.wip-product-card .wip-progress{
+  width:100%!important;
+  max-width:680px!important;
+}
+@media(max-width:1000px){
+  .wip-product-card .wip-metrics{gap:3px!important;max-width:100%!important}
+  .wip-product-card .wip-metric-label{font-size:5.8px!important}
+  .wip-product-card .wip-metric-box{height:25px!important;font-size:9px!important}
+}
+@media(max-width:760px){
+  .wip-product-card .wip-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .wip-product-card .wip-metric-label{font-size:6px!important}
+  .wip-product-card .wip-metric-box{height:24px!important}
+}
+</style>
+
+<style id="formal-uniform-wip-box-colors">
+/* Formal corporate palette: all WIP quantity boxes use the same muted navy/slate color. */
+.wip-metric-box,
+.wip-metric:nth-child(1) .wip-metric-box,
+.wip-metric:nth-child(2) .wip-metric-box,
+.wip-metric:nth-child(3) .wip-metric-box,
+.wip-metric:nth-child(4) .wip-metric-box,
+.wip-metric:nth-child(5) .wip-metric-box,
+.wip-metric:nth-child(6) .wip-metric-box,
+.wip-metric:nth-child(7) .wip-metric-box {
+  background:#26364D !important;
+  background-image:none !important;
+  color:#F8FAFC !important;
+  border:1px solid #40516A !important;
+  box-shadow:none !important;
+  border-radius:7px !important;
+}
+.wip-metric-label { color:#AAB8CA !important; }
+.wip-product-card { border-color:#344256 !important; }
+</style>
 </body>
 </html>
 <style>
@@ -4173,4 +4485,81 @@ document.addEventListener('DOMContentLoaded', function(){
 .wip-product-card .wip-product-kind,.wip-sub-row .wip-product-kind{display:none!important}
 .wip-product-card .status,.wip-product-card .status-badge,.wip-sub-row .status,.wip-sub-row .status-badge{display:none!important}
 .wip-last-update{pointer-events:none}
+</style>
+
+
+<style id="calculator-event-isolation-and-compact-wip-metrics">
+/* Keep Kit Qty and Incoming quantity boxes more compact on the WIP home page. */
+.wip-metrics{
+  grid-template-columns:minmax(38px,.76fr) minmax(40px,.80fr) repeat(3,minmax(46px,1fr))!important;
+}
+.wip-metric:nth-child(1) .wip-metric-box,
+.wip-metric:nth-child(2) .wip-metric-box{
+  min-width:0!important;
+  padding-left:3px!important;
+  padding-right:3px!important;
+  font-size:9px!important;
+}
+.wip-metric:nth-child(1) .wip-metric-label,
+.wip-metric:nth-child(2) .wip-metric-label{
+  font-size:5.8px!important;
+  letter-spacing:.15px!important;
+}
+@media(max-width:760px){
+  .wip-metrics{
+    grid-template-columns:minmax(34px,.76fr) minmax(36px,.80fr) repeat(3,minmax(0,1fr))!important;
+    gap:3px!important;
+  }
+  .wip-metric:nth-child(1) .wip-metric-box,
+  .wip-metric:nth-child(2) .wip-metric-box{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    font-size:8px!important;
+  }
+}
+</style>
+
+
+<style id="final-extra-compact-wip-metric-boxes">
+/* Extra-narrow the five quantity boxes on each WIP product card. */
+.wip-metrics{
+  grid-template-columns:repeat(5,minmax(0,48px))!important;
+  gap:4px!important;
+  justify-content:start!important;
+}
+.wip-metric{min-width:0!important;width:100%!important;}
+.wip-metric-label{
+  font-size:5.7px!important;
+  letter-spacing:.12px!important;
+  line-height:7px!important;
+  overflow:visible!important;
+}
+.wip-metric-box{
+  width:100%!important;
+  min-width:0!important;
+  padding-left:2px!important;
+  padding-right:2px!important;
+  font-size:8.5px!important;
+}
+.wip-progress{
+  width:256px!important;
+  max-width:100%!important;
+  justify-self:start!important;
+}
+@media(max-width:1000px){
+  .wip-metrics{
+    grid-template-columns:repeat(5,minmax(0,44px))!important;
+    gap:3px!important;
+  }
+  .wip-progress{width:232px!important;max-width:100%!important;}
+}
+@media(max-width:760px){
+  .wip-metrics{
+    grid-template-columns:repeat(5,minmax(0,40px))!important;
+    gap:3px!important;
+  }
+  .wip-metric-label{font-size:5.5px!important;letter-spacing:.05px!important;}
+  .wip-metric-box{font-size:8px!important;height:22px!important;}
+  .wip-progress{width:212px!important;max-width:100%!important;}
+}
 </style>
